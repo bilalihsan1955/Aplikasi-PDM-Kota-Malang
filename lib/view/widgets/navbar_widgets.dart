@@ -13,38 +13,44 @@ class NavbarWidgets extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SafeArea(
       child: Container(
         margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
         height: 96,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
               blurRadius: 25,
               offset: const Offset(0, 8),
             ),
           ],
-          border: Border.all(color: Colors.grey.shade100, width: 1),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100, 
+            width: 1,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildNavItem(Icons.home_filled, "Home", 0),
-            _buildNavItem(Icons.receipt_long_rounded, "Agenda", 1),
-            _buildNavItem(Icons.bar_chart_rounded, "Berita", 2),
-            _buildNavItem(Icons.person_rounded, "Profil", 3),
+            _buildNavItem(context, Icons.home_filled, "Home", 0),
+            _buildNavItem(context, Icons.receipt_long_rounded, "Agenda", 1),
+            _buildNavItem(context, Icons.bar_chart_rounded, "Berita", 2),
+            _buildNavItem(context, Icons.person_rounded, "Profil", 3),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
+  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index) {
     bool isActive = currentIndex == index;
     const Color themeColor = Color(0xFF39A658);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Expanded(
       child: GestureDetector(
@@ -62,14 +68,12 @@ class NavbarWidgets extends StatelessWidget {
               curve: Curves.easeInOut,
               padding: EdgeInsets.all(isActive ? 10 : 8),
               decoration: BoxDecoration(
-                // Warna background dibuat sedikit lebih soft
                 color: isActive ? themeColor.withOpacity(0.1) : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
                 border: isActive ? Border.all (
-                      color: themeColor.withOpacity(0.1), // Border tipis agar lebih sharp
+                      color: themeColor.withOpacity(0.1),
                       width: 1.5,
                     ) : Border.all(color: Colors.transparent),
-                // Shadow Container dibuat sangat tipis (subtle)
                 boxShadow: isActive ? [
                   BoxShadow(
                     color: themeColor.withOpacity(0.08),
@@ -80,21 +84,19 @@ class NavbarWidgets extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                color: isActive ? themeColor : Colors.blueGrey[200],
+                color: isActive ? themeColor : (isDark ? Colors.white.withOpacity(0.8) : Colors.blueGrey[200]),
                 size: isActive ? 30 : 26,
-                // SHADOW ICON DIHAPUS agar tidak terlalu glow
                 shadows: const [], 
               ),
             ),
-            const SizedBox(height: 4), // Jarak sedikit ditambah agar teks lebih bernapas
+            const SizedBox(height: 4),
             Text(
               label,
               textScaler: TextScaler.noScaling,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                color: isActive ? themeColor : Colors.blueGrey[400],
-                // Pastikan tidak ada bayangan pada teks juga
+                color: isActive ? themeColor : (isDark ? Colors.white.withOpacity(1) : Colors.blueGrey[400]),
               ),
             ),
           ],

@@ -1,110 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../view_models/news_view_model.dart';
+import '../../models/news_model.dart';
 
-class BeritaPage extends StatefulWidget {
+class BeritaPage extends StatelessWidget {
   const BeritaPage({super.key});
-
-  @override
-  State<BeritaPage> createState() => _BeritaPageState();
-}
-
-class _BeritaPageState extends State<BeritaPage> {
-  String selectedTag = 'Semua';
-  String searchQuery = '';
-  bool isSearching = false;
-
-  final List<String> categories = [
-    'Semua',
-    'News',
-    'Event',
-    'Info',
-    'Update',
-    'Info',
-    'Update',
-  ];
-
-  final List<Map<String, dynamic>> allNews = [
-    {
-      'tag': 'News',
-      'time': '2 jam lalu',
-      'title': 'Kantor Cabang Baru Dibuka',
-      'desc': 'Peresmian kantor cabang baru...',
-      'image': 'assets/images/bg.webp',
-    },
-    {
-      'tag': 'Event',
-      'time': '5 jam lalu',
-      'title': 'Kajian Akbar Bulanan',
-      'desc': 'Kajian bersama tokoh nasional.',
-      'image': 'assets/images/profile.png',
-    },
-    {
-      'tag': 'Info',
-      'time': '1 hari lalu',
-      'title': 'Libur Nasional',
-      'desc': 'Penyesuaian jadwal kegiatan.',
-      'image': 'assets/images/bg.webp',
-    },
-    {
-      'tag': 'Update',
-      'time': '2 hari lalu',
-      'title': 'Pembaruan Sistem',
-      'desc': 'Optimalisasi performa.',
-      'image': 'assets/images/profile.png',
-    },
-    {
-      'tag': 'News',
-      'time': '3 jam lalu',
-      'title': 'Rapat Kerja Wilayah',
-      'desc': 'Koordinasi tahunan pengurus.',
-      'image': 'assets/images/bg.webp',
-    },
-    {
-      'tag': 'Info',
-      'time': '4 hari lalu',
-      'title': 'Update Keanggotaan',
-      'desc': 'Pendaftaran kartu anggota baru.',
-      'image': 'assets/images/profile.png',
-    },
-  ];
-
-  List<Map<String, dynamic>> get filteredNews {
-    return allNews.where((item) {
-      final matchTag =
-          selectedTag.toLowerCase() == 'semua' ||
-          item['tag'].toString().toLowerCase() == selectedTag.toLowerCase();
-      final matchSearch = item['title'].toString().toLowerCase().contains(
-        searchQuery.toLowerCase(),
-      );
-      return matchTag && matchSearch;
-    }).toList();
-  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: const Color(0xFFFCFCFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
-            Positioned.fill(child: _newsGrid()),
+            Positioned.fill(child: _NewsGrid()),
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              child: _buildCombinedHeader(),
+              child: _CombinedHeader(),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  // ================= COMBINED HEADER =================
-  Widget _buildCombinedHeader() {
+class _CombinedHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -118,62 +48,89 @@ class _BeritaPageState extends State<BeritaPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildAnimatedHeader(),
+            _AnimatedHeader(),
             const SizedBox(height: 16),
-            _categoryChips(),
+            _CategoryChips(),
             const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildAnimatedHeader() {
+class _AnimatedHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<NewsViewModel>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
-        child: isSearching ? _searchBar() : _headerTitle(),
+        child: viewModel.isSearching ? _SearchBar() : _HeaderTitle(),
       ),
     );
   }
+}
 
-  Widget _headerTitle() {
+class _HeaderTitle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.read<NewsViewModel>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       key: const ValueKey('headerTitle'),
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Berita',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 24, 
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF2D3142),
+              ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'Informasi terbaru untuk anda',
-              style: TextStyle(fontSize: 14),
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.grey[600],
+              ),
             ),
           ],
         ),
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
-          onPressed: () => setState(() => isSearching = true),
-          icon: const Icon(Icons.search, size: 28, color: Colors.black87),
+          onPressed: () => viewModel.setSearching(true),
+          icon: Icon(
+            Icons.search, 
+            size: 28, 
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
       ],
     );
   }
+}
 
-  Widget _searchBar() {
+class _SearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.read<NewsViewModel>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       key: const ValueKey('searchField'),
       height: 50,
       padding: const EdgeInsets.only(left: 12, right: 0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F7FB),
+        color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -183,8 +140,11 @@ class _BeritaPageState extends State<BeritaPage> {
           Expanded(
             child: TextField(
               autofocus: true,
-              onChanged: (value) => setState(() => searchQuery = value),
-              style: const TextStyle(fontSize: 14),
+              onChanged: viewModel.setSearchQuery,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
               textAlignVertical: TextAlignVertical.center,
               decoration: const InputDecoration(
                 hintText: 'Cari judul berita...',
@@ -199,12 +159,7 @@ class _BeritaPageState extends State<BeritaPage> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                setState(() {
-                  isSearching = false;
-                  searchQuery = '';
-                });
-              },
+              onTap: () => viewModel.setSearching(false),
               child: const Padding(
                 padding: EdgeInsets.all(12.0),
                 child: Icon(Icons.close, size: 20, color: Colors.grey),
@@ -216,22 +171,28 @@ class _BeritaPageState extends State<BeritaPage> {
       ),
     );
   }
+}
 
-  Widget _categoryChips() {
+class _CategoryChips extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<NewsViewModel>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 40,
       child: ListView.separated(
         physics: const BouncingScrollPhysics(),
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        itemCount: categories.length,
+        itemCount: viewModel.categories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          final tag = categories[index];
-          final isActive = tag == selectedTag;
+          final tag = viewModel.categories[index];
+          final isActive = tag == viewModel.selectedTag;
 
           return GestureDetector(
-            onTap: () => setState(() => selectedTag = tag),
+            onTap: () => viewModel.setTag(tag),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -239,13 +200,13 @@ class _BeritaPageState extends State<BeritaPage> {
               decoration: BoxDecoration(
                 color: isActive
                     ? const Color(0xFF152D8D)
-                    : const Color(0xFFF6F7FB),
+                    : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 tag,
                 style: TextStyle(
-                  color: isActive ? Colors.white : Colors.black87,
+                  color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
                   fontSize: 13,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
                 ),
@@ -256,74 +217,79 @@ class _BeritaPageState extends State<BeritaPage> {
       ),
     );
   }
+}
 
-  Widget _newsGrid() {
+class _NewsGrid extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<NewsViewModel>();
+    final filteredNews = viewModel.filteredNews;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     double topPadding = MediaQuery.of(context).padding.top + 160;
     double bottomPadding = MediaQuery.of(context).padding.bottom + 24;
 
     if (filteredNews.isEmpty) {
-  return Padding(
-    padding: EdgeInsets.only(top: topPadding),
-    child: Align(
-      alignment: const Alignment(0, -0.4), 
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/images/empty_state/not_found.png',
-              width: 160,
-              height: 160,
-              fit: BoxFit.contain,
-            ),
-            const Text(
-              'Berita Tidak Ditemukan',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF212121),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 50),
-              child: Text(
-                'Maaf, kami tidak menemukan berita yang Anda cari.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey,
-                  height: 1.4,
+      return Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Align(
+          alignment: const Alignment(0, -0.4),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  isDark 
+                      ? 'assets/images/empty_state/not_found_dark.png' 
+                      : 'assets/images/empty_state/not_found.png',
+                  width: 160,
+                  height: 160,
+                  fit: BoxFit.contain,
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (searchQuery.isNotEmpty || selectedTag != 'Semua')
-              GestureDetector(
-                onTap: () => setState(() {
-                  searchQuery = '';
-                  selectedTag = 'Semua';
-                  isSearching = false;
-                }),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF152D8D),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: const Text(
-                    'Atur Ulang Filter',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                Text(
+                  'Berita Tidak Ditemukan',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF212121),
                   ),
                 ),
-              ),
-          ],
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 50),
+                  child: Text(
+                    'Maaf, kami tidak menemukan berita yang Anda cari.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white60 : Colors.grey,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (viewModel.searchQuery.isNotEmpty || viewModel.selectedTag != 'Semua')
+                  GestureDetector(
+                    onTap: viewModel.resetFilters,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF152D8D),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: const Text(
+                        'Atur Ulang Filter',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
-}
+      );
+    }
 
     return GridView.builder(
       padding: EdgeInsets.only(
@@ -344,20 +310,25 @@ class _BeritaPageState extends State<BeritaPage> {
   }
 }
 
-// ================= NEW CARD DESIGN WITH TAG =================
 class _NewsCard extends StatelessWidget {
-  final Map<String, dynamic> data;
+  final NewsModel data;
   const _NewsCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1), // Shadow pekat sesuai Home
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -366,7 +337,6 @@ class _NewsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // BAGIAN GAMBAR (Flex 4)
           Expanded(
             flex: 4,
             child: ClipRRect(
@@ -377,14 +347,14 @@ class _NewsCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   Image.asset(
-                    data['image'],
+                    data.image,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>
-                        Container(color: Colors.grey[200]),
+                        Container(color: isDark ? Colors.white10 : Colors.grey[200]),
                   ),
                   Container(
                     color: Colors.black.withOpacity(0.1),
-                  ), // Overlay tipis sesuai Home
+                  ),
                   Positioned(
                     top: 12,
                     left: 12,
@@ -394,17 +364,15 @@ class _NewsCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD1EBDD),
+                        color: isDark ? const Color(0xFF11683B) : const Color(0xFFD1EBDD),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
-                        data['tag']
-                            .toString()
-                            .toUpperCase(), // Ubah ke UpperCase sesuai data Home
-                        style: const TextStyle(
+                        data.tag.toUpperCase(),
+                        style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF11683B),
+                          color: isDark ? const Color(0xFFD1EBDD) : const Color(0xFF11683B),
                         ),
                       ),
                     ),
@@ -413,8 +381,6 @@ class _NewsCard extends StatelessWidget {
               ),
             ),
           ),
-
-          // BAGIAN TEKS (Flex 3)
           Expanded(
             flex: 3,
             child: Padding(
@@ -423,27 +389,33 @@ class _NewsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data['time'],
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    data['title'],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15, // Ukuran font spesifik Home
-                      fontWeight: FontWeight.bold,
+                    data.time,
+                    style: TextStyle(
+                      fontSize: 11, 
+                      color: isDark ? Colors.white54 : Colors.grey[500],
                     ),
                   ),
                   const SizedBox(height: 6),
-                  // Deskripsi menggunakan flex lagi untuk handle overflow
+                  Text(
+                    data.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Expanded(
                     child: Text(
-                      data['desc'],
+                      data.desc,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: isDark ? Colors.white60 : Colors.grey[600],
+                      ),
                     ),
                   ),
                 ],

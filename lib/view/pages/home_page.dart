@@ -1,121 +1,39 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../view_models/home_view_model.dart';
+import '../../models/event_model.dart';
+import '../../models/news_model.dart';
 
-/// =======================
-/// DATA
-/// =======================
-
-final List<Map<String, String>> events = [
-  {
-    "month": "OCT",
-    "date": "24",
-    "title": "Kajian Tablogh Akbar",
-    "time": "10:00 AM",
-    "location": "Aula PDM Kota Malang",
-  },
-  {
-    "month": "NOV",
-    "date": "12",
-    "title": "Design Sprint",
-    "time": "01:00 PM",
-    "location": "Meeting Room A",
-  },
-  {
-    "month": "DEC",
-    "date": "05",
-    "title": "Year End Party",
-    "time": "07:00 PM",
-    "location": "Grand Ballroom",
-  },
-];
-
-final List<Map<String, dynamic>> newsData = [
-  {
-    "tag": "POLICY",
-    "time": "2 hours ago",
-    "title": "New Remote Work Policy",
-    "desc": "Updating hybrid work guidelines for flexibility.",
-    "image": "assets/images/profile.png",
-  },
-  {
-    "tag": "EVENT",
-    "time": "5 hours ago",
-    "title": "Annual Tech Conference",
-    "desc": "Join us for the biggest tech event of the year.",
-    "image": "assets/images/bg.webp",
-  },
-  {
-    "tag": "NEWS",
-    "time": "2 days ago",
-    "title": "New Office Opening",
-    "desc": "We are expanding to a new location in Bali.",
-    "image": "assets/images/bg.webp",
-  },
-  {
-    "tag": "UPDATE",
-    "time": "1 day ago",
-    "title": "System Maintenance",
-    "desc": "Server downtime scheduled for this weekend.",
-    "image": "assets/images/profile.png",
-  },
-];
-
-final List<Map<String, dynamic>> homeMenus = [
-  {'icon': Icons.apartment, 'label': 'Profil'},
-  {'icon': Icons.article_outlined, 'label': 'Berita'},
-  {'icon': Icons.event_outlined, 'label': 'Agenda'},
-  {'icon': Icons.photo_library_outlined, 'label': 'Dokumentasi'},
-  {'icon': Icons.notifications_none, 'label': 'Pengumuman'},
-  {'icon': Icons.location_on_outlined, 'label': 'Lokasi'},
-  {'icon': Icons.search, 'label': 'Cari'},
-  {'icon': Icons.share_outlined, 'label': 'Bagikan'},
-];
-
-/// =======================
-/// HOME PAGE
-/// =======================
-
-class HomePage extends StatefulWidget {
-  final ValueChanged<int>? onNavigate;
-
-  const HomePage({super.key, this.onNavigate});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int _currentPage = 0;
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: SafeArea(
-        child: Column(
-          children: [
-            const _Header(),
-            const SizedBox(height: 24),
-            const _CompanyBanner(),
-            const SizedBox(height: 24),
-
-            _EventSection(
-              currentPage: _currentPage,
-              onChanged: (i) => setState(() => _currentPage = i),
-            ),
-            const SizedBox(height: 24),
-            const _HomeMenuSection(),
-            const SizedBox(height: 24),
-            _NewsSection(onNavigate: widget.onNavigate),
-            const SizedBox(height: 24),
-          ],
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SingleChildScrollView(
+        child: SafeArea(
+          child: Column(
+            children: const [
+              _Header(),
+              SizedBox(height: 24),
+              _CompanyBanner(),
+              SizedBox(height: 24),
+              _EventSection(),
+              SizedBox(height: 24),
+              _HomeMenuSection(),
+              SizedBox(height: 8),
+              _NewsSection(),
+              SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-/// =======================
-/// HEADER
-/// =======================
 
 class _Header extends StatelessWidget {
   const _Header();
@@ -130,12 +48,13 @@ class _Header extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Hi, Bilal Al Ihsan',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -1,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               Text(
@@ -188,7 +107,6 @@ class _CompanyBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           child: Stack(
             children: [
-              /// 🔹 Background Image (lebih natural, ga terlalu zoom)
               Positioned.fill(
                 child: Image.asset(
                   'assets/images/banner.png',
@@ -196,8 +114,6 @@ class _CompanyBanner extends StatelessWidget {
                   alignment: Alignment.topCenter,
                 ),
               ),
-
-              /// 🔹 Dark overlay (lebih kuat di bawah)
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -213,8 +129,6 @@ class _CompanyBanner extends StatelessWidget {
                   ),
                 ),
               ),
-
-              /// 🔹 Content
               Positioned(
                 left: 20,
                 right: 20,
@@ -253,62 +167,58 @@ class _CompanyBanner extends StatelessWidget {
   }
 }
 
-/// =======================
-/// EVENT SECTION
-/// =======================
-
 class _EventSection extends StatelessWidget {
-  final int currentPage;
-  final ValueChanged<int> onChanged;
-
-  const _EventSection({required this.currentPage, required this.onChanged});
+  const _EventSection();
 
   @override
   Widget build(BuildContext context) {
-    final visibleEvents = events.length > 2 ? 2 : events.length;
+    return Consumer<HomeViewModel>(
+      builder: (context, viewModel, child) {
+        final events = viewModel.events;
+        final visibleEvents = events.length > 2 ? 2 : events.length;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: _SectionHeader(
-            title: 'Agenda Terkini',
-            // onTapAll: () {
-            //   Navigator.push(
-            //     context,
-            //     MaterialPageRoute(builder: (_) => const EventPage()),
-            //   );
-            // },
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 120,
-          child: PageView.builder(
-            padEnds: false,
-            controller: PageController(viewportFraction: 0.88),
-            itemCount: visibleEvents,
-            onPageChanged: onChanged,
-            itemBuilder: (context, index) {
-              return _EventCard(
-                event: events[index],
-                margin: EdgeInsets.only(
-                  left: index == 0 ? 24 : 8,
-                  right: index == visibleEvents - 1 ? 24 : 8,
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
-        _DotsIndicator(length: visibleEvents, current: currentPage),
-      ],
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _SectionHeader(
+                title: 'Agenda Terkini',
+                onTapAll: () => context.go('/agenda'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 120,
+              child: PageView.builder(
+                padEnds: false,
+                controller: PageController(viewportFraction: 0.88),
+                itemCount: visibleEvents,
+                onPageChanged: viewModel.setEventPage,
+                itemBuilder: (context, index) {
+                  return _EventCard(
+                    event: events[index],
+                    margin: EdgeInsets.only(
+                      left: index == 0 ? 24 : 8,
+                      right: index == visibleEvents - 1 ? 24 : 8,
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            _DotsIndicator(
+              length: visibleEvents,
+              current: viewModel.currentEventPage,
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
 class _EventCard extends StatelessWidget {
-  final Map<String, String> event;
+  final EventModel event;
   final EdgeInsets margin;
 
   const _EventCard({required this.event, required this.margin});
@@ -346,43 +256,89 @@ class _EventCard extends StatelessWidget {
 }
 
 class _EventDate extends StatelessWidget {
-  final Map<String, String> event;
+  final EventModel event;
 
   const _EventDate({required this.event});
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFFCFCFC),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    if (isDark) {
+      return AspectRatio(
+        aspectRatio: 1,
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              event['month']!,
-              style: const TextStyle(
-                color: Color(0xFF152D8D),
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF152D8D).withOpacity(0.8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    event.month,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    event.date,
+                    style: const TextStyle(
+                      fontSize: 24, 
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              event['date']!,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      return AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFCFCFC),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                event.month,
+                style: const TextStyle(
+                  color: Color(0xFF2D3142),
+                  fontWeight: FontWeight.w900 ,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                event.date,
+                style: const TextStyle(
+                  fontSize: 24, 
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3142),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 }
 
 class _EventInfo extends StatelessWidget {
-  final Map<String, String> event;
+  final EventModel event;
 
   const _EventInfo({required this.event});
 
@@ -394,7 +350,7 @@ class _EventInfo extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            event['title']!,
+            event.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -408,7 +364,7 @@ class _EventInfo extends StatelessWidget {
             children: [
               const Icon(Icons.access_time, color: Colors.white70, size: 16),
               const SizedBox(width: 4),
-              Text(event['time']!, style: const TextStyle(color: Colors.white)),
+              Text(event.time, style: const TextStyle(color: Colors.white)),
               Container(
                 height: 12,
                 width: 1,
@@ -417,7 +373,7 @@ class _EventInfo extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  event['location']!,
+                  event.location,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white),
                 ),
@@ -429,10 +385,6 @@ class _EventInfo extends StatelessWidget {
     );
   }
 }
-
-/// =======================
-/// MENU GRID
-/// =======================
 
 class _HomeMenuSection extends StatelessWidget {
   const _HomeMenuSection();
@@ -457,59 +409,62 @@ class _HomeMenuGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Menggunakan warna tema yang sama dengan Navbar
-    const Color themeColor = Color(0xFF39A658); 
+    const Color themeColor = Color(0xFF39A658);
+    final viewModel = context.watch<HomeViewModel>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: homeMenus.length,
+        itemCount: viewModel.homeMenus.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
-          mainAxisSpacing: 0, // Jarak antar baris ditambah sedikit
+          mainAxisSpacing: 0,
           crossAxisSpacing: 16,
-          childAspectRatio: 0.8, // Disesuaikan agar teks tidak terpotong
+          childAspectRatio: 0.8,
         ),
         itemBuilder: (context, index) {
-          final item = homeMenus[index];
+          final item = viewModel.homeMenus[index];
 
           return GestureDetector(
+            onTap: () {
+              if (item['label'] == 'Berita') context.go('/berita');
+              if (item['label'] == 'Agenda') context.go('/agenda');
+              if (item['label'] == 'Profil') context.go('/profile');
+            },
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Container Ikon yang dibuat konsisten dengan gaya Navbar
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   height: 60,
                   width: 60,
                   decoration: BoxDecoration(
-                    // Menggunakan opacity yang sama lembutnya dengan navbar (0.12)
-                    color: themeColor.withOpacity(0.12), 
-                    borderRadius: BorderRadius.circular(20), // Sudut membulat modern
+                    color: themeColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: themeColor.withOpacity(0.1), // Border tipis agar lebih sharp
+                      color: themeColor.withOpacity(0.1),
                       width: 1.5,
                     ),
                   ),
                   child: Icon(
-                    item['icon'], 
-                    color: themeColor, 
-                    size: 28, // Ukuran ikon dipertegas
+                    item['icon'],
+                    color: themeColor,
+                    size: 28,
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Teks Menu
                 Text(
                   item['label'],
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D3142), // Warna teks gelap yang elegan
+                    color: isDark ? Colors.white70 : const Color(0xFF2D3142),
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -522,65 +477,66 @@ class _HomeMenuGrid extends StatelessWidget {
   }
 }
 
-/// =======================
-/// NEWS SECTION
-/// =======================
-
 class _NewsSection extends StatelessWidget {
-  final ValueChanged<int>? onNavigate;
-
-  const _NewsSection({this.onNavigate});
+  const _NewsSection();
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionHeader(
-            title: 'Berita Terkini',
-            onTapAll: () {
-              if (onNavigate != null) {
-                onNavigate!(2); // 2 = index BeritaPage di MainScreen
-              }
-            },
-          ),
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: newsData.length > 4 ? 4 : newsData.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.75,
-            ),
-            itemBuilder: (context, index) {
-              return _NewsCard(data: newsData[index]);
-            },
-          ),
-        ],
+      child: Consumer<HomeViewModel>(
+        builder: (context, viewModel, child) {
+          final newsData = viewModel.news;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(
+                title: 'Berita Terkini',
+                onTapAll: () => context.go('/berita'),
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: newsData.length > 4 ? 4 : newsData.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.75,
+                ),
+                itemBuilder: (context, index) {
+                  return _NewsCard(data: newsData[index]);
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _NewsCard extends StatelessWidget {
-  final Map<String, dynamic> data;
+  final NewsModel data;
 
   const _NewsCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -598,7 +554,7 @@ class _NewsCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(data['image'], fit: BoxFit.cover),
+                  Image.asset(data.image, fit: BoxFit.cover),
                   Container(color: Colors.black.withOpacity(0.1)),
                   Positioned(
                     top: 12,
@@ -609,15 +565,15 @@ class _NewsCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD6DCEF),
+                        color: isDark ? const Color(0XFF071D75) : const Color(0xFFD6DCEF),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
-                        data['tag'],
-                        style: const TextStyle(
+                        data.tag,
+                        style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: Color(0XFF071D75),
+                          color: isDark ? const Color(0xFFD6DCEF) : const Color(0XFF071D75),
                         ),
                       ),
                     ),
@@ -634,26 +590,33 @@ class _NewsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data['time'],
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    data.time,
+                    style: TextStyle(
+                      fontSize: 11, 
+                      color: isDark ? Colors.white54 : Colors.grey[500],
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    data['title'],
+                    data.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF2D3142),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Expanded(
                     child: Text(
-                      data['desc'],
+                      data.desc,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: isDark ? Colors.white60 : Colors.grey[600],
+                      ),
                     ),
                   ),
                 ],
@@ -666,10 +629,6 @@ class _NewsCard extends StatelessWidget {
   }
 }
 
-/// =======================
-/// SHARED WIDGETS
-/// =======================
-
 class _SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onTapAll;
@@ -678,21 +637,37 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const Color appBlue = Color(0xFF152D8D);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18, 
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF2D3142),
+          ),
         ),
-        GestureDetector(
-          onTap: onTapAll,
+        TextButton(
+          onPressed: onTapAll,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            foregroundColor: appBlue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           child: Text(
             'Semua',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white70 : appBlue,
             ),
           ),
         ),
