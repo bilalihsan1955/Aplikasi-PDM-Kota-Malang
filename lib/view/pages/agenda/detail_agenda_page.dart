@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -140,6 +141,76 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
     );
   }
 
+  Widget _buildDateTimeCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const RadialGradient(center: Alignment.topLeft, radius: 3, colors: [Color(0xFF39A658), Color(0xFF4A6FDB), Color(0XFF071D75)], stops: [0.0, 0.3, 0.8]),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          // Row dibatasi tinggi agar double.infinity pada anak bekerja dengan benar
+          SizedBox(
+            height: 64,
+            child: _buildCardDate(context),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text('DATE & TIME', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text('Oct 24, 2026', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text('09:00 AM - 12:00 PM', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardDate(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF2D3142);
+    
+    return AspectRatio(
+      aspectRatio: 1,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: isDark 
+          ? BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: _dateContainer(isDark, textColor),
+            )
+          : _dateContainer(isDark, textColor),
+      ),
+    );
+  }
+
+  Widget _dateContainer(bool isDark, Color textColor) {
+    return Container(
+      height: double.infinity, // Tinggi mengisi ruang yang tersedia
+      width: double.infinity,  // Lebar akan dikontrol oleh AspectRatio 1:1
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF152D8D).withOpacity(0.8) : const Color(0xFFFCFCFC),
+        borderRadius: BorderRadius.circular(12),
+        border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('OCT', style: TextStyle(color: textColor, fontWeight: isDark ? FontWeight.bold : FontWeight.w900, fontSize: 12)),
+          Text('24', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLocationHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,45 +226,19 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
 
   Widget _buildMapPreview(bool isDark) {
     const LatLng eventLocation = LatLng(-7.9666, 112.6326);
-
     return Container(
       height: 240,
       width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200)),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
             FlutterMap(
-              options: const MapOptions(
-                initialCenter: eventLocation,
-                initialZoom: 15.0,
-                interactionOptions: InteractionOptions(
-                  flags: InteractiveFlag.none,
-                ),
-              ),
+              options: const MapOptions(initialCenter: eventLocation, initialZoom: 15.0, interactionOptions: InteractionOptions(flags: InteractiveFlag.none)),
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.pdm_malang.app',
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: eventLocation,
-                      width: 40,
-                      height: 40,
-                      child: const Icon(
-                        Icons.location_on,
-                        color: Colors.red,
-                        size: 40,
-                      ),
-                    ),
-                  ],
-                ),
+                TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.pdm_malang.app'),
+                MarkerLayer(markers: [Marker(point: eventLocation, width: 40, height: 40, child: const Icon(Icons.location_on, color: Colors.red, size: 40))]),
               ],
             ),
             Align(
@@ -204,47 +249,17 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                   borderRadius: BorderRadius.circular(100),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle),
-                      child: const Icon(Icons.location_on, color: Colors.white, size: 20),
-                    ),
+                    Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle), child: const Icon(Icons.location_on, color: Colors.white, size: 20)),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Grand Hyatt Center',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          Text(
-                            '2.4 km from your location',
-                            style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(color: Color(0xFFE3F2FD), shape: BoxShape.circle),
-                      child: const Icon(Icons.near_me, color: Color(0xFF1565C0), size: 20),
-                    ),
+                    Expanded(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Grand Hyatt Center', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                      Text('2.4 km from your location', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                    ])),
+                    Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle), child: const Icon(Icons.near_me, color: Color(0xFF1565C0), size: 20)),
                   ],
                 ),
               ),
@@ -292,51 +307,6 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
         const SizedBox(width: 6),
         const Text('Hosted by Global Innovators', style: TextStyle(color: Colors.grey, fontSize: 14)),
       ],
-    );
-  }
-
-  Widget _buildDateTimeCard(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const RadialGradient(center: Alignment.topLeft, radius: 3, colors: [Color(0xFF39A658), Color(0xFF4A6FDB), Color(0XFF071D75)], stops: [0.0, 0.3, 0.8]),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Row(
-        children: [
-          _buildCardDate(isDark),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text('DATE & TIME', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
-                Text('Oct 24, 2026', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('09:00 AM - 12:00 PM', style: TextStyle(color: Colors.white70, fontSize: 13)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardDate(bool isDark) {
-    final textColor = isDark ? Colors.white : const Color(0xFF2D3142);
-    return Container(
-      height: 60, width: 60,
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF152D8D).withOpacity(0.8) : const Color(0xFFFCFCFC), borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('OCT', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 12)),
-          Text('24', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
-        ],
-      ),
     );
   }
 
