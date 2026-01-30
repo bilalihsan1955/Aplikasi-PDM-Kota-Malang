@@ -13,27 +13,27 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: navigationShell.currentIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         
-        if (navigationShell.currentIndex != 0) {
-          navigationShell.goBranch(0);
+        if (navigationShell.currentIndex != 0 && context.canPop() == false) {
+          navigationShell.goBranch(0, initialLocation: true);
         } else {
           // Jika sudah di Home, biarkan sistem menangani back (biasanya keluar aplikasi)
-          // Kita bisa menggunakan SystemNavigator.pop() jika ingin memaksa keluar
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFCFCFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         extendBody: true,
         body: navigationShell,
         bottomNavigationBar: NavbarWidgets(
           currentIndex: navigationShell.currentIndex,
           onTap: (index) {
+            // Memastikan selalu kembali ke halaman utama tab (root) saat Navbar ditekan
             navigationShell.goBranch(
               index,
-              initialLocation: index == navigationShell.currentIndex,
+              initialLocation: true,
             );
           },
         ),

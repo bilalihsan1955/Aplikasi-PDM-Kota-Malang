@@ -6,6 +6,7 @@ import 'package:pdm_malang/view_models/home_view_model.dart';
 import 'package:pdm_malang/view_models/agenda_view_model.dart';
 import 'package:pdm_malang/view_models/news_view_model.dart';
 import 'package:pdm_malang/view_models/profile_view_model.dart';
+import 'package:pdm_malang/utils/app_style.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,36 +35,47 @@ class MyApp extends StatelessWidget {
       title: 'PDM Malang',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
-      themeAnimationDuration: const Duration(milliseconds: 250),
+      themeAnimationDuration: const Duration(milliseconds: 150),
       themeAnimationCurve: Curves.fastOutSlowIn,
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFFCFCFC),
+        scaffoldBackgroundColor: AppStyle.scaffoldLight,
         textTheme: GoogleFonts.interTextTheme(),
         dividerTheme: DividerThemeData(color: Colors.grey[200]),
-        iconTheme: const IconThemeData(color: Color(0xFF152D8D)),
+        iconTheme: const IconThemeData(color: AppStyle.primary),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF152D8D),
+          seedColor: AppStyle.primary,
           brightness: Brightness.light,
+          primary: AppStyle.primary,
+          secondary: AppStyle.accent,
+          tertiary: AppStyle.warning, // Menambahkan warna kuning
           surface: Colors.white,
           onSurface: const Color(0xFF2D3142),
-          background: const Color(0xFFFCFCFC),
+          background: AppStyle.scaffoldLight,
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        scaffoldBackgroundColor: AppStyle.scaffoldDark,
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
+          bodyLarge: const TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white.withOpacity(0.7)),
+          titleLarge: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         dividerTheme: const DividerThemeData(color: Colors.white10),
-        iconTheme: const IconThemeData(color: Colors.white70),
+        iconTheme: const IconThemeData(color: Colors.white),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF152D8D),
+          seedColor: AppStyle.primary,
           brightness: Brightness.dark,
-          surface: const Color(0xFF1E1E1E),
+          primary: AppStyle.primary,
+          secondary: AppStyle.accent,
+          tertiary: AppStyle.warning, // Menambahkan warna kuning
+          surface: AppStyle.cardDark,
           onSurface: Colors.white,
-          background: const Color(0xFF121212),
+          onPrimary: Colors.white,
+          background: AppStyle.scaffoldDark,
         ),
       ),
       routerConfig: router,

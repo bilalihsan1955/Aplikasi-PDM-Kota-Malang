@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../view_models/news_view_model.dart';
-import '../../models/news_model.dart';
+import 'package:go_router/go_router.dart';
+import '../../../view_models/agenda_view_model.dart';
+import '../../../models/agenda_model.dart';
 
-class BeritaPage extends StatelessWidget {
-  const BeritaPage({super.key});
+class AgendaPage extends StatelessWidget {
+  const AgendaPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +15,7 @@ class BeritaPage extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
-            Positioned.fill(child: _NewsGrid()),
+            Positioned.fill(child: _AgendaList()),
             Positioned(
               top: 0,
               left: 0,
@@ -62,7 +63,7 @@ class _CombinedHeader extends StatelessWidget {
 class _AnimatedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<NewsViewModel>();
+    final viewModel = context.watch<AgendaViewModel>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: AnimatedSwitcher(
@@ -76,9 +77,9 @@ class _AnimatedHeader extends StatelessWidget {
 class _HeaderTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.read<NewsViewModel>();
+    final viewModel = context.read<AgendaViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    
     return Row(
       key: const ValueKey('headerTitle'),
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -87,7 +88,7 @@ class _HeaderTitle extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Berita',
+              'Agenda',
               style: TextStyle(
                 fontSize: 24, 
                 fontWeight: FontWeight.bold,
@@ -96,7 +97,7 @@ class _HeaderTitle extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Informasi terbaru untuk anda',
+              'Jadwal kegiatan mendatang',
               style: TextStyle(
                 fontSize: 14,
                 color: isDark ? Colors.white70 : Colors.grey[600],
@@ -122,13 +123,13 @@ class _HeaderTitle extends StatelessWidget {
 class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.read<NewsViewModel>();
+    final viewModel = context.read<AgendaViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       key: const ValueKey('searchField'),
       height: 50,
-      padding: const EdgeInsets.only(left: 12, right: 0),
+      padding: const EdgeInsets.only(left: 12),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB),
         borderRadius: BorderRadius.circular(16),
@@ -145,28 +146,18 @@ class _SearchBar extends StatelessWidget {
                 fontSize: 14,
                 color: isDark ? Colors.white : Colors.black87,
               ),
-              textAlignVertical: TextAlignVertical.center,
               decoration: const InputDecoration(
-                hintText: 'Cari judul berita...',
+                hintText: 'Cari agenda...',
                 hintStyle: TextStyle(color: Colors.grey),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: EdgeInsets.zero,
               ),
             ),
           ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => viewModel.setSearching(false),
-              child: const Padding(
-                padding: EdgeInsets.all(12.0),
-                child: Icon(Icons.close, size: 20, color: Colors.grey),
-              ),
-            ),
+          IconButton(
+            onPressed: () => viewModel.setSearching(false),
+            icon: const Icon(Icons.close, size: 20, color: Colors.grey),
           ),
-          const SizedBox(width: 4),
         ],
       ),
     );
@@ -176,7 +167,7 @@ class _SearchBar extends StatelessWidget {
 class _CategoryChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<NewsViewModel>();
+    final viewModel = context.watch<AgendaViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
@@ -185,26 +176,26 @@ class _CategoryChips extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        itemCount: viewModel.categories.length,
+        itemCount: viewModel.timeFilters.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          final tag = viewModel.categories[index];
-          final isActive = tag == viewModel.selectedTag;
+          final filter = viewModel.timeFilters[index];
+          final isActive = filter == viewModel.selectedFilter;
 
           return GestureDetector(
-            onTap: () => viewModel.setTag(tag),
+            onTap: () => viewModel.setFilter(filter),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               padding: const EdgeInsets.symmetric(horizontal: 18),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isActive
+                color: isActive 
                     ? const Color(0xFF152D8D)
                     : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                tag,
+                filter,
                 style: TextStyle(
                   color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
                   fontSize: 13,
@@ -219,100 +210,89 @@ class _CategoryChips extends StatelessWidget {
   }
 }
 
-class _NewsGrid extends StatelessWidget {
+class _AgendaList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<NewsViewModel>();
-    final filteredNews = viewModel.filteredNews;
+    final viewModel = context.watch<AgendaViewModel>();
+    final filteredAgendas = viewModel.filteredAgendas;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     double topPadding = MediaQuery.of(context).padding.top + 160;
     double bottomPadding = MediaQuery.of(context).padding.bottom + 24;
 
-    if (filteredNews.isEmpty) {
+    if (filteredAgendas.isEmpty) {
       return Padding(
         padding: EdgeInsets.only(top: topPadding),
         child: Align(
           alignment: const Alignment(0, -0.4),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  isDark 
-                      ? 'assets/images/empty_state/not_found_dark.png' 
-                      : 'assets/images/empty_state/not_found.png',
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.contain,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                isDark 
+                    ? 'assets/images/empty_state/not_found_dark.png' 
+                    : 'assets/images/empty_state/not_found.png',
+                width: 160,
+                height: 160,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.event_busy, size: 80, color: isDark ? Colors.white24 : Colors.grey[300]),
+              ),
+              Text(
+                'Agenda Tidak Ditemukan',
+                style: TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
-                Text(
-                  'Berita Tidak Ditemukan',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF212121),
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Maaf, kami tidak menemukan jadwal yang Anda cari.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? Colors.white60 : Colors.grey, 
+                  fontSize: 13,
                 ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 50),
-                  child: Text(
-                    'Maaf, kami tidak menemukan berita yang Anda cari.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDark ? Colors.white60 : Colors.grey,
-                      height: 1.4,
+              ),
+              const SizedBox(height: 24),
+              if (viewModel.searchQuery.isNotEmpty || viewModel.selectedFilter != 'Semua')
+                GestureDetector(
+                  onTap: viewModel.resetFilters,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF152D8D),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Text(
+                      'Atur Ulang Filter',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                if (viewModel.searchQuery.isNotEmpty || viewModel.selectedTag != 'Semua')
-                  GestureDetector(
-                    onTap: viewModel.resetFilters,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF152D8D),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const Text(
-                        'Atur Ulang Filter',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       );
     }
 
-    return GridView.builder(
-      padding: EdgeInsets.only(
-        top: topPadding,
-        left: 24,
-        right: 24,
-        bottom: bottomPadding,
-      ),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.75,
-      ),
-      itemCount: filteredNews.length,
-      itemBuilder: (context, index) => _NewsCard(data: filteredNews[index]),
+    return ListView.separated(
+      padding: EdgeInsets.only(top: topPadding, left: 24, right: 24, bottom: bottomPadding),
+      itemCount: filteredAgendas.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () => context.push('/agenda/detail'),
+          child: _AgendaCard(data: filteredAgendas[index]),
+        );
+      },
     );
   }
 }
 
-class _NewsCard extends StatelessWidget {
-  final NewsModel data;
-  const _NewsCard({required this.data});
+class _AgendaCard extends StatelessWidget {
+  final AgendaModel data;
+  const _AgendaCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -323,106 +303,100 @@ class _NewsCard extends StatelessWidget {
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9), 
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              height: 72,
+              width: 72,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF152D8D) : const Color(0xFFE0E6F8),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Stack(
-                fit: StackFit.expand,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    data.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Container(color: isDark ? Colors.white10 : Colors.grey[200]),
+                  Text(
+                    data.month,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF071D75),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
                   ),
-                  Container(
-                    color: Colors.black.withOpacity(0.1),
-                  ),
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF11683B) : const Color(0xFFD1EBDD),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Text(
-                        data.tag.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFD1EBDD) : const Color(0xFF11683B),
-                        ),
-                      ),
+                  Text(
+                    data.date,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF071D75),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 24,
+                      height: 1,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
+            const SizedBox(width: 16),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     data.time,
-                    style: TextStyle(
-                      fontSize: 11, 
-                      color: isDark ? Colors.white54 : Colors.grey[500],
+                    style: const TextStyle(
+                      color: Color(0xFF39A658),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     data.title,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: isDark ? Colors.white : const Color(0xFF1A202C),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Expanded(
-                    child: Text(
-                      data.desc,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12, 
-                        color: isDark ? Colors.white60 : Colors.grey[600],
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_rounded, size: 14, color: Colors.grey[400]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          data.location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isDark ? Colors.white60 : Colors.grey[500], 
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            Icon(Icons.chevron_right_rounded, color: Colors.grey[isDark ? 600 : 300], size: 24),
+          ],
+        ),
       ),
     );
   }

@@ -16,17 +16,17 @@ class HomePage extends StatelessWidget {
       body: SingleChildScrollView(
         child: SafeArea(
           child: Column(
-            children: const [
-              _Header(),
-              SizedBox(height: 24),
-              _CompanyBanner(),
-              SizedBox(height: 24),
-              _EventSection(),
-              SizedBox(height: 24),
-              _HomeMenuSection(),
-              SizedBox(height: 8),
-              _NewsSection(),
-              SizedBox(height: 24),
+            children: [
+              const _Header(),
+              const SizedBox(height: 24),
+              const _CompanyBanner(),
+              const SizedBox(height: 24),
+              const _EventSection(),
+              const SizedBox(height: 24),
+              const _HomeMenuSection(),
+              const SizedBox(height: 8),
+              const _NewsSection(),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -195,11 +195,14 @@ class _EventSection extends StatelessWidget {
                 itemCount: visibleEvents,
                 onPageChanged: viewModel.setEventPage,
                 itemBuilder: (context, index) {
-                  return _EventCard(
-                    event: events[index],
-                    margin: EdgeInsets.only(
-                      left: index == 0 ? 24 : 8,
-                      right: index == visibleEvents - 1 ? 24 : 8,
+                  return GestureDetector(
+                    onTap: () => context.push('/agenda/detail'),
+                    child: _EventCard(
+                      event: events[index],
+                      margin: EdgeInsets.only(
+                        left: index == 0 ? 24 : 8,
+                        right: index == visibleEvents - 1 ? 24 : 8,
+                      ),
                     ),
                   );
                 },
@@ -232,7 +235,7 @@ class _EventCard extends StatelessWidget {
         gradient: const RadialGradient(
           center: Alignment.topLeft,
           radius: 3,
-          colors: [Color(0xFF26C6DA), Color(0xFF4A6FDB), Color(0XFF071D75)],
+          colors: [Color(0xFF39A658), Color(0xFF4A6FDB), Color(0XFF071D75)],
           stops: [0.0, 0.3, 0.8],
         ),
         borderRadius: BorderRadius.circular(24),
@@ -442,10 +445,17 @@ class _HomeMenuGrid extends StatelessWidget {
                   height: 60,
                   width: 60,
                   decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.12),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFFFC300).withOpacity(0.25),
+                        themeColor.withOpacity(0.25),
+                      ],
+                      begin: index.isEven ? Alignment.topLeft : Alignment.bottomRight,
+                      end: index.isEven ? Alignment.bottomRight : Alignment.topLeft,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: themeColor.withOpacity(0.1),
+                      color: themeColor.withOpacity(0.2),
                       width: 1.5,
                     ),
                   ),
@@ -506,7 +516,10 @@ class _NewsSection extends StatelessWidget {
                   childAspectRatio: 0.75,
                 ),
                 itemBuilder: (context, index) {
-                  return _NewsCard(data: newsData[index]);
+                  return GestureDetector(
+                    onTap: () => context.push('/berita/detail'),
+                    child: _NewsCard(data: newsData[index]),
+                  );
                 },
               ),
             ],

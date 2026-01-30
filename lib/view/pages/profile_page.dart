@@ -84,7 +84,7 @@ class ProfilePage extends StatelessWidget {
                 trailing: Switch(
                   value: currentSwitchValue,
                   activeColor: AppStyle.accent,
-                  activeTrackColor: AppStyle.accent.withOpacity(0.4),
+                  activeTrackColor: AppStyle.accent.withOpacity(0.1),
                   inactiveThumbColor: isDark ? Colors.white.withOpacity(0.6) : Colors.grey[400],
                   inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200],
                   trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
@@ -99,7 +99,7 @@ class ProfilePage extends StatelessWidget {
                 trailing: Switch(
                   value: viewModel.notificationsEnabled,
                   activeColor: AppStyle.accent,
-                  activeTrackColor: AppStyle.accent.withOpacity(0.4),
+                  activeTrackColor: AppStyle.accent.withOpacity(0.1),
                   inactiveThumbColor: isDark ? Colors.white.withOpacity(0.6) : Colors.grey[400],
                   inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200],
                   trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
@@ -221,10 +221,19 @@ class ProfilePage extends StatelessWidget {
             height: 48,
             width: 48,
             decoration: BoxDecoration(
-              color: AppStyle.accent.withOpacity(0.12),
+              gradient: RadialGradient(
+                center: Alignment.topLeft,
+                radius: 3,
+                colors: [
+                  const Color(0xFF26C6DA).withOpacity(0.15),
+                  const Color(0xFF4A6FDB).withOpacity(0.15),
+                  const Color(0XFF071D75).withOpacity(0.15),
+                ],
+                stops: const [0.0, 0.3, 0.8],
+              ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppStyle.accent.withOpacity(0.1),
+                color: AppStyle.primary.withOpacity(0.1),
                 width: 1.5,
               ),
             ),

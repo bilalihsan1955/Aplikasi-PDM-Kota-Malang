@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../view/main_screen.dart';
 import '../view/pages/home_page.dart';
-import '../view/pages/agenda_page.dart';
-import '../view/pages/berita_page.dart';
+import '../view/pages/agenda/agenda_page.dart';
+import '../view/pages/berita/berita_page.dart';
 import '../view/pages/profile_page.dart';
+import '../view/pages/berita/detail_berita_page.dart';
+import '../view/pages/agenda/detail_agenda_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -17,35 +19,47 @@ final GoRouter router = GoRouter(
         return MainScreen(navigationShell: navigationShell);
       },
       branches: [
+        // Tab 0: Home
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/',
-              builder: (context, state) => const HomePage(),
+              pageBuilder: (context, state) => const NoTransitionPage(child: HomePage()),
             ),
           ],
         ),
+        // Tab 1: Agenda
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/agenda',
-              builder: (context, state) => const AgendaPage(),
+              pageBuilder: (context, state) => const NoTransitionPage(child: AgendaPage()),
+            ),
+            GoRoute(
+              path: '/agenda/detail',
+              pageBuilder: (context, state) => const NoTransitionPage(child: DetailAgendaPage()),
             ),
           ],
         ),
+        // Tab 2: Berita
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/berita',
-              builder: (context, state) => const BeritaPage(),
+              pageBuilder: (context, state) => const NoTransitionPage(child: BeritaPage()),
+            ),
+            GoRoute(
+              path: '/berita/detail',
+              pageBuilder: (context, state) => const NoTransitionPage(child: DetailBeritaPage()),
             ),
           ],
         ),
+        // Tab 3: Profil
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/profile',
-              builder: (context, state) => const ProfilePage(),
+              pageBuilder: (context, state) => const NoTransitionPage(child: ProfilePage()),
             ),
           ],
         ),

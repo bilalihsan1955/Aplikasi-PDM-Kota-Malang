@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../utils/app_style.dart';
 
 class NavbarWidgets extends StatelessWidget {
   final int currentIndex;
@@ -49,8 +50,10 @@ class NavbarWidgets extends StatelessWidget {
 
   Widget _buildNavItem(BuildContext context, IconData icon, String label, int index) {
     bool isActive = currentIndex == index;
-    const Color themeColor = Color(0xFF39A658);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Warna aktif menggunakan biru gelap utama
+    final Color activeColor = AppStyle.accent;
 
     return Expanded(
       child: GestureDetector(
@@ -68,25 +71,30 @@ class NavbarWidgets extends StatelessWidget {
               curve: Curves.easeInOut,
               padding: EdgeInsets.all(isActive ? 10 : 8),
               decoration: BoxDecoration(
-                color: isActive ? themeColor.withOpacity(0.1) : Colors.transparent,
+                // Menggunakan gradasi biru dengan opacity rendah untuk background item aktif
+                gradient: isActive 
+                  ? RadialGradient(
+                      center: Alignment.topLeft,
+                      radius: 3,
+                      colors: [
+                        const Color(0xFF39A658).withOpacity(0.15),
+                        const Color(0xFF4A6FDB).withOpacity(0.15),
+                        const Color(0XFF071D75).withOpacity(0.15),
+                      ],
+                      stops: const [0.0, 0.3, 0.8],
+                    ) 
+                  : null,
                 borderRadius: BorderRadius.circular(16),
                 border: isActive ? Border.all (
-                      color: themeColor.withOpacity(0.1),
+                      color: activeColor.withOpacity(0.1),
                       width: 1.5,
-                    ) : Border.all(color: Colors.transparent),
-                boxShadow: isActive ? [
-                  BoxShadow(
-                    color: themeColor.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ] : [],
+                    ) : null,
               ),
               child: Icon(
                 icon,
-                color: isActive ? themeColor : (isDark ? Colors.white.withOpacity(0.8) : Colors.blueGrey[200]),
+                // Ikon aktif berwarna biru gelap
+                color: isActive ? activeColor : (isDark ? Colors.white.withOpacity(0.5) : Colors.blueGrey[200]),
                 size: isActive ? 30 : 26,
-                shadows: const [], 
               ),
             ),
             const SizedBox(height: 4),
@@ -96,7 +104,8 @@ class NavbarWidgets extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                color: isActive ? themeColor : (isDark ? Colors.white.withOpacity(1) : Colors.blueGrey[400]),
+                // Teks aktif berwarna biru gelap
+                color: isActive ? activeColor : (isDark ? Colors.white.withOpacity(0.6) : Colors.blueGrey[400]),
               ),
             ),
           ],
