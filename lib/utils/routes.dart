@@ -9,13 +9,31 @@ import '../view/pages/berita/detail_berita_page.dart';
 import '../view/pages/agenda/detail_agenda_page.dart';
 import '../view/pages/about_pdm_page.dart';
 import '../view/pages/gallery_page.dart';
+import '../view/pages/auth/onboarding_page.dart';
+import '../view/pages/auth/login_page.dart';
+import '../view/pages/auth/register_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/',
+  initialLocation: '/onboarding',
   routes: [
+    // Auth Routes
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingPage(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterPage(),
+    ),
+
+    // App Shell Routes
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainScreen(navigationShell: navigationShell);
@@ -30,7 +48,8 @@ final GoRouter router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'about-pdm',
-                  pageBuilder: (context, state) => const NoTransitionPage(child: AboutPdmPage()),
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const AboutPdmPage(),
                 ),
                 GoRoute(
                   path: 'gallery',

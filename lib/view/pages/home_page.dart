@@ -438,7 +438,7 @@ class _HomeMenuGrid extends StatelessWidget {
             onTap: () {
               if (item['label'] == 'Berita') context.go('/berita');
               if (item['label'] == 'Agenda') context.go('/agenda');
-              if (item['label'] == 'Profil') context.go('/profile');
+              if (item['label'] == 'Profil') context.go('/about-pdm');
               if (item['label'] == 'Dokumentasi') context.push('/gallery');
             },
             child: Column(
