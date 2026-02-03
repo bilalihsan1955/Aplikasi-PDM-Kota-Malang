@@ -7,6 +7,8 @@ import '../view/pages/berita/berita_page.dart';
 import '../view/pages/profile_page.dart';
 import '../view/pages/berita/detail_berita_page.dart';
 import '../view/pages/agenda/detail_agenda_page.dart';
+import '../view/pages/about_pdm_page.dart';
+import '../view/pages/gallery_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,6 +27,16 @@ final GoRouter router = GoRouter(
             GoRoute(
               path: '/',
               pageBuilder: (context, state) => const NoTransitionPage(child: HomePage()),
+              routes: [
+                GoRoute(
+                  path: 'about-pdm',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: AboutPdmPage()),
+                ),
+                GoRoute(
+                  path: 'gallery',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: GalleryPage()),
+                ),
+              ],
             ),
           ],
         ),
@@ -34,10 +46,12 @@ final GoRouter router = GoRouter(
             GoRoute(
               path: '/agenda',
               pageBuilder: (context, state) => const NoTransitionPage(child: AgendaPage()),
-            ),
-            GoRoute(
-              path: '/agenda/detail',
-              pageBuilder: (context, state) => const NoTransitionPage(child: DetailAgendaPage()),
+              routes: [
+                GoRoute(
+                  path: 'detail',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: DetailAgendaPage()),
+                ),
+              ],
             ),
           ],
         ),
@@ -47,10 +61,12 @@ final GoRouter router = GoRouter(
             GoRoute(
               path: '/berita',
               pageBuilder: (context, state) => const NoTransitionPage(child: BeritaPage()),
-            ),
-            GoRoute(
-              path: '/berita/detail',
-              pageBuilder: (context, state) => const NoTransitionPage(child: DetailBeritaPage()),
+              routes: [
+                GoRoute(
+                  path: 'detail',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: DetailBeritaPage()),
+                ),
+              ],
             ),
           ],
         ),

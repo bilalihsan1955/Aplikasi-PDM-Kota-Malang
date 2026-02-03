@@ -16,17 +16,17 @@ class HomePage extends StatelessWidget {
       body: SingleChildScrollView(
         child: SafeArea(
           child: Column(
-            children: [
-              const _Header(),
-              const SizedBox(height: 24),
-              const _CompanyBanner(),
-              const SizedBox(height: 24),
-              const _EventSection(),
-              const SizedBox(height: 24),
-              const _HomeMenuSection(),
-              const SizedBox(height: 8),
-              const _NewsSection(),
-              const SizedBox(height: 24),
+            children: const [
+              _Header(),
+              SizedBox(height: 24),
+              _CompanyBanner(),
+              SizedBox(height: 24),
+              _EventSection(),
+              SizedBox(height: 24),
+              _HomeMenuSection(),
+              SizedBox(height: 8),
+              _NewsSection(),
+              SizedBox(height: 24),
             ],
           ),
         ),
@@ -54,7 +54,7 @@ class _Header extends StatelessWidget {
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -1,
-                  color: Theme.of(context).colorScheme.onBackground,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
                 ),
               ),
               Text(
@@ -91,75 +91,78 @@ class _CompanyBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        height: 200,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/images/banner.png',
-                  fit: BoxFit.fitWidth,
-                  alignment: Alignment.topCenter,
-                ),
+      child: GestureDetector(
+        onTap: () => context.push('/about-pdm'),
+        child: Container(
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.75),
-                        Colors.black.withOpacity(0.35),
-                        Colors.transparent,
-                      ],
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/images/banner.png',
+                    fit: BoxFit.fitWidth,
+                    alignment: Alignment.topCenter,
+                  ),
+                ),
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.75),
+                          Colors.black.withOpacity(0.35),
+                          Colors.transparent,
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: 20,
-                right: 20,
-                bottom: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Tentang PDM Malang',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: -0.6,
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Tentang PDM Malang',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.6,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Mengenal lebih dekat visi, misi, dan perjalanan organisasi kami.',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                        height: 1.4,
+                      SizedBox(height: 6),
+                      Text(
+                        'Mengenal lebih dekat visi, misi, dan perjalanan organisasi kami.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -436,6 +439,7 @@ class _HomeMenuGrid extends StatelessWidget {
               if (item['label'] == 'Berita') context.go('/berita');
               if (item['label'] == 'Agenda') context.go('/agenda');
               if (item['label'] == 'Profil') context.go('/profile');
+              if (item['label'] == 'Dokumentasi') context.push('/gallery');
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,

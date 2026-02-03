@@ -64,7 +64,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                     child: SafeArea(
                       top: false,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -125,6 +125,19 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                         onTap: () => context.pop(),
                         showWhiteBg: !_isScrolled,
                         isDark: isDark,
+                      ),
+                      SizedBox(
+                        width: 12,
+                      ),
+                      Expanded(
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _isScrolled ? 1 : 0,
+                          child: const Text(
+                            'x',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
                       _circleNavButton(
                         icon: Icons.share_outlined,

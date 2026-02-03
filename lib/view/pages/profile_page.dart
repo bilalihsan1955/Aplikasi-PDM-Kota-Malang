@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../view_models/profile_view_model.dart';
+import '../../utils/app_style.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -35,10 +37,10 @@ class ProfilePage extends StatelessWidget {
   // ===== SECTIONS =====
   Widget _infoSection(BuildContext context) {
     final infoMenus = [
-      (Icons.apartment, 'Profil Organisasi'),
-      (Icons.article_outlined, 'Berita & Pengumuman'),
-      (Icons.event_outlined, 'Agenda Kegiatan'),
-      (Icons.photo_library_outlined, 'Dokumentasi'),
+      (Icons.apartment, 'Profil Organisasi', '/about-pdm'),
+      (Icons.article_outlined, 'Berita & Pengumuman', '/berita'),
+      (Icons.event_outlined, 'Agenda Kegiatan', '/agenda'),
+      (Icons.photo_library_outlined, 'Dokumentasi', '/gallery'),
     ];
 
     return Container(
@@ -49,7 +51,18 @@ class ProfilePage extends StatelessWidget {
           final item = infoMenus[index];
           return Column(
             children: [
-              _menuItem(context: context, icon: item.$1, title: item.$2),
+              _menuItem(
+                context: context, 
+                icon: item.$1, 
+                title: item.$2,
+                onTap: () {
+                  if (item.$3 == '/berita' || item.$3 == '/agenda') {
+                    context.go(item.$3);
+                  } else {
+                    context.push(item.$3);
+                  }
+                },
+              ),
               if (index != infoMenus.length - 1)
                 Divider(height: 1, color: Theme.of(context).dividerTheme.color),
             ],
@@ -65,7 +78,6 @@ class ProfilePage extends StatelessWidget {
     
     return Consumer<ProfileViewModel>(
       builder: (context, viewModel, child) {
-        // Jika mode system, switch mengikuti brightness device
         bool currentSwitchValue = viewModel.themeMode == ThemeMode.system 
             ? isPlatformDark 
             : viewModel.isDarkMode;
@@ -210,48 +222,52 @@ class ProfilePage extends StatelessWidget {
     required IconData icon,
     required String title,
     Widget? trailing,
+    VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            height: 48,
-            width: 48,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topLeft,
-                radius: 3,
-                colors: [
-                  const Color(0xFF26C6DA).withOpacity(0.15),
-                  const Color(0xFF4A6FDB).withOpacity(0.15),
-                  const Color(0XFF071D75).withOpacity(0.15),
-                ],
-                stops: const [0.0, 0.3, 0.8],
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topLeft,
+                  radius: 3,
+                  colors: [
+                    const Color(0xFF26C6DA).withOpacity(0.15),
+                    const Color(0xFF4A6FDB).withOpacity(0.15),
+                    const Color(0XFF071D75).withOpacity(0.15),
+                  ],
+                  stops: const [0.0, 0.3, 0.8],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppStyle.primary.withOpacity(0.1),
+                  width: 1.5,
+                ),
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppStyle.primary.withOpacity(0.1),
-                width: 1.5,
+              child: Icon(icon, color: AppStyle.accent, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF2D3142),
+                ),
               ),
             ),
-            child: Icon(icon, color: AppStyle.accent, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF2D3142),
-              ),
-            ),
-          ),
-          trailing ?? Icon(Icons.chevron_right_rounded, color: Colors.grey[400], size: 24),
-        ],
+            trailing ?? Icon(Icons.chevron_right_rounded, color: Colors.grey[400], size: 24),
+          ],
+        ),
       ),
     );
   }
@@ -314,10 +330,4 @@ class ProfilePage extends StatelessWidget {
       ],
     );
   }
-}
-
-class AppStyle {
-  static const primary = Color(0xFF152D8D);
-  static const accent = Color(0xFF39A658);
-  static const hPadding = EdgeInsets.symmetric(horizontal: 24);
 }
