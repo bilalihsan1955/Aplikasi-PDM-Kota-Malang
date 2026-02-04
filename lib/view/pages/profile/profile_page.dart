@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import '../../view_models/profile_view_model.dart';
-import '../../utils/app_style.dart';
+import '../../../view_models/profile_view_model.dart';
+import '../../../utils/app_style.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -87,7 +87,12 @@ class ProfilePage extends StatelessWidget {
           decoration: _cardDecoration(context),
           child: Column(
             children: [
-              _menuItem(context: context, icon: Icons.person_outline, title: 'Akun Saya'),
+              _menuItem(
+                context: context, 
+                icon: Icons.person_outline, 
+                title: 'Akun Saya',
+                onTap: () => context.push('/profile/account'), // Perbaikan: Menambahkan Navigasi
+              ),
               Divider(height: 1, color: Theme.of(context).dividerTheme.color),
               _menuItem(
                 context: context,

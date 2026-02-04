@@ -4,11 +4,12 @@ import '../view/main_screen.dart';
 import '../view/pages/home_page.dart';
 import '../view/pages/agenda/agenda_page.dart';
 import '../view/pages/berita/berita_page.dart';
-import '../view/pages/profile_page.dart';
+import '../view/pages/profile/profile_page.dart';
 import '../view/pages/berita/detail_berita_page.dart';
 import '../view/pages/agenda/detail_agenda_page.dart';
 import '../view/pages/about_pdm_page.dart';
 import '../view/pages/gallery_page.dart';
+import '../view/pages/profile/account_page.dart';
 import '../view/pages/auth/onboarding_page.dart';
 import '../view/pages/auth/login_page.dart';
 import '../view/pages/auth/register_page.dart';
@@ -19,7 +20,7 @@ final GoRouter router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/onboarding',
   routes: [
-    // Auth Routes - Outside Shell (Full Screen)
+    // Auth Routes - Full Screen
     GoRoute(
       path: '/onboarding',
       pageBuilder: (context, state) => const NoTransitionPage(child: OnboardingPage()),
@@ -33,7 +34,7 @@ final GoRouter router = GoRouter(
       pageBuilder: (context, state) => const NoTransitionPage(child: RegisterPage()),
     ),
 
-    // App Shell Routes - Inside Shell (With Navbar)
+    // App Shell Routes - With Navbar
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainScreen(navigationShell: navigationShell);
@@ -94,6 +95,12 @@ final GoRouter router = GoRouter(
             GoRoute(
               path: '/profile',
               pageBuilder: (context, state) => const NoTransitionPage(child: ProfilePage()),
+              routes: [
+                GoRoute(
+                  path: 'account',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: AccountPage()),
+                ),
+              ],
             ),
           ],
         ),
