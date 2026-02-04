@@ -19,21 +19,21 @@ final GoRouter router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/onboarding',
   routes: [
-    // Auth Routes
+    // Auth Routes - Outside Shell (Full Screen)
     GoRoute(
       path: '/onboarding',
-      builder: (context, state) => const OnboardingPage(),
+      pageBuilder: (context, state) => const NoTransitionPage(child: OnboardingPage()),
     ),
     GoRoute(
       path: '/login',
-      builder: (context, state) => const LoginPage(),
+      pageBuilder: (context, state) => const NoTransitionPage(child: LoginPage()),
     ),
     GoRoute(
       path: '/register',
-      builder: (context, state) => const RegisterPage(),
+      pageBuilder: (context, state) => const NoTransitionPage(child: RegisterPage()),
     ),
 
-    // App Shell Routes
+    // App Shell Routes - Inside Shell (With Navbar)
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainScreen(navigationShell: navigationShell);
@@ -48,8 +48,7 @@ final GoRouter router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'about-pdm',
-                  parentNavigatorKey: _rootNavigatorKey,
-                  builder: (context, state) => const AboutPdmPage(),
+                  pageBuilder: (context, state) => const NoTransitionPage(child: AboutPdmPage()),
                 ),
                 GoRoute(
                   path: 'gallery',

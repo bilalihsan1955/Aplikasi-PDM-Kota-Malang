@@ -134,7 +134,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                           duration: const Duration(milliseconds: 200),
                           opacity: _isScrolled ? 1 : 0,
                           child: const Text(
-                            'x',
+                            'Berita Terkini',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
