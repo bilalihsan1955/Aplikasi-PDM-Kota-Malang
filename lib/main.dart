@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:pdm_malang/utils/routes.dart';
@@ -6,10 +7,25 @@ import 'package:pdm_malang/view_models/home_view_model.dart';
 import 'package:pdm_malang/view_models/agenda_view_model.dart';
 import 'package:pdm_malang/view_models/news_view_model.dart';
 import 'package:pdm_malang/view_models/profile_view_model.dart';
+import 'package:pdm_malang/view_models/notification_view_model.dart';
 import 'package:pdm_malang/utils/app_style.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load .env (URL API). Jika file belum ada, salin dari .env.example
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    // .env tidak ditemukan; ApiService akan pakai fallback URL
+  }
+
+  // Initialize Firebase (Optional - akan skip jika tidak tersedia)
+  // Uncomment baris berikut jika sudah setup Firebase:
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
+
   runApp(
     MultiProvider(
       providers: [
@@ -17,6 +33,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AgendaViewModel()),
         ChangeNotifierProvider(create: (_) => NewsViewModel()),
         ChangeNotifierProvider(create: (_) => ProfileViewModel()),
+        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
       ],
       child: const MyApp(),
     ),

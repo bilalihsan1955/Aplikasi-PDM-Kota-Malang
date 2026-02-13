@@ -1,10 +1,30 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import '../models/event_model.dart';
 import '../models/news_model.dart';
 
 class HomeViewModel extends ChangeNotifier {
   int _currentEventPage = 0;
   int get currentEventPage => _currentEventPage;
+
+  int _slideIndex = 0;
+  int get slideIndex => _slideIndex;
+  static const int slideCount = 3;
+  Timer? _slideTimer;
+
+  HomeViewModel() {
+    _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _slideIndex = (_slideIndex + 1) % slideCount;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _slideTimer?.cancel();
+    super.dispose();
+  }
 
   final List<EventModel> _events = [
     EventModel(
@@ -62,14 +82,14 @@ class HomeViewModel extends ChangeNotifier {
   ];
 
   final List<Map<String, dynamic>> _homeMenus = [
-    {'icon': Icons.apartment, 'label': 'Profil'},
-    {'icon': Icons.article_outlined, 'label': 'Berita'},
-    {'icon': Icons.event_outlined, 'label': 'Agenda'},
-    {'icon': Icons.photo_library_outlined, 'label': 'Dokumentasi'},
-    {'icon': Icons.notifications_none, 'label': 'Pengumuman'},
-    {'icon': Icons.location_on_outlined, 'label': 'Lokasi'},
-    {'icon': Icons.search, 'label': 'Cari'},
-    {'icon': Icons.share_outlined, 'label': 'Bagikan'},
+    {'icon': RemixIcons.community_line, 'label': 'Profil'},
+    {'icon': RemixIcons.article_line, 'label': 'Berita'},
+    {'icon': RemixIcons.calendar_event_line, 'label': 'Agenda'},
+    {'icon': RemixIcons.image_line, 'label': 'Dokumentasi'},
+    {'icon': RemixIcons.notification_3_line, 'label': 'Pengumuman'},
+    {'icon': RemixIcons.map_pin_line, 'label': 'Lokasi'},
+    {'icon': RemixIcons.search_line, 'label': 'Cari'},
+    {'icon': RemixIcons.share_line, 'label': 'Bagikan'},
   ];
 
   List<EventModel> get events => _events;

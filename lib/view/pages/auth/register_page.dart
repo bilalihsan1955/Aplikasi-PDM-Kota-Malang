@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -77,21 +78,21 @@ class _RegisterPageState extends State<RegisterPage> {
         _buildTextField(
           label: 'Nama Lengkap',
           hint: 'Masukkan nama lengkap Anda',
-          icon: Icons.person_outline_rounded,
+          icon: RemixIcons.user_line,
           isDark: isDark,
         ),
         const SizedBox(height: 20),
         _buildTextField(
           label: 'Email',
           hint: 'Masukkan alamat email Anda',
-          icon: Icons.email_outlined,
+          icon: RemixIcons.mail_line,
           isDark: isDark,
         ),
         const SizedBox(height: 20),
         _buildTextField(
           label: 'Password',
           hint: 'Masukkan password Anda',
-          icon: Icons.lock_outline_rounded,
+          icon: RemixIcons.lock_line,
           isPassword: true,
           isPasswordVisible: _isPasswordVisible,
           onToggleVisibility: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
@@ -101,7 +102,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _buildTextField(
           label: 'Konfirmasi Password',
           hint: 'Ulangi password Anda',
-          icon: Icons.lock_reset_rounded,
+          icon: RemixIcons.lock_password_line,
           isPassword: true,
           isPasswordVisible: _isConfirmPasswordVisible,
           onToggleVisibility: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
@@ -151,7 +152,7 @@ class _RegisterPageState extends State<RegisterPage> {
               suffixIcon: isPassword
                   ? IconButton(
                       icon: Icon(
-                        isPasswordVisible! ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        isPasswordVisible! ? RemixIcons.eye_off_line : RemixIcons.eye_line,
                         color: Colors.grey,
                         size: 20,
                       ),
@@ -205,7 +206,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 SizedBox(width: 8),
-                Icon(Icons.person_add_rounded, color: Colors.white, size: 20),
+                Icon(RemixIcons.user_add_line, color: Colors.white, size: 20),
               ],
             ),
           ),

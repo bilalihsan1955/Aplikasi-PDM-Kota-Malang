@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../utils/app_style.dart';
+import '../../view_models/notification_view_model.dart';
 
 class NavbarWidgets extends StatelessWidget {
   final int currentIndex;
@@ -15,6 +19,8 @@ class NavbarWidgets extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentLocation = GoRouterState.of(context).uri.toString();
+    final isInNotificationPage = currentLocation.contains('/notifications');
 
     return SafeArea(
       child: Container(
@@ -38,22 +44,123 @@ class NavbarWidgets extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildNavItem(context, Icons.home_filled, "Home", 0),
-            _buildNavItem(context, Icons.receipt_long_rounded, "Agenda", 1),
-            _buildNavItem(context, Icons.bar_chart_rounded, "Berita", 2),
-            _buildNavItem(context, Icons.person_rounded, "Profil", 3),
+            _buildNavItem(context, RemixIcons.home_3_fill, RemixIcons.home_3_line, "Home", 0, isInNotificationPage),
+            _buildNavItem(context, RemixIcons.calendar_event_fill, RemixIcons.calendar_event_line, "Agenda", 1, isInNotificationPage),
+            _buildNavItem(context, RemixIcons.article_fill, RemixIcons.article_line, "Berita", 2, isInNotificationPage),
+            _buildNotificationItem(context, isInNotificationPage),
+            _buildNavItem(context, RemixIcons.user_3_fill, RemixIcons.user_3_line, "Profil", 3, isInNotificationPage),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index) {
-    bool isActive = currentIndex == index;
+  Widget _buildNotificationItem(BuildContext context, bool isInNotificationPage) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color activeColor = AppStyle.accent;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          context.push('/notifications');
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Consumer<NotificationViewModel>(
+          builder: (context, viewModel, child) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeInOut,
+                      padding: EdgeInsets.all(isInNotificationPage ? 10 : 8),
+                      decoration: BoxDecoration(
+                        gradient: isInNotificationPage 
+                          ? RadialGradient(
+                              center: Alignment.topLeft,
+                              radius: 3,
+                              colors: [
+                                const Color(0xFF39A658).withOpacity(0.15),
+                                const Color(0xFF4A6FDB).withOpacity(0.15),
+                                const Color(0XFF071D75).withOpacity(0.15),
+                              ],
+                              stops: const [0.0, 0.3, 0.8],
+                            ) 
+                          : null,
+                        borderRadius: BorderRadius.circular(16),
+                        border: isInNotificationPage ? Border.all(
+                              color: activeColor.withOpacity(0.1),
+                              width: 1.5,
+                            ) : null,
+                      ),
+                      child: Icon(
+                        isInNotificationPage ? RemixIcons.notification_3_fill : RemixIcons.notification_3_line,
+                        color: isInNotificationPage 
+                            ? activeColor 
+                            : (isDark ? Colors.white.withOpacity(0.5) : Colors.blueGrey[200]),
+                        size: isInNotificationPage ? 30 : 26,
+                      ),
+                    ),
+                    if (viewModel.unreadCount > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            viewModel.unreadCount > 9 ? '9+' : '${viewModel.unreadCount}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Notifikasi',
+                  textScaler: TextScaler.noScaling,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isInNotificationPage ? FontWeight.bold : FontWeight.w500,
+                    color: isInNotificationPage 
+                        ? activeColor 
+                        : (isDark ? Colors.white.withOpacity(0.6) : Colors.blueGrey[400]),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(BuildContext context, IconData iconActive, IconData iconInactive, String label, int index, bool isInNotificationPage) {
+    // Jika di halaman notifikasi, jangan tampilkan tab manapun sebagai aktif
+    bool isActive = !isInNotificationPage && (currentIndex == index);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     // Warna aktif menggunakan biru gelap utama
     final Color activeColor = AppStyle.accent;
+    final IconData icon = isActive ? iconActive : iconInactive;
 
     return Expanded(
       child: GestureDetector(

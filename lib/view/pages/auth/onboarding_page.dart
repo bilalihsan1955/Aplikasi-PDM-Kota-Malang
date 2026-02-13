@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -150,7 +151,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
                 const SizedBox(width: 8),
                 Icon(
-                  isLastPage ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
+                  isLastPage ? RemixIcons.rocket_2_line : RemixIcons.arrow_right_line,
                   color: Colors.white,
                   size: 20,
                 ),

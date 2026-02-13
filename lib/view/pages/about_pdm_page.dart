@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 
 class AboutPdmPage extends StatefulWidget {
@@ -152,7 +153,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                   child: Row(
                     children: [
                       _circleNavButton(
-                        icon: Icons.arrow_back_ios_new_rounded,
+                        icon: RemixIcons.arrow_left_line,
                         onTap: () => context.pop(),
                         showWhiteBg: !_isScrolled,
                         isDark: isDark,
@@ -222,7 +223,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     Marker(
                       point: officeLocation,
                       width: 40, height: 40,
-                      child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                      child: const Icon(RemixIcons.map_pin_line, color: Colors.red, size: 40),
                     ),
                   ],
                 ),
@@ -244,7 +245,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle),
-                      child: const Icon(Icons.location_on, color: Colors.white, size: 20),
+                      child: const Icon(RemixIcons.map_pin_line, color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -260,7 +261,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle),
-                      child: const Icon(Icons.near_me, color: Color(0xFF1565C0), size: 20),
+                      child: const Icon(RemixIcons.compass_3_line, color: Color(0xFF1565C0), size: 20),
                     ),
                   ],
                 ),
@@ -276,13 +277,14 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 40, width: 40,
+        height: 48,
+        width: 48,
         decoration: BoxDecoration(
           color: showWhiteBg ? Colors.white : Colors.transparent,
           shape: BoxShape.circle,
           boxShadow: showWhiteBg ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))] : [],
         ),
-        child: Icon(icon, color: showWhiteBg ? Colors.black : (isDark ? Colors.white : Colors.black87), size: 18),
+        child: Icon(icon, color: showWhiteBg ? Colors.black : (isDark ? Colors.white : Colors.black87), size: 20),
       ),
     );
   }
@@ -320,9 +322,9 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
   Widget _buildVisiMisiCard(bool isDark) {
     return Column(
       children: [
-        _visiMisiItem(Icons.auto_awesome, 'Visi', 'Terwujudnya masyarakat Islam yang sebenar-benarnya melalui dakwah berkemajuan.', isDark),
+        _visiMisiItem(RemixIcons.star_line, 'Visi', 'Terwujudnya masyarakat Islam yang sebenar-benarnya melalui dakwah berkemajuan.', isDark),
         const SizedBox(height: 12),
-        _visiMisiItem(Icons.rocket_launch, 'Misi', 'Meningkatkan kualitas SDM dan menguatkan peran sosial organisasi.', isDark),
+        _visiMisiItem(RemixIcons.rocket_2_line, 'Misi', 'Meningkatkan kualitas SDM dan menguatkan peran sosial organisasi.', isDark),
       ],
     );
   }
@@ -365,7 +367,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const CircleAvatar(radius: 24, backgroundColor: AppStyle.primary, child: Icon(Icons.person, color: Colors.white)),
+            const CircleAvatar(radius: 24, backgroundColor: AppStyle.primary, child: Icon(RemixIcons.user_3_fill, color: Colors.white)),
             const SizedBox(height: 12),
             Text(pengurus[index].$1, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, height: 1.2), maxLines: 2),
             Text(pengurus[index].$2, style: const TextStyle(fontSize: 10, color: Colors.grey)),

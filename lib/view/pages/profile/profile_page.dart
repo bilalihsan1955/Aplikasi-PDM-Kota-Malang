@@ -1,33 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../view_models/profile_view_model.dart';
 import '../../../utils/app_style.dart';
+import '../../widgets/back_button_app.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SingleChildScrollView(
-        child: SafeArea(
-          child: Column(
-            children: [
-              _header(context),
-              const SizedBox(height: 24),
-              _profileCard(context),
-              const SizedBox(height: 24),
-              _section('Informasi'),
-              _infoSection(context),
-              const SizedBox(height: 24),
-              _section('Pengaturan'),
-              _settingsSection(context),
-              const SizedBox(height: 24),
-              _logout(context),
-              const SizedBox(height: 24),
-            ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go('/');
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SingleChildScrollView(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _header(context),
+                const SizedBox(height: 24),
+                _profileCard(context),
+                const SizedBox(height: 24),
+                _section('Informasi'),
+                _infoSection(context),
+                const SizedBox(height: 24),
+                _section('Pengaturan'),
+                _settingsSection(context),
+                const SizedBox(height: 24),
+                _logout(context),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
@@ -37,10 +46,10 @@ class ProfilePage extends StatelessWidget {
   // ===== SECTIONS =====
   Widget _infoSection(BuildContext context) {
     final infoMenus = [
-      (Icons.apartment, 'Profil Organisasi', '/about-pdm'),
-      (Icons.article_outlined, 'Berita & Pengumuman', '/berita'),
-      (Icons.event_outlined, 'Agenda Kegiatan', '/agenda'),
-      (Icons.photo_library_outlined, 'Dokumentasi', '/gallery'),
+      (RemixIcons.community_line, 'Profil Organisasi', '/about-pdm'),
+      (RemixIcons.article_line, 'Berita & Pengumuman', '/berita'),
+      (RemixIcons.calendar_event_line, 'Agenda Kegiatan', '/agenda'),
+      (RemixIcons.image_line, 'Dokumentasi', '/gallery'),
     ];
 
     return Container(
@@ -89,14 +98,14 @@ class ProfilePage extends StatelessWidget {
             children: [
               _menuItem(
                 context: context, 
-                icon: Icons.person_outline, 
+                icon: RemixIcons.user_line, 
                 title: 'Akun Saya',
                 onTap: () => context.push('/profile/account'), // Perbaikan: Menambahkan Navigasi
               ),
               Divider(height: 1, color: Theme.of(context).dividerTheme.color),
               _menuItem(
                 context: context,
-                icon: currentSwitchValue ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                icon: currentSwitchValue ? RemixIcons.sun_line : RemixIcons.moon_line,
                 title: currentSwitchValue ? 'Tema Terang' : 'Tema Gelap',
                 trailing: Switch(
                   value: currentSwitchValue,
@@ -111,7 +120,7 @@ class ProfilePage extends StatelessWidget {
               Divider(height: 1, color: Theme.of(context).dividerTheme.color),
               _menuItem(
                 context: context,
-                icon: Icons.notifications_none,
+                icon: RemixIcons.notification_3_line,
                 title: 'Notifikasi',
                 trailing: Switch(
                   value: viewModel.notificationsEnabled,
@@ -124,7 +133,7 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
               Divider(height: 1, color: Theme.of(context).dividerTheme.color),
-              _menuItem(context: context, icon: Icons.help_outline, title: 'Bantuan'),
+              _menuItem(context: context, icon: RemixIcons.question_line, title: 'Bantuan'),
             ],
           ),
         );
@@ -137,25 +146,28 @@ class ProfilePage extends StatelessWidget {
     return Padding(
       padding: AppStyle.hPadding,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -1,
-                  color: Theme.of(context).textTheme.titleLarge?.color,
+          BackButtonApp(onTap: () => context.go('/')),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Profile',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -1,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
+                  ),
                 ),
-              ),
-              Text(
-                'Informasi akun anda',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
+                Text(
+                  'Informasi akun anda',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -270,7 +282,7 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
             ),
-            trailing ?? Icon(Icons.chevron_right_rounded, color: Colors.grey[400], size: 24),
+            trailing ?? Icon(RemixIcons.arrow_right_s_line, color: Colors.grey[400], size: 24),
           ],
         ),
       ),
@@ -285,7 +297,7 @@ class ProfilePage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: const [
-          Icon(Icons.logout, color: Colors.redAccent),
+          Icon(RemixIcons.logout_box_r_line, color: Colors.redAccent),
           SizedBox(width: 8),
           Text(
             'Logout',

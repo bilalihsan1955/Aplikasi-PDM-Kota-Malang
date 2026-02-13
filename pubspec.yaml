@@ -39,6 +39,12 @@ dependencies:
   provider: ^6.1.5+1
   shared_preferences: ^2.5.4
   flutter_map: ^8.2.2
+  firebase_core: ^3.8.1
+  firebase_messaging: ^15.1.5
+  flutter_local_notifications: ^18.0.1
+  http: ^1.2.2
+  flutter_dotenv: ^5.2.1
+  remixicon: ^1.4.1
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +72,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/empty_state/
+    - .env
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

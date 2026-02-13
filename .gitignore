@@ -1,3 +1,6 @@
+# Environment (gunakan .env.example sebagai template)
+.env
+
 # Miscellaneous
 *.class
 *.log

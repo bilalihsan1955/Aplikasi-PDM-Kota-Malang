@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 
 class LoginPage extends StatefulWidget {
@@ -31,12 +32,8 @@ class _LoginPageState extends State<LoginPage> {
                   _buildHeader(isDark),
                   const SizedBox(height: 48),
                   _buildForm(isDark),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _buildLoginButton(context),
-                  const SizedBox(height: 24),
-                  _buildSocialDivider(isDark),
-                  const SizedBox(height: 24),
-                  _buildGoogleButton(context, isDark),
                   const SizedBox(height: 24),
                   _buildRegisterLink(context, isDark),
                   const SizedBox(height: 40),
@@ -80,14 +77,14 @@ class _LoginPageState extends State<LoginPage> {
         _buildTextField(
           label: 'Email atau Username',
           hint: 'Masukkan email Anda',
-          icon: Icons.person_outline_rounded,
+          icon: RemixIcons.user_line,
           isDark: isDark,
         ),
         const SizedBox(height: 20),
         _buildTextField(
           label: 'Password',
           hint: 'Masukkan password Anda',
-          icon: Icons.lock_outline_rounded,
+          icon: RemixIcons.lock_line,
           isPassword: true,
           isPasswordVisible: _isPasswordVisible,
           onToggleVisibility: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
@@ -151,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
               suffixIcon: isPassword
                   ? IconButton(
                       icon: Icon(
-                        isPasswordVisible! ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        isPasswordVisible! ? RemixIcons.eye_off_line : RemixIcons.eye_line,
                         color: Colors.grey,
                         size: 20,
                       ),
@@ -205,72 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 SizedBox(width: 8),
-                Icon(Icons.login_rounded, color: Colors.white, size: 20),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialDivider(bool isDark) {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: isDark ? Colors.white10 : Colors.grey[200])),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Atau masuk dengan',
-            style: TextStyle(color: Colors.grey[500], fontSize: 13),
-          ),
-        ),
-        Expanded(child: Divider(color: isDark ? Colors.white10 : Colors.grey[200])),
-      ],
-    );
-  }
-
-  Widget _buildGoogleButton(BuildContext context, bool isDark) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {},
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/google-icon.png',
-                  height: 22,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Google',
-                  style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF2D3142),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Icon(RemixIcons.login_box_line, color: Colors.white, size: 20),
               ],
             ),
           ),

@@ -1,28 +1,37 @@
   import 'package:flutter/material.dart';
   import 'package:provider/provider.dart';
   import 'package:go_router/go_router.dart';
+  import 'package:remixicon/remixicon.dart';
   import '../../../view_models/news_view_model.dart';
   import '../../../models/news_model.dart';
+  import '../../../view/widgets/back_button_app.dart';
 
   class BeritaPage extends StatelessWidget {
     const BeritaPage({super.key});
 
     @override
     Widget build(BuildContext context) {
-      return GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Stack(
-            children: [
-              Positioned.fill(child: _NewsGrid()),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _CombinedHeader(),
-              ),
-            ],
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          context.go('/');
+        },
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: Stack(
+              children: [
+                Positioned.fill(child: _NewsGrid()),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _CombinedHeader(),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -82,36 +91,39 @@
 
       return Row(
         key: const ValueKey('headerTitle'),
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Berita',
-                style: TextStyle(
-                  fontSize: 24, 
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF2D3142),
+          BackButtonApp(onTap: () => context.go('/')),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Berita',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF2D3142),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Informasi terbaru untuk anda',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white70 : Colors.grey[600],
+                const SizedBox(height: 4),
+                Text(
+                  'Informasi terbaru untuk anda',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white70 : Colors.grey[600],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           IconButton(
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: () => viewModel.setSearching(true),
             icon: Icon(
-              Icons.search, 
-              size: 28, 
+              RemixIcons.search_line,
+              size: 28,
               color: isDark ? Colors.white : Colors.black87,
             ),
           ),
@@ -136,7 +148,7 @@
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: Colors.grey, size: 22),
+            const Icon(RemixIcons.search_line, color: Colors.grey, size: 22),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -163,7 +175,7 @@
                 onTap: () => viewModel.setSearching(false),
                 child: const Padding(
                   padding: EdgeInsets.all(12.0),
-                  child: Icon(Icons.close, size: 20, color: Colors.grey),
+                  child: Icon(RemixIcons.close_line, size: 20, color: Colors.grey),
                 ),
               ),
             ),

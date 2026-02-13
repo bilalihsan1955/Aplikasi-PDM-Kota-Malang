@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 
 class DetailBeritaPage extends StatefulWidget {
@@ -121,7 +122,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _circleNavButton(
-                        icon: Icons.arrow_back_ios_new_rounded,
+                        icon: RemixIcons.arrow_left_line,
                         onTap: () => context.pop(),
                         showWhiteBg: !_isScrolled,
                         isDark: isDark,
@@ -140,7 +141,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                         ),
                       ),
                       _circleNavButton(
-                        icon: Icons.share_outlined,
+                        icon: RemixIcons.share_line,
                         onTap: () {},
                         showWhiteBg: !_isScrolled,
                         isDark: isDark,
@@ -160,7 +161,8 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 40, width: 40,
+        height: 48, 
+        width: 48,
         decoration: BoxDecoration(
           color: showWhiteBg ? Colors.white : Colors.transparent,
           shape: BoxShape.circle,
@@ -169,7 +171,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
         child: Icon(
           icon, 
           color: showWhiteBg ? Colors.black : (isDark ? Colors.white : Colors.black87), 
-          size: 18
+          size: 20
         ),
       ),
     );

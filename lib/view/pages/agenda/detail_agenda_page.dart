@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 
 class DetailAgendaPage extends StatefulWidget {
@@ -88,8 +89,6 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                         style: TextStyle(fontSize: 15, height: 1.6),
                       ),
                       const SizedBox(height: 24),
-                      _buildRegisterButton(context),
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -115,9 +114,11 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : Colors.black87, size: 20),
+                        icon: Icon(RemixIcons.arrow_left_line, color: isDark ? Colors.white : Colors.black87, size: 22),
+                        iconSize: 48,
+                        padding: const EdgeInsets.all(12),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       const Expanded(
                         child: Text(
                           'Detail Agenda',
@@ -128,7 +129,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                       ),
                       IconButton(
                         onPressed: () {},
-                        icon: Icon(Icons.share_outlined, color: isDark ? Colors.white : Colors.black87, size: 22),
+                        icon: Icon(RemixIcons.share_line, color: isDark ? Colors.white : Colors.black87, size: 22),
                       ),
                     ],
                   ),
@@ -143,33 +144,57 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
 
   Widget _buildDateTimeCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const RadialGradient(center: Alignment.topLeft, radius: 3, colors: [Color(0xFF39A658), Color(0xFF4A6FDB), Color(0XFF071D75)], stops: [0.0, 0.3, 0.8]),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: Row(
-        children: [
-          // Row dibatasi tinggi agar double.infinity pada anak bekerja dengan benar
-          SizedBox(
-            height: 64,
-            child: _buildCardDate(context),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text('DATE & TIME', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
-                Text('Oct 24, 2026', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('09:00 AM - 12:00 PM', style: TextStyle(color: Colors.white70, fontSize: 13)),
-              ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // Pattern di kanan
+            Positioned(
+              right: -20,
+              top: -20,
+              bottom: -20,
+              child: Opacity(
+                opacity: 0.15,
+                child: Image.asset(
+                  'assets/images/pattern.png',
+                  fit: BoxFit.cover,
+                  height: 140,
+                ),
+              ),
             ),
-          ),
-        ],
+            // Konten utama
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  // Row dibatasi tinggi agar double.infinity pada anak bekerja dengan benar
+                  SizedBox(
+                    height: 64,
+                    child: _buildCardDate(context),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Text('DATE & TIME', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                        Text('Oct 24, 2026', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 4),
+                        Text('09:00 AM - 12:00 PM', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -238,7 +263,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
               options: const MapOptions(initialCenter: eventLocation, initialZoom: 15.0, interactionOptions: InteractionOptions(flags: InteractiveFlag.none)),
               children: [
                 TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.pdm_malang.app'),
-                MarkerLayer(markers: [Marker(point: eventLocation, width: 40, height: 40, child: const Icon(Icons.location_on, color: Colors.red, size: 40))]),
+                MarkerLayer(markers: [Marker(point: eventLocation, width: 40, height: 40, child: const Icon(RemixIcons.map_pin_line, color: Colors.red, size: 40))]),
               ],
             ),
             Align(
@@ -253,41 +278,19 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                 ),
                 child: Row(
                   children: [
-                    Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle), child: const Icon(Icons.location_on, color: Colors.white, size: 20)),
+                    Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle), child: const Icon(RemixIcons.map_pin_line, color: Colors.white, size: 20)),
                     const SizedBox(width: 12),
                     Expanded(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Grand Hyatt Center', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
                       Text('2.4 km from your location', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
                     ])),
-                    Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle), child: const Icon(Icons.near_me, color: Color(0xFF1565C0), size: 20)),
+                    Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle), child: const Icon(RemixIcons.compass_3_line, color: Color(0xFF1565C0), size: 20)),
                   ],
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildRegisterButton(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFF1F4F9), width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Text('Register Now', style: TextStyle(color: AppStyle.accent, fontWeight: FontWeight.w600, fontSize: 16)),
-          SizedBox(width: 8),
-          Icon(Icons.arrow_forward, color: AppStyle.accent, size: 20),
-        ],
       ),
     );
   }
@@ -303,7 +306,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   Widget _buildHostedInfo() {
     return Row(
       children: [
-        const Icon(Icons.verified, color: AppStyle.accent, size: 18),
+        const Icon(RemixIcons.verified_badge_line, color: AppStyle.accent, size: 18),
         const SizedBox(width: 6),
         const Text('Hosted by Global Innovators', style: TextStyle(color: Colors.grey, fontSize: 14)),
       ],
@@ -321,9 +324,9 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
       ),
       child: Column(
         children: [
-          _infoRow(Icons.location_on, 'Grand Hyatt Center', 'Hall B, Level 2', Colors.green),
+          _infoRow(RemixIcons.map_pin_line, 'Grand Hyatt Center', 'Hall B, Level 2', Colors.green),
           const Divider(height: 32),
-          _infoRow(Icons.accessibility, 'Business Casual', 'Professional attire', Colors.blue),
+          _infoRow(RemixIcons.accessibility_line, 'Business Casual', 'Professional attire', Colors.blue),
         ],
       ),
     );

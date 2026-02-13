@@ -13,6 +13,9 @@ import '../view/pages/profile/account_page.dart';
 import '../view/pages/auth/onboarding_page.dart';
 import '../view/pages/auth/login_page.dart';
 import '../view/pages/auth/register_page.dart';
+import '../view/pages/notification_page.dart';
+import '../view/pages/menu_list_page.dart';
+import '../view/pages/empty_placeholder_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -32,6 +35,13 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/register',
       pageBuilder: (context, state) => const NoTransitionPage(child: RegisterPage()),
+    ),
+    GoRoute(
+      path: '/placeholder',
+      pageBuilder: (context, state) {
+        final title = state.extra is String ? state.extra as String : 'Halaman';
+        return NoTransitionPage(child: EmptyPlaceholderPage(title: title));
+      },
     ),
 
     // App Shell Routes - With Navbar
@@ -54,6 +64,14 @@ final GoRouter router = GoRouter(
                 GoRoute(
                   path: 'gallery',
                   pageBuilder: (context, state) => const NoTransitionPage(child: GalleryPage()),
+                ),
+                GoRoute(
+                  path: 'notifications',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: NotificationPage()),
+                ),
+                GoRoute(
+                  path: 'menu',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: MenuListPage()),
                 ),
               ],
             ),

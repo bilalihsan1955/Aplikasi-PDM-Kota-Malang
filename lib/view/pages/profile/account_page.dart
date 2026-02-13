@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 
 class AccountPage extends StatefulWidget {
@@ -88,10 +89,12 @@ class _AccountPageState extends State<AccountPage> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: Icon(Icons.arrow_back_ios_new_rounded, 
-                          color: isDark ? Colors.white : Colors.black87, size: 20),
+                        icon: Icon(RemixIcons.arrow_left_line, 
+                          color: isDark ? Colors.white : Colors.black87, size: 22),
+                        iconSize: 48,
+                        padding: const EdgeInsets.all(12),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       const Expanded(
                         child: Text(
                           'Akun Saya',
@@ -138,7 +141,7 @@ class _AccountPageState extends State<AccountPage> {
                 color: AppStyle.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
+              child: const Icon(RemixIcons.camera_line, color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -149,13 +152,13 @@ class _AccountPageState extends State<AccountPage> {
   Widget _buildAccountForm(bool isDark) {
     return Column(
       children: [
-        _buildTextField('Nama Lengkap', 'Bilal Al Ihsan', Icons.person_outline, isDark),
+        _buildTextField('Nama Lengkap', 'Bilal Al Ihsan', RemixIcons.user_line, isDark),
         const SizedBox(height: 20),
-        _buildTextField('Email', 'bilal@pdm-malang.org', Icons.email_outlined, isDark),
+        _buildTextField('Email', 'bilal@pdm-malang.org', RemixIcons.mail_line, isDark),
         const SizedBox(height: 20),
-        _buildTextField('Nomor Telepon', '+62 812 3456 7890', Icons.phone_outlined, isDark),
+        _buildTextField('Nomor Telepon', '+62 812 3456 7890', RemixIcons.phone_line, isDark),
         const SizedBox(height: 20),
-        _buildTextField('Alamat', 'Jl. Gajayana No. 28, Malang', Icons.location_on_outlined, isDark),
+        _buildTextField('Alamat', 'Jl. Gajayana No. 28, Malang', RemixIcons.map_pin_line, isDark),
       ],
     );
   }

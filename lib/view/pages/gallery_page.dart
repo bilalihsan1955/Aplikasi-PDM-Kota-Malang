@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../utils/app_style.dart';
+import 'package:remixicon/remixicon.dart';
+import '../widgets/back_button_app.dart';
 
 class GalleryPage extends StatefulWidget {
   const GalleryPage({super.key});
@@ -143,15 +144,8 @@ class _HeaderTitle extends StatelessWidget {
     return Row(
       key: const ValueKey('headerTitle'),
       children: [
-        IconButton(
-          onPressed: () => context.pop(),
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded, 
-            color: isDark ? Colors.white : const Color(0xFF2D3142),
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: 8),
+        BackButtonApp(onTap: () => context.pop()),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +172,7 @@ class _HeaderTitle extends StatelessWidget {
         IconButton(
           onPressed: () => onToggleSearch(true),
           icon: Icon(
-            Icons.search, 
+            RemixIcons.search_line, 
             size: 28, 
             color: isDark ? Colors.white : Colors.black87,
           ),
@@ -208,7 +202,7 @@ class _SearchBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: Colors.grey, size: 22),
+          const Icon(RemixIcons.search_line, color: Colors.grey, size: 22),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
@@ -228,7 +222,7 @@ class _SearchBar extends StatelessWidget {
           ),
           IconButton(
             onPressed: () => onToggleSearch(false),
-            icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+            icon: const Icon(RemixIcons.close_line, size: 20, color: Colors.grey),
           ),
         ],
       ),
@@ -406,7 +400,7 @@ class _ImagePreviewDialog extends StatelessWidget {
                       color: Colors.white.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close, color: Colors.white, size: 24),
+                    child: const Icon(RemixIcons.close_line, color: Colors.white, size: 24),
                   ),
                 ),
                 Container(
@@ -415,7 +409,7 @@ class _ImagePreviewDialog extends StatelessWidget {
                     color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.share_outlined, color: Colors.white, size: 22),
+                  child: const Icon(RemixIcons.share_line, color: Colors.white, size: 22),
                 ),
               ],
             ),
