@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 import '../models/event_model.dart';
 import '../models/news_model.dart';
+import '../services/news_api_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
   int _currentEventPage = 0;
@@ -12,6 +13,13 @@ class HomeViewModel extends ChangeNotifier {
   int get slideIndex => _slideIndex;
   static const int slideCount = 3;
   Timer? _slideTimer;
+
+  final NewsApiService _newsApi = NewsApiService();
+  List<NewsModel> _news = [];
+  bool _newsLoading = true;
+
+  List<NewsModel> get news => _news;
+  bool get newsLoading => _newsLoading;
 
   HomeViewModel() {
     _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
@@ -24,6 +32,20 @@ class HomeViewModel extends ChangeNotifier {
   void dispose() {
     _slideTimer?.cancel();
     super.dispose();
+  }
+
+  /// Muat berita terbaru dari API untuk section Berita Terkini di Home.
+  Future<void> loadLatestNews() async {
+    _newsLoading = true;
+    notifyListeners();
+    try {
+      final list = await _newsApi.getLatest();
+      _news = list.length > 4 ? list.sublist(0, 4) : list;
+    } catch (_) {
+      _news = [];
+    }
+    _newsLoading = false;
+    notifyListeners();
   }
 
   final List<EventModel> _events = [
@@ -50,37 +72,6 @@ class HomeViewModel extends ChangeNotifier {
     ),
   ];
 
-  final List<NewsModel> _news = [
-    NewsModel(
-      tag: "POLICY",
-      time: "2 hours ago",
-      title: "New Remote Work Policy",
-      desc: "Updating hybrid work guidelines for flexibility.",
-      image: "assets/images/profile.png",
-    ),
-    NewsModel(
-      tag: "EVENT",
-      time: "5 hours ago",
-      title: "Annual Tech Conference",
-      desc: "Join us for the biggest tech event of the year.",
-      image: "assets/images/bg.webp",
-    ),
-    NewsModel(
-      tag: "NEWS",
-      time: "2 days ago",
-      title: "New Office Opening",
-      desc: "We are expanding to a new location in Bali.",
-      image: "assets/images/bg.webp",
-    ),
-    NewsModel(
-      tag: "UPDATE",
-      time: "1 day ago",
-      title: "System Maintenance",
-      desc: "Server downtime scheduled for this weekend.",
-      image: "assets/images/profile.png",
-    ),
-  ];
-
   final List<Map<String, dynamic>> _homeMenus = [
     {'icon': RemixIcons.community_line, 'label': 'Profil'},
     {'icon': RemixIcons.article_line, 'label': 'Berita'},
@@ -93,7 +84,6 @@ class HomeViewModel extends ChangeNotifier {
   ];
 
   List<EventModel> get events => _events;
-  List<NewsModel> get news => _news;
   List<Map<String, dynamic>> get homeMenus => _homeMenus;
 
   void setEventPage(int index) {

@@ -6,6 +6,7 @@ import '../view/pages/agenda/agenda_page.dart';
 import '../view/pages/berita/berita_page.dart';
 import '../view/pages/profile/profile_page.dart';
 import '../view/pages/berita/detail_berita_page.dart';
+import '../models/news_model.dart';
 import '../view/pages/agenda/detail_agenda_page.dart';
 import '../view/pages/about_pdm_page.dart';
 import '../view/pages/gallery_page.dart';
@@ -101,7 +102,20 @@ final GoRouter router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'detail',
-                  pageBuilder: (context, state) => const NoTransitionPage(child: DetailBeritaPage()),
+                  pageBuilder: (context, state) {
+                    String? slug;
+                    NewsModel? initialNews;
+                    final ex = state.extra;
+                    if (ex is Map) {
+                      slug = ex['slug'] is String ? ex['slug'] as String : null;
+                      initialNews = ex['news'] is NewsModel ? ex['news'] as NewsModel : null;
+                    } else if (ex is String) {
+                      slug = ex;
+                    }
+                    return NoTransitionPage(
+                      child: DetailBeritaPage(slug: slug, initialNews: initialNews),
+                    );
+                  },
                 ),
               ],
             ),

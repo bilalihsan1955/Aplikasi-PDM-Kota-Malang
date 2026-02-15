@@ -2,12 +2,26 @@
   import 'package:provider/provider.dart';
   import 'package:go_router/go_router.dart';
   import 'package:remixicon/remixicon.dart';
+  import 'package:skeletonizer/skeletonizer.dart';
   import '../../../view_models/news_view_model.dart';
   import '../../../models/news_model.dart';
   import '../../../view/widgets/back_button_app.dart';
 
-  class BeritaPage extends StatelessWidget {
+  class BeritaPage extends StatefulWidget {
     const BeritaPage({super.key});
+
+    @override
+    State<BeritaPage> createState() => _BeritaPageState();
+  }
+
+  class _BeritaPageState extends State<BeritaPage> {
+    @override
+    void initState() {
+      super.initState();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<NewsViewModel>().loadNews();
+      });
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -187,52 +201,113 @@
   }
 
   class _CategoryChips extends StatelessWidget {
+    static const List<String> _skeletonChips = ['Semua', 'Kategori', 'Berita', 'Info', 'Update'];
+
     @override
     Widget build(BuildContext context) {
       final viewModel = context.watch<NewsViewModel>();
       final isDark = Theme.of(context).brightness == Brightness.dark;
+      final isLoading = viewModel.isLoading && viewModel.filteredNews.isEmpty;
 
       return SizedBox(
         height: 40,
-        child: ListView.separated(
-          physics: const BouncingScrollPhysics(),
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          itemCount: viewModel.categories.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 10),
-          itemBuilder: (context, index) {
-            final tag = viewModel.categories[index];
-            final isActive = tag == viewModel.selectedTag;
+        child: isLoading
+            ? Skeletonizer(
+                enabled: true,
+                child: ListView.separated(
+                  physics: const ClampingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: _skeletonChips.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _skeletonChips[index],
+                        style: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.black87,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              )
+            : ListView.separated(
+                physics: const ClampingScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: viewModel.categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final tag = viewModel.categories[index];
+                  final isActive = tag == viewModel.selectedTag;
 
-            return GestureDetector(
-              onTap: () => viewModel.setTag(tag),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? const Color(0xFF152D8D)
-                      : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  tag,
-                  style: TextStyle(
-                    color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                    fontSize: 13,
-                    fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-                  ),
-                ),
+                  return GestureDetector(
+                    onTap: () => viewModel.setTag(tag),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? const Color(0xFF152D8D)
+                            : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        tag,
+                        style: TextStyle(
+                          color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          fontSize: 13,
+                          fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
       );
     }
   }
 
-  class _NewsGrid extends StatelessWidget {
+  class _NewsGrid extends StatefulWidget {
+    @override
+    State<_NewsGrid> createState() => _NewsGridState();
+  }
+
+  class _NewsGridState extends State<_NewsGrid> {
+    final ScrollController _scrollController = ScrollController();
+
+    @override
+    void initState() {
+      super.initState();
+      _scrollController.addListener(_onScroll);
+    }
+
+    @override
+    void dispose() {
+      _scrollController.removeListener(_onScroll);
+      _scrollController.dispose();
+      super.dispose();
+    }
+
+    void _onScroll() {
+      final vm = context.read<NewsViewModel>();
+      if (!vm.hasMore || vm.isLoadingMore) return;
+      final pos = _scrollController.position;
+      if (pos.pixels >= pos.maxScrollExtent - 200) {
+        vm.loadMore();
+      }
+    }
+
     @override
     Widget build(BuildContext context) {
       final viewModel = context.watch<NewsViewModel>();
@@ -241,13 +316,109 @@
 
       double topPadding = MediaQuery.of(context).padding.top + 160;
       double bottomPadding = MediaQuery.of(context).padding.bottom + 24;
+      double skeletonTopPadding = MediaQuery.of(context).padding.top + 112;
+
+      if (viewModel.isLoading && filteredNews.isEmpty) {
+        final dummyNews = [
+          NewsModel.fromCard(
+            tag: 'Kategori',
+            time: '0 menit lalu',
+            title: 'Judul berita placeholder pertama untuk skeleton',
+            desc: 'Deskripsi singkat berita placeholder.',
+            image: 'assets/images/bg.webp',
+          ),
+          NewsModel.fromCard(
+            tag: 'Info',
+            time: '1 jam lalu',
+            title: 'Judul berita placeholder kedua',
+            desc: 'Deskripsi singkat untuk kartu skeleton.',
+            image: 'assets/images/profile.png',
+          ),
+        ];
+        return RefreshIndicator(
+          onRefresh: () async {
+            await context.read<NewsViewModel>().loadNews();
+          },
+          displacement: 200,
+          triggerMode: RefreshIndicatorTriggerMode.anywhere,
+          color: Theme.of(context).colorScheme.primary,
+          child: Padding(
+            padding: EdgeInsets.only(top: skeletonTopPadding, left: 24, right: 24, bottom: bottomPadding),
+            child: Skeletonizer(
+              enabled: true,
+              child: GridView.builder(
+                physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: 6,
+                itemBuilder: (context, index) => _NewsCard(data: dummyNews[index % 2], skeletonStyle: true),
+              ),
+            ),
+          ),
+        );
+      }
+
+      if (!viewModel.isLoading && viewModel.errorMessage.isNotEmpty && filteredNews.isEmpty) {
+        return RefreshIndicator(
+          onRefresh: () async {
+            await context.read<NewsViewModel>().loadNews();
+          },
+          displacement: 200,
+          triggerMode: RefreshIndicatorTriggerMode.anywhere,
+          color: Theme.of(context).colorScheme.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+            padding: EdgeInsets.only(top: topPadding),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height - topPadding - 100,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(RemixIcons.error_warning_line, size: 48, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(
+                        viewModel.errorMessage,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white70 : Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: () => viewModel.loadNews(),
+                        icon: const Icon(RemixIcons.refresh_line, size: 20),
+                        label: const Text('Coba lagi'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
 
       if (filteredNews.isEmpty) {
-        return Padding(
-          padding: EdgeInsets.only(top: topPadding),
-          child: Align(
-            alignment: const Alignment(0, -0.4),
-            child: SingleChildScrollView(
+        return RefreshIndicator(
+          onRefresh: () async {
+            await context.read<NewsViewModel>().loadNews();
+          },
+          displacement: 200,
+          triggerMode: RefreshIndicatorTriggerMode.anywhere,
+          color: Theme.of(context).colorScheme.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+            padding: EdgeInsets.only(top: topPadding),
+            child: Align(
+              alignment: const Alignment(0, -0.4),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -304,33 +475,75 @@
         );
       }
 
-      return GridView.builder(
-        padding: EdgeInsets.only(
-          top: topPadding,
-          left: 24,
-          right: 24,
-          bottom: bottomPadding,
-        ),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 0.75,
-        ),
-        itemCount: filteredNews.length,
+      return RefreshIndicator(
+        onRefresh: () async {
+          await context.read<NewsViewModel>().loadNews();
+        },
+        displacement: 200,
+        triggerMode: RefreshIndicatorTriggerMode.anywhere,
+        color: Theme.of(context).colorScheme.primary,
+        child: GridView.builder(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          padding: EdgeInsets.only(
+            top: topPadding,
+            left: 24,
+            right: 24,
+            bottom: bottomPadding,
+          ),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: filteredNews.length + (viewModel.isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= filteredNews.length) {
+            final dummy = NewsModel.fromCard(
+              tag: '...',
+              time: '...',
+              title: 'Memuat...',
+              desc: '...',
+              image: 'assets/images/bg.webp',
+            );
+            return Skeletonizer(
+              enabled: true,
+              child: _NewsCard(data: dummy, skeletonStyle: true),
+            );
+          }
+          final item = filteredNews[index];
           return GestureDetector(
-            onTap: () => context.push('/berita/detail'),
-            child: _NewsCard(data: filteredNews[index]),
+            onTap: () => context.push('/berita/detail', extra: {'slug': item.slug, 'news': item}),
+            child: _NewsCard(data: item),
           );
         },
+        ),
       );
     }
   }
 
   class _NewsCard extends StatelessWidget {
     final NewsModel data;
-    const _NewsCard({required this.data});
+    final bool skeletonStyle;
+    const _NewsCard({required this.data, this.skeletonStyle = false});
+
+    Widget _buildNewsImage(String image, bool isDark) {
+      if (image.startsWith('http://') || image.startsWith('https://')) {
+        return Image.network(
+          image,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              Container(color: isDark ? Colors.white10 : Colors.grey[200]),
+        );
+      }
+      return Image.asset(
+        image,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            Container(color: isDark ? Colors.white10 : Colors.grey[200]),
+      );
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -364,12 +577,7 @@
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.asset(
-                      data.image,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Container(color: isDark ? Colors.white10 : Colors.grey[200]),
-                    ),
+                    _buildNewsImage(data.image, isDark),
                     Container(
                       color: Colors.black.withOpacity(0.1),
                     ),
@@ -382,7 +590,9 @@
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF11683B) : const Color(0xFFD1EBDD),
+                          color: skeletonStyle
+                              ? (isDark ? Colors.white24 : Colors.grey[300])
+                              : (isDark ? const Color(0xFF11683B) : const Color(0xFFD1EBDD)),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Text(
@@ -390,7 +600,9 @@
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFFD1EBDD) : const Color(0xFF11683B),
+                            color: skeletonStyle
+                                ? (isDark ? Colors.white54 : Colors.grey[600])
+                                : (isDark ? const Color(0xFFD1EBDD) : const Color(0xFF11683B)),
                           ),
                         ),
                       ),

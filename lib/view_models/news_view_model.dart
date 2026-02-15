@@ -1,75 +1,101 @@
 import 'package:flutter/material.dart';
-import '../models/news_model.dart';
+import 'package:pdm_malang/models/news_model.dart';
+import 'package:pdm_malang/services/news_api_service.dart';
 
 class NewsViewModel extends ChangeNotifier {
+  final NewsApiService _api = NewsApiService();
+
   String _selectedTag = 'Semua';
   String _searchQuery = '';
   bool _isSearching = false;
+  bool _isLoading = false;
+  String _errorMessage = '';
+
+  List<NewsModel> _allNews = [];
+  int _currentPage = 1;
+  static const int _perPage = 15;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
 
   String get selectedTag => _selectedTag;
   String get searchQuery => _searchQuery;
   bool get isSearching => _isSearching;
+  bool get isLoading => _isLoading;
+  String get errorMessage => _errorMessage;
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
 
-  final List<String> categories = [
-    'Semua',
-    'News',
-    'Event',
-    'Info',
-    'Update',
-  ];
+  /// Kategori: "Semua" + nama unik dari berita yang sudah dimuat.
+  List<String> get categories {
+    final names = <String>{};
+    for (final n in _allNews) {
+      if (n.category != null && n.category!.name.isNotEmpty) {
+        names.add(n.category!.name);
+      }
+    }
+    final list = names.toList()..sort();
+    return ['Semua', ...list];
+  }
 
-  final List<NewsModel> _allNews = [
-    NewsModel(
-      tag: 'News',
-      time: '2 jam lalu',
-      title: 'Kantor Cabang Baru Dibuka',
-      desc: 'Peresmian kantor cabang baru...',
-      image: 'assets/images/bg.webp',
-    ),
-    NewsModel(
-      tag: 'Event',
-      time: '5 jam lalu',
-      title: 'Kajian Akbar Bulanan',
-      desc: 'Kajian bersama tokoh nasional.',
-      image: 'assets/images/profile.png',
-    ),
-    NewsModel(
-      tag: 'Info',
-      time: '1 hari lalu',
-      title: 'Libur Nasional',
-      desc: 'Penyesuaian jadwal kegiatan.',
-      image: 'assets/images/bg.webp',
-    ),
-    NewsModel(
-      tag: 'Update',
-      time: '2 hari lalu',
-      title: 'Pembaruan Sistem',
-      desc: 'Optimalisasi performa.',
-      image: 'assets/images/profile.png',
-    ),
-    NewsModel(
-      tag: 'News',
-      time: '3 jam lalu',
-      title: 'Rapat Kerja Wilayah',
-      desc: 'Koordinasi tahunan pengurus.',
-      image: 'assets/images/bg.webp',
-    ),
-    NewsModel(
-      tag: 'Info',
-      time: '4 hari lalu',
-      title: 'Update Keanggotaan',
-      desc: 'Pendaftaran kartu anggota baru.',
-      image: 'assets/images/profile.png',
-    ),
-  ];
-
+  /// Daftar berita setelah filter tag + search (client-side).
   List<NewsModel> get filteredNews {
     return _allNews.where((item) {
-      final matchTag = _selectedTag.toLowerCase() == 'semua' ||
-          item.tag.toLowerCase() == _selectedTag.toLowerCase();
-      final matchSearch = item.title.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchTag = _selectedTag == 'Semua' ||
+          (item.category?.name ?? '').toLowerCase() == _selectedTag.toLowerCase();
+      final matchSearch = _searchQuery.trim().isEmpty ||
+          item.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          item.excerpt.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchTag && matchSearch;
     }).toList();
+  }
+
+  /// Muat halaman pertama (refresh). Saat dipanggil, list dikosongkan dulu
+  /// agar UI menampilkan skeleton seperti load pertama kali.
+  Future<void> loadNews({int? categoryId, String? search}) async {
+    _isLoading = true;
+    _errorMessage = '';
+    _allNews = [];
+    notifyListeners();
+
+    final result = await _api.getNews(
+      page: 1,
+      perPage: _perPage,
+      categoryId: categoryId,
+      search: search?.trim().isEmpty ?? true ? null : search,
+    );
+
+    _isLoading = false;
+    if (result.success) {
+      _allNews = result.data;
+      _currentPage = 1;
+      _hasMore = result.data.length >= _perPage;
+    } else {
+      _errorMessage = result.message.isNotEmpty ? result.message : 'Gagal memuat berita';
+      _allNews = [];
+    }
+    notifyListeners();
+  }
+
+  /// Muat halaman berikutnya (pagination).
+  Future<void> loadMore() async {
+    if (_isLoadingMore || !_hasMore || _isLoading) return;
+    _isLoadingMore = true;
+    notifyListeners();
+
+    final result = await _api.getNews(
+      page: _currentPage + 1,
+      perPage: _perPage,
+    );
+
+    _isLoadingMore = false;
+    if (result.success && result.data.isNotEmpty) {
+      _allNews = [..._allNews, ...result.data];
+      _currentPage++;
+      _hasMore = result.data.length >= _perPage;
+    } else {
+      _hasMore = false;
+    }
+    notifyListeners();
   }
 
   void setTag(String tag) {
@@ -92,6 +118,12 @@ class NewsViewModel extends ChangeNotifier {
     _selectedTag = 'Semua';
     _searchQuery = '';
     _isSearching = false;
+    notifyListeners();
+  }
+
+  /// Bersihkan error (mis. setelah user tutup snackbar).
+  void clearError() {
+    _errorMessage = '';
     notifyListeners();
   }
 }

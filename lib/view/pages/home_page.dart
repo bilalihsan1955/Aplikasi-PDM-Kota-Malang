@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../view_models/home_view_model.dart';
 import '../../models/event_model.dart';
 import '../../models/news_model.dart';
@@ -70,18 +71,21 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            height: 50,
-            width: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFF152D8D),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.asset(
-                'assets/images/profile.png',
-                fit: BoxFit.cover,
+          GestureDetector(
+            onTap: () => context.go('/profile'),
+            child: Container(
+              height: 50,
+              width: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFF152D8D),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  'assets/images/profile.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -662,8 +666,21 @@ class _HomeMenuGrid extends StatelessWidget {
   }
 }
 
-class _NewsSection extends StatelessWidget {
+class _NewsSection extends StatefulWidget {
   const _NewsSection();
+
+  @override
+  State<_NewsSection> createState() => _NewsSectionState();
+}
+
+class _NewsSectionState extends State<_NewsSection> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeViewModel>().loadLatestNews();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -672,6 +689,8 @@ class _NewsSection extends StatelessWidget {
       child: Consumer<HomeViewModel>(
         builder: (context, viewModel, child) {
           final newsData = viewModel.news;
+          final loading = viewModel.newsLoading;
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -680,23 +699,65 @@ class _NewsSection extends StatelessWidget {
                 onTapAll: () => context.go('/berita'),
               ),
               const SizedBox(height: 8),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: newsData.length > 4 ? 4 : newsData.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.75,
+              if (loading && newsData.isEmpty)
+                Skeletonizer(
+                  enabled: true,
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: 4,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemBuilder: (context, index) {
+                      final dummy = NewsModel.fromCard(
+                        tag: 'Kategori',
+                        time: '0 menit lalu',
+                        title: 'Judul berita placeholder',
+                        desc: 'Deskripsi singkat berita.',
+                        image: 'assets/images/bg.webp',
+                      );
+                      return _NewsCard(data: dummy, skeletonStyle: true);
+                    },
+                  ),
+                )
+              else if (newsData.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text(
+                      'Berita belum tersedia',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white54
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: newsData.length > 4 ? 4 : newsData.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.75,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = newsData[index];
+                    return GestureDetector(
+                      onTap: () => context.push('/berita/detail', extra: {'slug': item.slug, 'news': item}),
+                      child: _NewsCard(data: item),
+                    );
+                  },
                 ),
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () => context.push('/berita/detail'),
-                    child: _NewsCard(data: newsData[index]),
-                  );
-                },
-              ),
             ],
           );
         },
@@ -707,8 +768,26 @@ class _NewsSection extends StatelessWidget {
 
 class _NewsCard extends StatelessWidget {
   final NewsModel data;
+  final bool skeletonStyle;
 
-  const _NewsCard({required this.data});
+  const _NewsCard({required this.data, this.skeletonStyle = false});
+
+  Widget _buildNewsImage(String image, bool isDark) {
+    if (image.startsWith('http://') || image.startsWith('https://')) {
+      return Image.network(
+        image,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            Container(color: isDark ? Colors.white10 : Colors.grey[200]),
+      );
+    }
+    return Image.asset(
+      image,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) =>
+          Container(color: isDark ? Colors.white10 : Colors.grey[200]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -739,11 +818,11 @@ class _NewsCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(24),
               ),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.asset(data.image, fit: BoxFit.cover),
-                  Container(color: Colors.black.withOpacity(0.1)),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _buildNewsImage(data.image, isDark),
+                Container(color: Colors.black.withOpacity(0.1)),
                   Positioned(
                     top: 12,
                     left: 12,
@@ -753,7 +832,9 @@ class _NewsCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0XFF071D75) : const Color(0xFFD6DCEF),
+                        color: skeletonStyle
+                            ? (isDark ? Colors.white24 : Colors.grey[300])
+                            : (isDark ? const Color(0XFF071D75) : const Color(0xFFD6DCEF)),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
@@ -761,7 +842,9 @@ class _NewsCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFD6DCEF) : const Color(0XFF071D75),
+                          color: skeletonStyle
+                              ? (isDark ? Colors.white54 : Colors.grey[600])
+                              : (isDark ? const Color(0xFFD6DCEF) : const Color(0XFF071D75)),
                         ),
                       ),
                     ),
