@@ -24,7 +24,11 @@ class HomePage extends StatelessWidget {
               const _SearchSection(),
               const SizedBox(height: 24),
               Consumer<HomeViewModel>(
-                builder: (_, vm, __) => _NewsSlide(currentIndex: vm.slideIndex),
+                builder: (_, vm, __) => _NewsSlide(
+                  currentIndex: vm.slideIndex,
+                  news: vm.news,
+                  loading: vm.newsLoading,
+                ),
               ),
               const SizedBox(height: 24),
               const _EventSection(),
@@ -104,35 +108,41 @@ class _SearchSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: GestureDetector(
-        onTap: () => context.push('/menu'),
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFF6F7FB),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE8ECF4),
-              width: 1,
+        onTap: () => context.push('/menu', extra: {'openSearch': true}),
+        child: Hero(
+          tag: 'menu_search',
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFF6F7FB),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE8ECF4),
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                Icon(
+                  RemixIcons.search_line,
+                  size: 22,
+                  color: isDark ? Colors.white54 : Colors.grey[500],
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Cari menu, layanan, informasi...',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isDark ? Colors.white38 : Colors.grey[500],
+                  ),
+                ),
+              ],
             ),
           ),
-          alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              Icon(
-                RemixIcons.search_line,
-                size: 22,
-                color: isDark ? Colors.white54 : Colors.grey[500],
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Cari menu, layanan, informasi...',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isDark ? Colors.white38 : Colors.grey[500],
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -140,49 +150,63 @@ class _SearchSection extends StatelessWidget {
   }
 }
 
-/// Satu item untuk slide berita (gambar + judul + deskripsi)
-class _NewsSlideItem {
-  final String imagePath;
-  final String title;
-  final String subtitle;
-
-  const _NewsSlideItem({
-    required this.imagePath,
-    required this.title,
-    required this.subtitle,
-  });
-}
-
 class _NewsSlide extends StatelessWidget {
-  const _NewsSlide({required this.currentIndex});
+  const _NewsSlide({
+    required this.currentIndex,
+    required this.news,
+    required this.loading,
+  });
   final int currentIndex;
-
-  static const List<_NewsSlideItem> _slides = [
-    _NewsSlideItem(
-      imagePath: 'assets/images/banner.png',
-      title: 'Tentang PDM Malang',
-      subtitle: 'Mengenal lebih dekat visi, misi, dan perjalanan organisasi kami.',
-    ),
-    _NewsSlideItem(
-      imagePath: 'assets/images/berita.webp',
-      title: 'Berita & Pengumuman',
-      subtitle: 'Informasi terbaru seputar kegiatan dan pengumuman PDM Malang.',
-    ),
-    _NewsSlideItem(
-      imagePath: 'assets/images/bg.webp',
-      title: 'Agenda Kegiatan',
-      subtitle: 'Jadwal kajian, bakti sosial, dan kegiatan lainnya.',
-    ),
-  ];
+  final List<NewsModel> news;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    final index = currentIndex % _slides.length;
-    final slide = _slides[index];
+    if (loading && news.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Skeletonizer(
+          enabled: true,
+          child: Container(
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: Colors.grey[300],
+            ),
+          ),
+        ),
+      );
+    }
+    if (news.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: GestureDetector(
+          onTap: () => context.go('/berita'),
+          child: Container(
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.grey[200],
+            ),
+            child: Center(
+              child: Text(
+                'Berita belum tersedia',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.grey[600],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final index = currentIndex % news.length;
+    final item = news[index];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: GestureDetector(
-        onTap: () => context.push('/berita/detail'),
+        onTap: () => context.push('/berita/detail', extra: {'slug': item.slug, 'news': item}),
         child: Container(
           height: 200,
           decoration: BoxDecoration(
@@ -231,10 +255,8 @@ class _NewsSlide extends StatelessWidget {
                 );
               },
               child: _NewsSlideCard(
-                key: ValueKey<int>(index),
-                imagePath: slide.imagePath,
-                title: slide.title,
-                subtitle: slide.subtitle,
+                key: ValueKey<int>(item.id),
+                news: item,
               ),
             ),
           ),
@@ -245,30 +267,32 @@ class _NewsSlide extends StatelessWidget {
 }
 
 class _NewsSlideCard extends StatelessWidget {
-  final String imagePath;
-  final String title;
-  final String subtitle;
-
-  const _NewsSlideCard({
-    super.key,
-    required this.imagePath,
-    required this.title,
-    required this.subtitle,
-  });
+  const _NewsSlideCard({super.key, required this.news});
+  final NewsModel news;
 
   @override
   Widget build(BuildContext context) {
+    final imageWidget = (news.image.startsWith('http://') || news.image.startsWith('https://'))
+        ? Image.network(
+            news.image,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (_, __, ___) => _placeholder(),
+          )
+        : (news.image.isNotEmpty
+            ? Image.asset(
+                news.image,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (_, __, ___) => _placeholder(),
+              )
+            : _placeholder());
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset(
-          imagePath,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            color: Colors.grey[300],
-            child: const Icon(RemixIcons.image_line, size: 48),
-          ),
-        ),
+        imageWidget,
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -290,29 +314,38 @@ class _NewsSlideCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                news.title,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                   letterSpacing: -0.6,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
               Text(
-                subtitle,
-                maxLines: 2,
+                news.desc,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white70,
-                  height: 1.4,
+                  color: Colors.white.withOpacity(0.9),
+                  height: 1.35,
                 ),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      color: Colors.grey[300],
+      child: const Icon(RemixIcons.image_line, size: 48),
     );
   }
 }
@@ -392,6 +425,7 @@ class _EventSectionState extends State<_EventSection> {
               ),
               const SizedBox(height: 8),
               const _DotsIndicator(length: 2, current: 0),
+              const SizedBox(height: 24),
             ],
           );
         }
@@ -451,6 +485,7 @@ class _EventSectionState extends State<_EventSection> {
                 current: viewModel.currentEventPage,
               ),
             ],
+            const SizedBox(height: 24),
           ],
         );
       },

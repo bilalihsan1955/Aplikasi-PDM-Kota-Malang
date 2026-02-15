@@ -73,7 +73,11 @@ final GoRouter router = GoRouter(
                 ),
                 GoRoute(
                   path: 'menu',
-                  pageBuilder: (context, state) => const NoTransitionPage(child: MenuListPage()),
+                  pageBuilder: (context, state) {
+                    final extra = state.extra is Map ? state.extra as Map<String, dynamic> : null;
+                    final openSearch = extra?['openSearch'] == true;
+                    return NoTransitionPage(child: MenuListPage(openSearch: openSearch));
+                  },
                 ),
               ],
             ),

@@ -8,16 +8,23 @@ import '../widgets/back_button_app.dart';
 const List<String> _categories = ['Semua', 'Layanan', 'Informasi', 'Lainnya'];
 
 class MenuListPage extends StatefulWidget {
-  const MenuListPage({super.key});
+  const MenuListPage({super.key, this.openSearch = false});
+  final bool openSearch;
 
   @override
   State<MenuListPage> createState() => _MenuListPageState();
 }
 
 class _MenuListPageState extends State<MenuListPage> {
-  bool _isSearching = false;
+  late bool _isSearching;
   String _searchQuery = '';
   String _selectedCategory = 'Semua';
+
+  @override
+  void initState() {
+    super.initState();
+    _isSearching = widget.openSearch;
+  }
 
   static const double _headerHeight = 160;
 
@@ -109,10 +116,16 @@ class _CombinedHeader extends StatelessWidget {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: isSearching
-                    ? _SearchBar(
-                        searchQuery: searchQuery,
-                        onQueryChanged: onSearchQueryChanged,
-                        onClose: () => onSearchingChanged(false),
+                    ? Hero(
+                        tag: 'menu_search',
+                        child: Material(
+                          color: Colors.transparent,
+                          child: _SearchBar(
+                            searchQuery: searchQuery,
+                            onQueryChanged: onSearchQueryChanged,
+                            onClose: () => onSearchingChanged(false),
+                          ),
+                        ),
                       )
                     : _HeaderTitle(onSearchTap: () => onSearchingChanged(true)),
               ),

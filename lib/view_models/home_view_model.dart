@@ -12,7 +12,6 @@ class HomeViewModel extends ChangeNotifier {
 
   int _slideIndex = 0;
   int get slideIndex => _slideIndex;
-  static const int slideCount = 3;
   Timer? _slideTimer;
 
   final NewsApiService _newsApi = NewsApiService();
@@ -29,7 +28,8 @@ class HomeViewModel extends ChangeNotifier {
 
   HomeViewModel() {
     _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      _slideIndex = (_slideIndex + 1) % slideCount;
+      final count = _news.isEmpty ? 1 : _news.length;
+      _slideIndex = (_slideIndex + 1) % count;
       notifyListeners();
     });
   }
