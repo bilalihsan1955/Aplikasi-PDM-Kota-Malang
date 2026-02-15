@@ -2,12 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../view_models/agenda_view_model.dart';
 import '../../../models/agenda_model.dart';
 import '../../widgets/back_button_app.dart';
 
-class AgendaPage extends StatelessWidget {
+class AgendaPage extends StatefulWidget {
   const AgendaPage({super.key});
+
+  @override
+  State<AgendaPage> createState() => _AgendaPageState();
+}
+
+class _AgendaPageState extends State<AgendaPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AgendaViewModel>().loadEvents();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,52 +191,111 @@ class _SearchBar extends StatelessWidget {
 }
 
 class _CategoryChips extends StatelessWidget {
+  static const List<String> _skeletonFilters = ['Semua', 'Minggu Ini', 'Bulan Ini', 'Akan Datang'];
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<AgendaViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLoading = viewModel.isLoading && viewModel.filteredAgendas.isEmpty;
 
     return SizedBox(
       height: 40,
-      child: ListView.separated(
-        physics: const BouncingScrollPhysics(),
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        itemCount: viewModel.timeFilters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final filter = viewModel.timeFilters[index];
-          final isActive = filter == viewModel.selectedFilter;
+      child: isLoading
+          ? Skeletonizer(
+              enabled: true,
+              child: ListView.separated(
+                physics: const ClampingScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: _skeletonFilters.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _skeletonFilters[index],
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          : ListView.separated(
+              physics: const ClampingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              itemCount: viewModel.timeFilters.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final filter = viewModel.timeFilters[index];
+                final isActive = filter == viewModel.selectedFilter;
 
-          return GestureDetector(
-            onTap: () => viewModel.setFilter(filter),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isActive 
-                    ? const Color(0xFF152D8D)
-                    : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                filter,
-                style: TextStyle(
-                  color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                  fontSize: 13,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-                ),
-              ),
+                return GestureDetector(
+                  onTap: () => viewModel.setFilter(filter),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFF152D8D)
+                          : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      filter,
+                      style: TextStyle(
+                        color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        fontSize: 13,
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }
 
-class _AgendaList extends StatelessWidget {
+class _AgendaList extends StatefulWidget {
+  @override
+  State<_AgendaList> createState() => _AgendaListState();
+}
+
+class _AgendaListState extends State<_AgendaList> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final vm = context.read<AgendaViewModel>();
+    if (!vm.hasMore || vm.isLoadingMore) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) vm.loadMore();
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<AgendaViewModel>();
@@ -231,84 +304,209 @@ class _AgendaList extends StatelessWidget {
 
     double topPadding = MediaQuery.of(context).padding.top + 160;
     double bottomPadding = MediaQuery.of(context).padding.bottom + 24;
+    double skeletonTopPadding = MediaQuery.of(context).padding.top + 112;
 
-    if (filteredAgendas.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.only(top: topPadding),
-        child: Align(
-          alignment: const Alignment(0, -0.4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                isDark 
-                    ? 'assets/images/empty_state/not_found_dark.png' 
-                    : 'assets/images/empty_state/not_found.png',
-                width: 160,
-                height: 160,
-                errorBuilder: (context, error, stackTrace) =>
-                    Icon(RemixIcons.calendar_close_line, size: 80, color: isDark ? Colors.white24 : Colors.grey[300]),
-              ),
-              Text(
-                'Agenda Tidak Ditemukan',
-                style: TextStyle(
-                  fontSize: 18, 
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Maaf, kami tidak menemukan jadwal yang Anda cari.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isDark ? Colors.white60 : Colors.grey, 
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 24),
-              if (viewModel.searchQuery.isNotEmpty || viewModel.selectedFilter != 'Semua')
-                GestureDetector(
-                  onTap: viewModel.resetFilters,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF152D8D),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Text(
-                      'Atur Ulang Filter',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-            ],
+    if (viewModel.isLoading && filteredAgendas.isEmpty) {
+      final dummy = AgendaModel(
+        id: 0,
+        title: 'Judul agenda placeholder',
+        slug: '',
+        description: '',
+        image: '',
+        eventDate: '2025-02-20',
+        eventTime: '09:00:00',
+        location: 'Lokasi placeholder',
+        status: 'upcoming',
+      );
+      return RefreshIndicator(
+        onRefresh: () async {
+          await context.read<AgendaViewModel>().loadEvents();
+        },
+        displacement: 200,
+        triggerMode: RefreshIndicatorTriggerMode.anywhere,
+        color: Theme.of(context).colorScheme.primary,
+        child: Padding(
+          padding: EdgeInsets.only(top: skeletonTopPadding, left: 24, right: 24, bottom: bottomPadding),
+          child: Skeletonizer(
+            enabled: true,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+              itemCount: 5,
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              itemBuilder: (_, __) => _AgendaCard(data: dummy, skeletonStyle: true),
+            ),
           ),
         ),
       );
     }
 
-    return ListView.separated(
-      padding: EdgeInsets.only(top: topPadding, left: 24, right: 24, bottom: bottomPadding),
-      itemCount: filteredAgendas.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () => context.push('/agenda/detail'),
-          child: _AgendaCard(data: filteredAgendas[index]),
-        );
+    if (!viewModel.isLoading && viewModel.errorMessage.isNotEmpty && filteredAgendas.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: () async {
+          await context.read<AgendaViewModel>().loadEvents();
+        },
+        displacement: 200,
+        color: Theme.of(context).colorScheme.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          padding: EdgeInsets.only(top: topPadding),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height - topPadding - 100,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(RemixIcons.error_warning_line, size: 48, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    Text(
+                      viewModel.errorMessage,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: () => viewModel.loadEvents(),
+                      icon: const Icon(RemixIcons.refresh_line, size: 20),
+                      label: const Text('Coba lagi'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (filteredAgendas.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: () async {
+          await context.read<AgendaViewModel>().loadEvents();
+        },
+        displacement: 200,
+        color: Theme.of(context).colorScheme.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          padding: EdgeInsets.only(top: topPadding),
+          child: Align(
+            alignment: const Alignment(0, -0.4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  isDark
+                      ? 'assets/images/empty_state/not_found_dark.png'
+                      : 'assets/images/empty_state/not_found.png',
+                  width: 160,
+                  height: 160,
+                  errorBuilder: (_, __, ___) =>
+                      Icon(RemixIcons.calendar_close_line, size: 80, color: isDark ? Colors.white24 : Colors.grey[300]),
+                ),
+                Text(
+                  'Agenda Tidak Ditemukan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Maaf, kami tidak menemukan jadwal yang Anda cari.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : Colors.grey,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (viewModel.searchQuery.isNotEmpty || viewModel.selectedFilter != 'Semua')
+                  GestureDetector(
+                    onTap: viewModel.resetFilters,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF152D8D),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: const Text(
+                        'Atur Ulang Filter',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        await context.read<AgendaViewModel>().loadEvents();
       },
+      displacement: 200,
+      triggerMode: RefreshIndicatorTriggerMode.anywhere,
+      color: Theme.of(context).colorScheme.primary,
+      child: ListView.separated(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+        padding: EdgeInsets.only(top: topPadding, left: 24, right: 24, bottom: bottomPadding),
+        itemCount: filteredAgendas.length + (viewModel.isLoadingMore ? 1 : 0),
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          if (index >= filteredAgendas.length) {
+            final dummy = AgendaModel(
+              id: 0,
+              title: '...',
+              slug: '',
+              description: '',
+              image: '',
+              eventDate: '2025-02-20',
+              eventTime: '09:00:00',
+              location: '...',
+              status: 'upcoming',
+            );
+            return Skeletonizer(
+              enabled: true,
+              child: _AgendaCard(data: dummy, skeletonStyle: true),
+            );
+          }
+          final item = filteredAgendas[index];
+          return GestureDetector(
+            onTap: () => context.push('/agenda/detail', extra: {'slug': item.slug, 'agenda': item}),
+            child: _AgendaCard(data: item),
+          );
+        },
+      ),
     );
   }
 }
 
 class _AgendaCard extends StatelessWidget {
   final AgendaModel data;
-  const _AgendaCard({required this.data});
+  final bool skeletonStyle;
+
+  const _AgendaCard({required this.data, this.skeletonStyle = false});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateBgColor = skeletonStyle
+        ? (isDark ? Colors.white24 : Colors.grey[300])
+        : (isDark ? const Color(0xFF152D8D) : const Color(0xFFE0E6F8));
+    final dateTextColor = skeletonStyle
+        ? (isDark ? Colors.white54 : Colors.grey[600])
+        : (isDark ? Colors.white : const Color(0xFF071D75));
+    final timeColor = skeletonStyle
+        ? (isDark ? Colors.white38 : Colors.grey[500])
+        : const Color(0xFF39A658);
 
     return Container(
       decoration: BoxDecoration(
@@ -334,7 +532,7 @@ class _AgendaCard extends StatelessWidget {
               height: 72,
               width: 72,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF152D8D) : const Color(0xFFE0E6F8),
+                color: dateBgColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -343,7 +541,7 @@ class _AgendaCard extends StatelessWidget {
                   Text(
                     data.month,
                     style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF071D75),
+                      color: dateTextColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                     ),
@@ -351,7 +549,7 @@ class _AgendaCard extends StatelessWidget {
                   Text(
                     data.date,
                     style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF071D75),
+                      color: dateTextColor,
                       fontWeight: FontWeight.w900,
                       fontSize: 24,
                       height: 1,
@@ -367,9 +565,9 @@ class _AgendaCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    data.time,
-                    style: const TextStyle(
-                      color: Color(0xFF39A658),
+                    data.time.isEmpty ? '–' : data.time,
+                    style: TextStyle(
+                      color: timeColor,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),

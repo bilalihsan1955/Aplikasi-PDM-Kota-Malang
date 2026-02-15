@@ -8,7 +8,7 @@ class NewsViewModel extends ChangeNotifier {
   String _selectedTag = 'Semua';
   String _searchQuery = '';
   bool _isSearching = false;
-  bool _isLoading = false;
+  bool _isLoading = true;
   String _errorMessage = '';
 
   List<NewsModel> _allNews = [];
@@ -47,6 +47,15 @@ class NewsViewModel extends ChangeNotifier {
           item.excerpt.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchTag && matchSearch;
     }).toList();
+  }
+
+  /// Set loading + kosongkan list agar UI langsung tampil skeleton (dipanggil sebelum load).
+  void beginLoad() {
+    if (_isLoading) return;
+    _isLoading = true;
+    _errorMessage = '';
+    _allNews = [];
+    notifyListeners();
   }
 
   /// Muat halaman pertama (refresh). Saat dipanggil, list dikosongkan dulu

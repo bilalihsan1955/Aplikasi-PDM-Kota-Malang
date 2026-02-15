@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
-import '../models/event_model.dart';
+import '../models/agenda_model.dart';
 import '../models/news_model.dart';
 import '../services/news_api_service.dart';
+import '../services/event_api_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
   int _currentEventPage = 0;
@@ -15,11 +16,16 @@ class HomeViewModel extends ChangeNotifier {
   Timer? _slideTimer;
 
   final NewsApiService _newsApi = NewsApiService();
+  final EventApiService _eventApi = EventApiService();
   List<NewsModel> _news = [];
   bool _newsLoading = true;
+  List<AgendaModel> _events = [];
+  bool _eventsLoading = true;
 
   List<NewsModel> get news => _news;
   bool get newsLoading => _newsLoading;
+  List<AgendaModel> get events => _events;
+  bool get eventsLoading => _eventsLoading;
 
   HomeViewModel() {
     _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
@@ -48,29 +54,36 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  final List<EventModel> _events = [
-    EventModel(
-      month: "OCT",
-      date: "24",
-      title: "Kajian Tablogh Akbar",
-      time: "10:00 AM",
-      location: "Aula PDM Kota Malang",
-    ),
-    EventModel(
-      month: "NOV",
-      date: "12",
-      title: "Design Sprint",
-      time: "01:00 PM",
-      location: "Meeting Room A",
-    ),
-    EventModel(
-      month: "DEC",
-      date: "05",
-      title: "Year End Party",
-      time: "07:00 PM",
-      location: "Grand Ballroom",
-    ),
-  ];
+  /// Muat agenda yang akan datang (terdekat di atas jam sekarang) untuk section Agenda Terkini di Home.
+  /// Hanya acara yang belum lewat, diurut dari yang terdekat, maksimal 5.
+  Future<void> loadUpcomingEvents() async {
+    _eventsLoading = true;
+    notifyListeners();
+    try {
+      List<AgendaModel> list = await _eventApi.getUpcoming();
+      if (list.isEmpty) {
+        final result = await _eventApi.getEvents(page: 1, perPage: 10);
+        if (result.success && result.data.isNotEmpty) {
+          list = result.data;
+        }
+      }
+      final now = DateTime.now();
+      final upcoming = list.where((e) {
+        final dt = e.eventDateTime;
+        return dt != null && dt.isAfter(now);
+      }).toList();
+      upcoming.sort((a, b) {
+        final da = a.eventDateTime ?? DateTime(0);
+        final db = b.eventDateTime ?? DateTime(0);
+        return da.compareTo(db);
+      });
+      _events = upcoming.length > 5 ? upcoming.sublist(0, 5) : upcoming;
+    } catch (_) {
+      _events = [];
+    }
+    _eventsLoading = false;
+    notifyListeners();
+  }
 
   final List<Map<String, dynamic>> _homeMenus = [
     {'icon': RemixIcons.community_line, 'label': 'Profil'},
@@ -83,7 +96,6 @@ class HomeViewModel extends ChangeNotifier {
     {'icon': RemixIcons.share_line, 'label': 'Bagikan'},
   ];
 
-  List<EventModel> get events => _events;
   List<Map<String, dynamic>> get homeMenus => _homeMenus;
 
   void setEventPage(int index) {

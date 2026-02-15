@@ -8,6 +8,7 @@ import '../view/pages/profile/profile_page.dart';
 import '../view/pages/berita/detail_berita_page.dart';
 import '../models/news_model.dart';
 import '../view/pages/agenda/detail_agenda_page.dart';
+import '../models/agenda_model.dart';
 import '../view/pages/about_pdm_page.dart';
 import '../view/pages/gallery_page.dart';
 import '../view/pages/profile/account_page.dart';
@@ -87,7 +88,20 @@ final GoRouter router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'detail',
-                  pageBuilder: (context, state) => const NoTransitionPage(child: DetailAgendaPage()),
+                  pageBuilder: (context, state) {
+                    String? slug;
+                    AgendaModel? initialAgenda;
+                    final ex = state.extra;
+                    if (ex is Map) {
+                      slug = ex['slug'] is String ? ex['slug'] as String : null;
+                      initialAgenda = ex['agenda'] is AgendaModel ? ex['agenda'] as AgendaModel : null;
+                    } else if (ex is String) {
+                      slug = ex;
+                    }
+                    return NoTransitionPage(
+                      child: DetailAgendaPage(slug: slug, initialAgenda: initialAgenda),
+                    );
+                  },
                 ),
               ],
             ),
