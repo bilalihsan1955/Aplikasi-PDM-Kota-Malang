@@ -6,8 +6,6 @@ import 'package:remixicon/remixicon.dart';
 import '../../services/prayer_time_service.dart';
 import '../widgets/back_button_app.dart';
 
-/// Halaman jadwal sholat dan arah kiblat; dibuka saat mengetuk card waktu sholat atau card kiblat di Home.
-/// Struktur scaffold/body/header disamakan dengan GalleryPage.
 class JadwalSholatPage extends StatelessWidget {
   const JadwalSholatPage({super.key, this.prayer, this.qiblaDegree});
 
@@ -35,28 +33,28 @@ class JadwalSholatPage extends StatelessWidget {
         ? _cityTitleCase(prayer!.city)
         : 'Waktu sholat dan arah kiblat';
 
+    // PERBAIKAN SPACE: topPadding tetap 130, bottomPadding dikunci ke 24 (Sesuai Gallery)
+    double topPadding = MediaQuery.of(context).padding.top + 112;
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
-            // 1. Lapisan List Grid (Struktur Arsitektur Konsisten)
+            // 1. Lapisan Konten
             Positioned.fill(
               child: SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
+                // PERBAIKAN: Padding bawah HANYA 24 agar tidak terlalu besar
+                padding: EdgeInsets.only(top: topPadding, bottom: 24),
                 child: SafeArea(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 90), // Ruang di atas container jadwal sholat
-                      _JadwalContent(
-                        prayer: prayer,
-                        qiblaDegree: qiblaDegree,
-                        nextName: nextName,
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 24), // Spasi akhir standar (sama dengan Gallery)
-                    ],
+                  top: false,
+                  child: _JadwalContent(
+                    prayer: prayer,
+                    qiblaDegree: qiblaDegree,
+                    nextName: nextName,
+                    isDark: isDark,
                   ),
                 ),
               ),
@@ -75,7 +73,6 @@ class JadwalSholatPage extends StatelessWidget {
   }
 }
 
-/// Header melayang: struktur identik _CombinedHeader + _HeaderTitle di Gallery.
 class _JadwalHeader extends StatelessWidget {
   const _JadwalHeader({required this.subtitle});
 
@@ -117,9 +114,7 @@ class _JadwalHeader extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Jadwal Sholat & Arah Kiblat',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            'Jadwal Sholat',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -138,7 +133,6 @@ class _JadwalHeader extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 48, height: 48), // Reserve space seperti IconButton search di Gallery
                 ],
               ),
             ),
@@ -150,7 +144,6 @@ class _JadwalHeader extends StatelessWidget {
   }
 }
 
-/// Konten utama: card jadwal + card kiblat. Padding horizontal di dalam seperti _GalleryList.
 class _JadwalContent extends StatelessWidget {
   const _JadwalContent({
     required this.prayer,
@@ -194,7 +187,7 @@ class _JadwalContent extends StatelessWidget {
                   isDark: isDark,
                 ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           // Section: Arah Kiblat
           _SectionCard(
           isDark: isDark,
@@ -243,7 +236,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
         boxShadow: [
           BoxShadow(
@@ -254,7 +247,7 @@ class _SectionCard extends StatelessWidget {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -284,7 +277,6 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-/// Path gambar ikon jadwal sholat: folder assets/images/jadwal_sholat/ (subuh.png, terbit.png, dll.)
 String _prayerIconAsset(String prayerName) {
   final file = prayerName.toLowerCase().replaceAll(' ', '_');
   return 'assets/images/jadwal_sholat/$file.png';
@@ -316,7 +308,6 @@ class _PrayerScheduleList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
       child: Column(
         children: rows.map((e) {
-
           final name = e.$1;
           final time = e.$2;
           final isNext = name == nextPrayerName;
@@ -325,7 +316,7 @@ class _PrayerScheduleList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(isNext ? 0.25 : 0.12),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               border: isNext
                   ? Border.all(color: Colors.white.withOpacity(0.4), width: 1)
                   : null,
@@ -385,7 +376,6 @@ class _PrayerScheduleList extends StatelessWidget {
   }
 }
 
-/// Kompas kiblat — desain seperti kompas sungguhan: dial dengan skala derajat, jarum dua ujung, pivot di tengah.
 class _QiblaCompassSection extends StatelessWidget {
   const _QiblaCompassSection({required this.qiblaDegree, required this.isDark});
 
@@ -402,14 +392,12 @@ class _QiblaCompassSection extends StatelessWidget {
           builder: (context, snapshot) {
             final heading = snapshot.data?.heading;
             final hasCompass = heading != null;
-            // Normalisasi heading ke 0–360° agar tampilan tidak negatif (mis. -56 → 304)
             double headingDisplay = heading ?? 0;
             while (headingDisplay < 0) headingDisplay += 360;
             while (headingDisplay >= 360) headingDisplay -= 360;
             double diff = hasCompass ? (headingDisplay - qiblaDegree) : 0;
             while (diff > 180) diff -= 360;
             while (diff < -180) diff += 360;
-            // Aktif ketika posisi di derajat kiblat (toleransi 1° agar sensor bisa mendeteksi)
             final isAligned = hasCompass && diff.abs() < 1;
 
             return Column(
@@ -430,8 +418,6 @@ class _QiblaCompassSection extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Dial kompas (lingkaran + skala derajat + N/E/S/W) — ikut rotasi perangkat
-                      // Lingkaran kompas yang berputar (jarum tetap)
                       if (hasCompass)
                         Transform.rotate(
                           angle: -heading * (math.pi / 180),
@@ -449,7 +435,6 @@ class _QiblaCompassSection extends StatelessWidget {
                           isAligned: isAligned,
                           heading: null,
                         ),
-                      // Jarum kompas diam (satu panah ke atas = arah hadap)
                       CustomPaint(
                         size: const Size(220, 220),
                         painter: _CompassNeedlePainter(
@@ -458,7 +443,6 @@ class _QiblaCompassSection extends StatelessWidget {
                               : Colors.white.withOpacity(0.9),
                         ),
                       ),
-                      // Cap pusat (seperti kompas asli)
                       Container(
                         width: 20,
                         height: 20,
@@ -480,7 +464,6 @@ class _QiblaCompassSection extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Derajat di bawah panah kompas (di dalam kompas); warna emas saat aktif (posisi kiblat)
                       if (hasCompass)
                         Positioned(
                           bottom: 64,
@@ -520,7 +503,6 @@ class _QiblaCompassSection extends StatelessWidget {
   }
 }
 
-/// Jarum kompas: satu panah mengarah ke atas (arah hadap), tanpa panah bawah.
 class _CompassNeedlePainter extends CustomPainter {
   _CompassNeedlePainter({
     required this.needleColor,
@@ -536,7 +518,6 @@ class _CompassNeedlePainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
 
-    // Satu segitiga ke atas (panah arah hadap)
     final path = Path()
       ..moveTo(cx, cy - needleLength)
       ..lineTo(cx + needleWidth, cy)
@@ -551,7 +532,6 @@ class _CompassNeedlePainter extends CustomPainter {
       old.needleColor != needleColor;
 }
 
-/// Dial kompas seperti asli: lingkaran, skala derajat (setiap 30°), N/E/S/W, dan ikon kiblat di sudut tetap.
 class _CompassDial extends StatelessWidget {
   const _CompassDial({
     required this.size,
@@ -574,7 +554,6 @@ class _CompassDial extends StatelessWidget {
     final rad = qiblaDegree * (math.pi / 180);
     final qx = cx + qiblaRadius * math.sin(rad);
     final qy = cy - qiblaRadius * math.cos(rad);
-    // Agar ikon tetap tegak di layar: dial berputar -heading, jadi ikon di dial perlu rotasi +heading
     final iconAngle = (heading ?? 0) * (math.pi / 180);
 
     return SizedBox(
@@ -588,7 +567,6 @@ class _CompassDial extends StatelessWidget {
             _dialLabel('E', Alignment.centerRight, isNorth: false),
             _dialLabel('S', Alignment.bottomCenter, isNorth: false),
             _dialLabel('W', Alignment.centerLeft, isNorth: false),
-            // Ikon Kaaba di posisi kiblat pada dial; rotasi agar tetap tegak di layar
             Positioned(
               left: qx - iconSize / 2,
               top: qy - iconSize / 2,
@@ -659,7 +637,6 @@ class _CompassDial extends StatelessWidget {
   }
 }
 
-/// Menggambar lingkaran kompas, border, dan tick mark setiap 30°.
 class _CompassDialPainter extends CustomPainter {
   _CompassDialPainter({required this.size});
 
@@ -671,7 +648,6 @@ class _CompassDialPainter extends CustomPainter {
     final cy = size.height / 2;
     final radius = (size.width / 2) - 4;
 
-    // Latar lingkaran
     canvas.drawCircle(
       Offset(cx, cy),
       radius,
@@ -687,7 +663,6 @@ class _CompassDialPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );
-    // Ring dalam
     canvas.drawCircle(
       Offset(cx, cy),
       radius - 8,
@@ -697,7 +672,6 @@ class _CompassDialPainter extends CustomPainter {
         ..strokeWidth = 1,
     );
 
-    // Tick marks setiap 30°
     for (int i = 0; i < 360; i += 30) {
       final rad = i * math.pi / 180;
       final isCardinal = i % 90 == 0;

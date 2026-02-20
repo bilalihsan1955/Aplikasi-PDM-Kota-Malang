@@ -25,19 +25,10 @@ class _GalleryPageState extends State<GalleryPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
-            // 1. Lapisan List Grid (Struktur Arsitektur Konsisten)
+            // 1. Lapisan List Grid (IDENTIK DENGAN BERITA LIST)
             Positioned.fill(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: SafeArea(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 90), // Ruang untuk Header melayang
-                      _GalleryList(searchQuery: _searchQuery),
-                      const SizedBox(height: 24), // Spasi akhir standar
-                    ],
-                  ),
-                ),
+              child: _GalleryList(
+                searchQuery: _searchQuery,
               ),
             ),
             // 2. Lapisan Header
@@ -76,21 +67,20 @@ class _CombinedHeader extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        boxShadow: isSearching || isScrolledLogic(context) // Placeholder logic or simplified
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  offset: const Offset(0, 4),
-                  blurRadius: 12,
-                ),
-              ]
-            : [],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ],
       ),
       child: SafeArea(
         bottom: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 8),
             _AnimatedHeader(
               isSearching: isSearching,
               onSearchChanged: onSearchChanged,
@@ -102,9 +92,6 @@ class _CombinedHeader extends StatelessWidget {
       ),
     );
   }
-
-  // Simple scrolled logic helper if needed, but here we usually rely on state from parent
-  bool isScrolledLogic(BuildContext context) => true; // For gallery, we often want the shadow always or managed by parent
 }
 
 class _AnimatedHeader extends StatelessWidget {
@@ -251,10 +238,13 @@ class _GalleryList extends StatelessWidget {
         .where((item) => item['title']!.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
 
+    // PERBAIKAN: Padding bawah HANYA 24 agar konsisten
+    double topPadding = MediaQuery.of(context).padding.top + 130;
+
     if (filteredItems.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.only(top: 100),
+          padding: EdgeInsets.only(top: topPadding),
           child: Text(
             'Tidak ditemukan',
             style: TextStyle(color: isDark ? Colors.white38 : Colors.grey),
@@ -264,9 +254,7 @@ class _GalleryList extends StatelessWidget {
     }
 
     return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.only(top: topPadding, left: 24, right: 24, bottom: 24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 16,
@@ -288,7 +276,7 @@ class _GalleryCard extends StatelessWidget {
   final String image;
   final String title;
 
-  const _GalleryCard({super.key, required this.image, required this.title});
+  const _GalleryCard({required this.image, required this.title});
 
   void _showImagePreview(BuildContext context) {
     showDialog(
@@ -371,24 +359,14 @@ class _ImagePreviewDialog extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Zoomable Image
           InteractiveViewer(
             minScale: 0.5,
             maxScale: 4.0,
-            child: Center(
-              child: Image.asset(
-                image,
-                fit: BoxFit.contain,
-                width: double.infinity,
-              ),
-            ),
+            child: Center(child: Image.asset(image, fit: BoxFit.contain, width: double.infinity)),
           ),
-          
-          // Header Actions
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
-            left: 20,
-            right: 20,
+            left: 20, right: 20,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -396,50 +374,27 @@ class _ImagePreviewDialog extends StatelessWidget {
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
                     child: const Icon(RemixIcons.close_line, color: Colors.white, size: 24),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
                   child: const Icon(RemixIcons.share_line, color: Colors.white, size: 22),
                 ),
               ],
             ),
           ),
-
-          // Bottom Title
           Positioned(
             bottom: MediaQuery.of(context).padding.bottom + 40,
-            left: 24,
-            right: 24,
+            left: 24, right: 24,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(title, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(
-                  'Gunakan dua jari untuk memperbesar gambar',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
-                ),
+                Text('Gunakan dua jari untuk memperbesar gambar', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
               ],
             ),
           ),
