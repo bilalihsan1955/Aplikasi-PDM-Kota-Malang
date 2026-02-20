@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -12,19 +13,13 @@ import 'package:pdm_malang/utils/app_style.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Mengaktifkan mode edge-to-edge secara total
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  // Load .env (URL API). Jika file belum ada, salin dari .env.example
   try {
     await dotenv.load(fileName: '.env');
-  } catch (_) {
-    // .env tidak ditemukan; ApiService akan pakai fallback URL
-  }
-
-  // Initialize Firebase (Optional - akan skip jika tidak tersedia)
-  // Uncomment baris berikut jika sudah setup Firebase:
-  // await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform,
-  // );
+  } catch (_) {}
 
   runApp(
     MultiProvider(
@@ -59,16 +54,22 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.light,
         scaffoldBackgroundColor: AppStyle.scaffoldLight,
         textTheme: GoogleFonts.interTextTheme(),
-        dividerTheme: DividerThemeData(color: Colors.grey[200]),
-        iconTheme: const IconThemeData(color: AppStyle.primary),
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: Brightness.dark,
+            systemNavigationBarContrastEnforced: false, // Matikan kontras paksaan
+          ),
+        ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppStyle.primary,
           brightness: Brightness.light,
           primary: AppStyle.primary,
-          secondary: AppStyle.accent,
-          tertiary: AppStyle.warning, // Menambahkan warna kuning
           surface: Colors.white,
-          onSurface: const Color(0xFF2D3142),
           background: AppStyle.scaffoldLight,
         ),
       ),
@@ -76,25 +77,42 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
         scaffoldBackgroundColor: AppStyle.scaffoldDark,
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-          bodyLarge: const TextStyle(color: Colors.white),
-          bodyMedium: TextStyle(color: Colors.white.withOpacity(0.7)),
-          titleLarge: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: Brightness.light,
+            systemNavigationBarContrastEnforced: false, // Matikan kontras paksaan
+          ),
         ),
-        dividerTheme: const DividerThemeData(color: Colors.white10),
-        iconTheme: const IconThemeData(color: Colors.white),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppStyle.primary,
           brightness: Brightness.dark,
           primary: AppStyle.primary,
-          secondary: AppStyle.accent,
-          tertiary: AppStyle.warning, // Menambahkan warna kuning
           surface: AppStyle.cardDark,
-          onSurface: Colors.white,
-          onPrimary: Colors.white,
           background: AppStyle.scaffoldDark,
         ),
       ),
+      builder: (context, child) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+            systemNavigationBarDividerColor: Colors.transparent,
+            systemNavigationBarContrastEnforced: false, // Tambahkan ini di builder juga
+            systemStatusBarContrastEnforced: false,
+          ),
+          child: child!,
+        );
+      },
       routerConfig: router,
     );
   }

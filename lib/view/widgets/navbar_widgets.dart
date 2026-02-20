@@ -137,6 +137,9 @@ class NavbarWidgets extends StatelessWidget {
                 Text(
                   'Notifikasi',
                   textScaler: TextScaler.noScaling,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isInNotificationPage ? FontWeight.bold : FontWeight.w500,
@@ -208,6 +211,9 @@ class NavbarWidgets extends StatelessWidget {
             Text(
               label,
               textScaler: TextScaler.noScaling,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.w500,

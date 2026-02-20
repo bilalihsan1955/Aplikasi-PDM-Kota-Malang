@@ -14,6 +14,7 @@ class AgendaModel {
   final String? organizer;
   final String? contactPerson;
   final String? contactPhone;
+  final String? dressCode;
   final int? maxParticipants;
   final String? registrationLink;
   final String status;
@@ -35,6 +36,7 @@ class AgendaModel {
     this.organizer,
     this.contactPerson,
     this.contactPhone,
+    this.dressCode,
     this.maxParticipants,
     this.registrationLink,
     required this.status,
@@ -233,6 +235,7 @@ class AgendaModel {
       organizer: raw['organizer'] as String?,
       contactPerson: raw['contact_person'] as String?,
       contactPhone: raw['contact_phone'] as String?,
+      dressCode: (raw['dress_code'] ?? raw['dressCode']) as String?,
       maxParticipants: (raw['max_participants'] as num?)?.toInt(),
       registrationLink: raw['registration_link'] as String?,
       status: (raw['status'] as String?) ?? 'upcoming',

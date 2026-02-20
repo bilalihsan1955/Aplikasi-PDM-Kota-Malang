@@ -152,7 +152,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                   child: Row(
                     children: [
                       _circleNavButton(
-                        icon: RemixIcons.arrow_left_line,
+                        icon: RemixIcons.arrow_left_s_line,
                         onTap: () => context.pop(),
                         showWhiteBg: !_isScrolled,
                         isDark: isDark,
@@ -222,8 +222,8 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     Marker(
                       point: officeLocation,
                       width: 40, height: 40,
-                      rotate: false, // Marker tetap tegak lurus
-                      child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                      rotate: true, // PERBAIKAN: true agar tetap tegak lurus melawan rotasi peta
+                      child: const Icon(RemixIcons.map_pin_2_fill, color: Colors.red, size: 40),
                     ),
                   ],
                 ),
@@ -244,7 +244,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle),
-                      child: const Icon(Icons.location_on, color: Colors.white, size: 20),
+                      child: const Icon(RemixIcons.map_pin_2_fill, color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -262,7 +262,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle),
-                        child: const Icon(Icons.near_me, color: Color(0xFF1565C0), size: 20),
+                        child: const Icon(RemixIcons.navigation_fill, color: Color(0xFF1565C0), size: 20),
                       ),
                     ),
                   ],
@@ -286,7 +286,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
           shape: BoxShape.circle,
           boxShadow: showWhiteBg ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))] : [],
         ),
-        child: Icon(icon, color: showWhiteBg ? Colors.black : (isDark ? Colors.white : Colors.black87), size: 20),
+        child: Icon(icon, color: showWhiteBg ? Colors.black : (isDark ? Colors.white : Colors.black87), size: 28),
       ),
     );
   }

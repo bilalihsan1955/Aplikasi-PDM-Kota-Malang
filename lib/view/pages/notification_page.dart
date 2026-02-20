@@ -22,25 +22,21 @@ class NotificationPage extends StatelessWidget {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Stack(
-            children: [
-              Positioned.fill(child: _NotificationList()),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _CombinedHeader(),
-              ),
-            ],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(130),
+            child: _CombinedHeader(),
           ),
+          body: _NotificationListContent(),
         ),
       ),
     );
   }
-
 }
 
-class _CombinedHeader extends StatelessWidget {
+class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(130);
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -86,6 +82,7 @@ class _HeaderTitle extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Notifikasi',
@@ -121,7 +118,7 @@ class _CategoryChips extends StatelessWidget {
     return SizedBox(
       height: 40,
       child: ListView.separated(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
         itemCount: viewModel.filters.length,
@@ -158,82 +155,89 @@ class _CategoryChips extends StatelessWidget {
   }
 }
 
-class _NotificationList extends StatelessWidget {
+class _NotificationListContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<NotificationViewModel>();
     final notifications = viewModel.filteredNotifications;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    double topPadding = MediaQuery.of(context).padding.top + 160;
-    double bottomPadding = MediaQuery.of(context).padding.bottom + 24;
-
     if (notifications.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.only(top: topPadding),
-        child: Align(
-          alignment: const Alignment(0, -0.4),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  isDark
-                      ? 'assets/images/empty_state/not_found_dark.png'
-                      : 'assets/images/empty_state/not_found.png',
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.contain,
-                ),
-                Text(
-                  'Belum Ada Notifikasi',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF212121),
+      return CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Align(
+              alignment: const Alignment(0, -0.2),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    isDark
+                        ? 'assets/images/empty_state/not_found_dark.png'
+                        : 'assets/images/empty_state/not_found.png',
+                    width: 160,
+                    height: 160,
+                    fit: BoxFit.contain,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 50),
-                  child: Text(
-                    'Notifikasi akan muncul di sini',
+                  Text(
+                    'Belum Ada Notifikasi',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 13,
-                      color: isDark ? Colors.white60 : Colors.grey,
-                      height: 1.4,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF212121),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 50),
+                    child: Text(
+                      'Notifikasi akan muncul di sini',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white60 : Colors.grey,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       );
     }
 
-    return ListView.builder(
-      padding: EdgeInsets.only(
-        top: topPadding,
-        left: 24,
-        right: 24,
-        bottom: bottomPadding,
-      ),
-      itemCount: notifications.length,
-      itemBuilder: (context, index) {
-        return _NotificationCard(
-          notification: notifications[index],
-          onTap: () {
-            viewModel.markAsRead(notifications[index].id);
-            _handleNotificationTap(context, notifications[index]);
-          },
-          onDelete: () {
-            viewModel.deleteNotification(notifications[index].id);
-          },
-        );
-      },
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+          sliver: SliverSafeArea(
+            top: false,
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return _NotificationCard(
+                    notification: notifications[index],
+                    onTap: () {
+                      viewModel.markAsRead(notifications[index].id);
+                      _handleNotificationTap(context, notifications[index]);
+                    },
+                    onDelete: () {
+                      viewModel.deleteNotification(notifications[index].id);
+                    },
+                  );
+                },
+                childCount: notifications.length,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -249,7 +253,6 @@ class _NotificationList extends StatelessWidget {
         break;
     }
   }
-
 }
 
 class _NotificationCard extends StatelessWidget {

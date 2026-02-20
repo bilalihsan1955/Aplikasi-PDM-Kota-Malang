@@ -114,8 +114,8 @@ class _BackButtonAppState extends State<BackButtonApp>
               ),
               alignment: Alignment.center,
               child: Icon(
-                RemixIcons.arrow_left_line,
-                size: 24,
+                RemixIcons.arrow_left_line, // Diubah agar konsisten
+                size: 28, // Ukuran sedikit diperbesar agar lebih jelas
                 color: iconColor,
               ),
             ),

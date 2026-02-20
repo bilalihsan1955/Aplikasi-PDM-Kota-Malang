@@ -23,33 +23,23 @@ class _GalleryPageState extends State<GalleryPage> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: Stack(
-          children: [
-            // 1. Lapisan List Grid (IDENTIK DENGAN BERITA LIST)
-            Positioned.fill(
-              child: _GalleryList(
-                searchQuery: _searchQuery,
-              ),
-            ),
-            // 2. Lapisan Header
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _CombinedHeader(
-                isSearching: _isSearching,
-                onSearchChanged: _setSearchQuery,
-                onToggleSearch: _setSearching,
-              ),
-            ),
-          ],
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: _CombinedHeader(
+            isSearching: _isSearching,
+            onSearchChanged: _setSearchQuery,
+            onToggleSearch: _setSearching,
+          ),
+        ),
+        body: _GalleryList(
+          searchQuery: _searchQuery,
         ),
       ),
     );
   }
 }
 
-class _CombinedHeader extends StatelessWidget {
+class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool isSearching;
   final Function(String) onSearchChanged;
   final Function(bool) onToggleSearch;
@@ -60,6 +50,9 @@ class _CombinedHeader extends StatelessWidget {
     required this.onSearchChanged,
     required this.onToggleSearch,
   });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(80);
 
   @override
   Widget build(BuildContext context) {
@@ -136,13 +129,18 @@ class _HeaderTitle extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Galeri',
-                style: TextStyle(
-                  fontSize: 24, 
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF2D3142),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Galeri',
+                  style: TextStyle(
+                    fontSize: 24, 
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF2D3142),
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -232,42 +230,50 @@ class _GalleryList extends StatelessWidget {
       {'image': 'assets/images/banner.png', 'title': 'Seminar Dakwah Digital'},
       {'image': 'assets/images/banner.png', 'title': 'Peresmian Masjid Baru'},
       {'image': 'assets/images/banner.png', 'title': 'Pelatihan Kader Organisasi'},
+      {'image': 'assets/images/banner.png', 'title': 'Kajian Rutin Ahad Pagi'},
+      {'image': 'assets/images/banner.png', 'title': 'Pemberdayaan Ekonomi Umat'},
     ];
 
     final filteredItems = galleryData
         .where((item) => item['title']!.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
 
-    // PERBAIKAN: Padding bawah HANYA 24 agar konsisten
-    double topPadding = MediaQuery.of(context).padding.top + 130;
-
     if (filteredItems.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.only(top: topPadding),
-          child: Text(
-            'Tidak ditemukan',
-            style: TextStyle(color: isDark ? Colors.white38 : Colors.grey),
-          ),
+      return const Center(
+        child: Text(
+          'Tidak ditemukan',
+          style: TextStyle(color: Colors.grey),
         ),
       );
     }
 
-    return GridView.builder(
-      padding: EdgeInsets.only(top: topPadding, left: 24, right: 24, bottom: 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: filteredItems.length,
-      itemBuilder: (context, index) {
-        return _GalleryCard(
-          image: filteredItems[index]['image']!,
-          title: filteredItems[index]['title']!,
-        );
-      },
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(), // Menghilangkan efek bounce
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+          sliver: SliverSafeArea(
+            top: false,
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.8,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return _GalleryCard(
+                    image: filteredItems[index]['image']!,
+                    title: filteredItems[index]['title']!,
+                  );
+                },
+                childCount: filteredItems.length,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

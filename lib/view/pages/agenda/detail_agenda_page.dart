@@ -7,6 +7,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/app_style.dart';
 import '../../../models/agenda_model.dart';
+import '../../../services/event_api_service.dart';
 
 class DetailAgendaPage extends StatefulWidget {
   final String? slug;
@@ -25,6 +26,11 @@ class DetailAgendaPage extends StatefulWidget {
 class _DetailAgendaPageState extends State<DetailAgendaPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  AgendaModel? _loadedAgenda;
+  bool _loading = false;
+
+  /// Data yang ditampilkan: initial dari navigator atau hasil load by slug.
+  AgendaModel? get _agenda => widget.initialAgenda ?? _loadedAgenda;
 
   // Koordinat Default
   static const double _defaultLat = -7.949630143095969;
@@ -40,6 +46,23 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
         if (_isScrolled) setState(() => _isScrolled = false);
       }
     });
+    if (widget.initialAgenda == null && widget.slug != null && widget.slug!.isNotEmpty) {
+      _loadBySlug();
+    }
+  }
+
+  Future<void> _loadBySlug() async {
+    setState(() => _loading = true);
+    try {
+      final api = EventApiService();
+      final a = await api.getBySlug(widget.slug!);
+      if (mounted) setState(() {
+        _loadedAgenda = a;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -49,13 +72,20 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   }
 
   Future<void> _launchGoogleMaps() async {
-    // Gunakan koordinat dari agenda jika ada, jika tidak gunakan default
-    final double lat = widget.initialAgenda?.latitude ?? _defaultLat;
-    final double lng = widget.initialAgenda?.longitude ?? _defaultLng;
-    
+    final double lat = _agenda?.latitude ?? _defaultLat;
+    final double lng = _agenda?.longitude ?? _defaultLng;
     final Uri url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
+    }
+  }
+
+  Future<void> _openRegistrationLink() async {
+    final link = _agenda?.registrationLink;
+    if (link == null || link.isEmpty) return;
+    final uri = Uri.tryParse(link);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -63,7 +93,25 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final appBarColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final agendaTitle = widget.initialAgenda?.title ?? 'Detail Agenda';
+    final agendaTitle = _agenda?.title ?? 'Detail Agenda';
+
+    if (_loading && _agenda == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text('Memuat agenda...', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -80,15 +128,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 80),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.asset(
-                          'assets/images/banner.png',
-                          height: 220,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                      _buildBanner(isDark),
                       const SizedBox(height: 24),
                       _buildConferenceTag(),
                       const SizedBox(height: 16),
@@ -107,14 +147,14 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                       const SizedBox(height: 16),
                       _buildMapPreview(isDark),
                       const SizedBox(height: 32),
-                      const Text('About Event', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text('Tentang Acara', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Join us for the annual Leadership Summit, where industry pioneers gather to discuss the future of corporate strategy. This year\'s session will focus on sustainable growth.',
-                        style: TextStyle(fontSize: 15, height: 1.6),
+                      Text(
+                        _agenda?.displayDescription ?? '-',
+                        style: const TextStyle(fontSize: 15, height: 1.6),
                       ),
                       const SizedBox(height: 24),
-                      _buildRegisterButton(context),
+                      if ((_agenda?.registrationLink ?? '').trim().isNotEmpty) _buildRegisterButton(context),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -141,7 +181,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : Colors.black87, size: 20),
+                        icon: Icon(RemixIcons.arrow_left_s_line, color: isDark ? Colors.white : Colors.black87, size: 28),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -158,7 +198,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                       ),
                       IconButton(
                         onPressed: () {},
-                        icon: Icon(Icons.share_outlined, color: isDark ? Colors.white : Colors.black87, size: 22),
+                        icon: Icon(RemixIcons.share_line, color: isDark ? Colors.white : Colors.black87, size: 22),
                       ),
                     ],
                   ),
@@ -168,6 +208,31 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBanner(bool isDark) {
+    final imageUrl = (_agenda?.image ?? '').trim();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: imageUrl.isNotEmpty
+          ? Image.network(
+              imageUrl,
+              height: 220,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _placeholderBanner(isDark),
+            )
+          : _placeholderBanner(isDark),
+    );
+  }
+
+  Widget _placeholderBanner(bool isDark) {
+    return Container(
+      height: 220,
+      width: double.infinity,
+      color: isDark ? Colors.white10 : Colors.grey.shade200,
+      child: Icon(RemixIcons.image_line, size: 48, color: isDark ? Colors.white38 : Colors.grey),
     );
   }
 
@@ -185,8 +250,8 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   }
 
   Widget _buildMapPreview(bool isDark) {
-    final double lat = widget.initialAgenda?.latitude ?? _defaultLat;
-    final double lng = widget.initialAgenda?.longitude ?? _defaultLng;
+    final double lat = _agenda?.latitude ?? _defaultLat;
+    final double lng = _agenda?.longitude ?? _defaultLng;
     final LatLng eventLocation = LatLng(lat, lng);
 
     return Container(
@@ -218,8 +283,8 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                     Marker(
                       point: eventLocation,
                       width: 40, height: 40,
-                      rotate: false,
-                      child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                      rotate: true, // PERBAIKAN: true agar tetap tegap (upright) melawan rotasi peta
+                      child: const Icon(RemixIcons.map_pin_2_fill, color: Colors.red, size: 40),
                     ),
                   ],
                 ),
@@ -237,10 +302,10 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                 ),
                 child: Row(
                   children: [
-                    Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle), child: const Icon(Icons.location_on, color: Colors.white, size: 20)),
+                    Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle), child: const Icon(RemixIcons.map_pin_2_fill, color: Colors.white, size: 20)),
                     const SizedBox(width: 12),
                     Expanded(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(widget.initialAgenda?.location ?? 'Lokasi Acara', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+                      Text(_agenda?.location ?? 'Lokasi Acara', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
                       Text('2.4 km from your location', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
                     ])),
                     GestureDetector(
@@ -248,7 +313,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle),
-                        child: const Icon(RemixIcons.compass_3_line, color: Color(0xFF1565C0), size: 20),
+                        child: const Icon(RemixIcons.navigation_fill, color: Color(0xFF1565C0), size: 20),
                       ),
                     ),
                   ],
@@ -263,46 +328,70 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
 
   Widget _buildRegisterButton(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFF1F4F9), width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Text('Register Now', style: TextStyle(color: AppStyle.accent, fontWeight: FontWeight.w600, fontSize: 16)),
-          SizedBox(width: 8),
-          Icon(Icons.arrow_forward, color: AppStyle.accent, size: 20),
-        ],
+    final hasLink = (_agenda?.registrationLink ?? '').trim().isNotEmpty;
+    return GestureDetector(
+      onTap: hasLink ? _openRegistrationLink : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFF1F4F9), width: 1.5),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              hasLink ? 'Daftar Sekarang' : 'Pendaftaran',
+              style: const TextStyle(color: AppStyle.accent, fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            const SizedBox(width: 8),
+            const Icon(RemixIcons.arrow_right_line, color: AppStyle.accent, size: 20),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildConferenceTag() {
+    final label = (_agenda?.categoryName ?? 'Agenda').toUpperCase();
+    if (label.isEmpty) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(color: AppStyle.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(100)),
-      child: const Text('CONFERENCE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppStyle.primary, letterSpacing: 0.5)),
+      child: Text(
+        label,
+        maxLines: 2,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppStyle.primary, letterSpacing: 0.5),
+      ),
     );
   }
 
   Widget _buildHostedInfo() {
+    final host = _agenda?.organizer?.trim() ?? 'PDM Malang';
     return Row(
       children: [
-        const Icon(Icons.verified, color: AppStyle.accent, size: 18),
+        const Icon(RemixIcons.checkbox_circle_fill, color: AppStyle.accent, size: 18),
         const SizedBox(width: 6),
-        const Text('Hosted by Global Innovators', style: TextStyle(color: Colors.grey, fontSize: 14)),
+        Expanded(
+          child: Text(
+            'Diselenggarakan oleh $host',
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildDateTimeCard(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateStr = _agenda?.eventDateFormatted ?? '-';
+    final timeStr = _agenda?.time ?? '-';
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -318,11 +407,11 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text('DATE & TIME', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
-                Text('Oct 24, 2026', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('09:00 AM - 12:00 PM', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              children: [
+                const Text('TANGGAL & WAKTU', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(dateStr, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(timeStr, style: const TextStyle(color: Colors.white70, fontSize: 13)),
               ],
             ),
           ),
@@ -346,6 +435,8 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   }
 
   Widget _dateContainer(bool isDark, Color textColor) {
+    final monthStr = _agenda?.month ?? '-';
+    final dateStr = _agenda?.date ?? '-';
     return Container(
       height: double.infinity, width: double.infinity,
       decoration: BoxDecoration(
@@ -356,14 +447,58 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('OCT', style: TextStyle(color: textColor, fontWeight: isDark ? FontWeight.bold : FontWeight.w900, fontSize: 12)),
-          Text('24', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
+          Text(monthStr, style: TextStyle(color: textColor, fontWeight: isDark ? FontWeight.bold : FontWeight.w900, fontSize: 12)),
+          Text(dateStr, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
         ],
       ),
     );
   }
 
   Widget _buildDetailsCard(bool isDark) {
+    // Nama lokasi / venue dari API
+    final locationName = (_agenda?.location ?? '').trim();
+    final locationDisplay = locationName.isEmpty ? '-' : locationName;
+
+    // Kontak: gabung contact_person & contact_phone dari API
+    final contactPerson = _agenda?.contactPerson?.trim();
+    final contactPhone = _agenda?.contactPhone?.trim();
+    final contactDisplay = [
+      if ((contactPerson ?? '').isNotEmpty) contactPerson!,
+      if ((contactPhone ?? '').isNotEmpty) contactPhone!,
+    ].join(' • ');
+    final hasContact = contactDisplay.isNotEmpty;
+
+    // Dress code dari API (opsional)
+    final dressCode = (_agenda?.dressCode ?? '').trim();
+    final hasDressCode = dressCode.isNotEmpty;
+
+    // Kuota peserta dari API (max_participants)
+    final maxParticipants = _agenda?.maxParticipants;
+    final hasMaxParticipants = maxParticipants != null && maxParticipants > 0;
+
+    final rows = <Widget>[
+      _infoRow(context, RemixIcons.map_pin_user_line, 'Lokasi', locationDisplay, Colors.green, isDark),
+    ];
+    final dividerColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
+    if (hasContact) {
+      rows.addAll([
+        Divider(height: 32, thickness: 1, color: dividerColor),
+        _infoRow(context, RemixIcons.user_voice_line, 'Kontak', contactDisplay, Colors.blue, isDark),
+      ]);
+    }
+    if (hasDressCode) {
+      rows.addAll([
+        Divider(height: 32, thickness: 1, color: dividerColor),
+        _infoRow(context, RemixIcons.file_list_3_line, 'Dress code', dressCode, Colors.orange, isDark),
+      ]);
+    }
+    if (hasMaxParticipants) {
+      rows.addAll([
+        Divider(height: 32, thickness: 1, color: dividerColor),
+        _infoRow(context, RemixIcons.user_line, 'Kuota Peserta', '$maxParticipants orang', Colors.purple, isDark),
+      ]);
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -373,17 +508,16 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
-        children: [
-          _infoRow(Icons.location_on, 'Grand Hyatt Center', 'Hall B, Level 2', Colors.green),
-          const Divider(height: 32),
-          _infoRow(Icons.accessibility, 'Business Casual', 'Professional attire', Colors.blue),
-        ],
+        children: rows,
       ),
     );
   }
 
-  Widget _infoRow(IconData icon, String title, String subtitle, Color color) {
+  Widget _infoRow(BuildContext context, IconData icon, String label, String value, Color color, bool isDark) {
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final secondaryColor = isDark ? Colors.white54 : Colors.grey[600]!;
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(10),
@@ -391,12 +525,21 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
           child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: secondaryColor, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
+              ),
+            ],
+          ),
         ),
       ],
     );

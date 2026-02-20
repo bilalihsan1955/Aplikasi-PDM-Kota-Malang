@@ -35,24 +35,21 @@ class _AgendaPageState extends State<AgendaPage> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Stack(
-            children: [
-              Positioned.fill(child: _AgendaList()),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _CombinedHeader(),
-              ),
-            ],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(130),
+            child: _CombinedHeader(),
           ),
+          body: _AgendaListContent(),
         ),
       ),
     );
   }
 }
 
-class _CombinedHeader extends StatelessWidget {
+class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(130);
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -272,12 +269,12 @@ class _CategoryChips extends StatelessWidget {
   }
 }
 
-class _AgendaList extends StatefulWidget {
+class _AgendaListContent extends StatefulWidget {
   @override
-  State<_AgendaList> createState() => _AgendaListState();
+  State<_AgendaListContent> createState() => _AgendaListContentState();
 }
 
-class _AgendaListState extends State<_AgendaList> {
+class _AgendaListContentState extends State<_AgendaListContent> {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -306,222 +303,147 @@ class _AgendaListState extends State<_AgendaList> {
     final filteredAgendas = viewModel.filteredAgendas;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    double topPadding = MediaQuery.of(context).padding.top + 160;
-    double bottomPadding = MediaQuery.of(context).padding.bottom + 24;
-    double skeletonTopPadding = MediaQuery.of(context).padding.top + 112;
-
     if (viewModel.isLoading && filteredAgendas.isEmpty) {
-      final dummy = AgendaModel(
-        id: 0,
-        title: 'Judul agenda placeholder',
-        slug: '',
-        description: '',
-        image: '',
-        eventDate: '2025-02-20',
-        eventTime: '09:00:00',
-        location: 'Lokasi placeholder',
-        status: 'upcoming',
-      );
+      final dummy = AgendaModel(id: 0, title: 'Judul agenda placeholder', slug: '', description: '', image: '', eventDate: '2025-02-20', eventTime: '09:00:00', location: 'Lokasi placeholder', status: 'upcoming');
       return RefreshIndicator(
-        onRefresh: () async {
-          await context.read<AgendaViewModel>().loadEvents();
-        },
-        displacement: 200,
-        triggerMode: RefreshIndicatorTriggerMode.anywhere,
+        onRefresh: () async => await context.read<AgendaViewModel>().loadEvents(),
+        displacement: 40,
         color: Theme.of(context).colorScheme.primary,
-        child: Padding(
-          padding: EdgeInsets.only(top: skeletonTopPadding, left: 24, right: 24, bottom: bottomPadding),
-          child: Skeletonizer(
-            enabled: true,
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-              itemCount: 5,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (_, __) => _AgendaCard(data: dummy, skeletonStyle: true),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              sliver: SliverSafeArea(
+                top: false,
+                sliver: Skeletonizer.sliver(
+                  enabled: true,
+                  child: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => Padding(padding: const EdgeInsets.only(bottom: 16), child: _AgendaCard(data: dummy, skeletonStyle: true)),
+                      childCount: 5,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       );
     }
 
     if (!viewModel.isLoading && viewModel.errorMessage.isNotEmpty && filteredAgendas.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () async {
-          await context.read<AgendaViewModel>().loadEvents();
-        },
-        displacement: 200,
+        onRefresh: () async => await context.read<AgendaViewModel>().loadEvents(),
+        displacement: 40,
         color: Theme.of(context).colorScheme.primary,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-          padding: EdgeInsets.only(top: topPadding),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height - topPadding - 100,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      RemixIcons.wifi_off_line,
-                      size: 56,
-                      color: isDark ? Colors.white24 : Colors.grey[300],
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Oops!',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF2D3142),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      viewModel.errorMessage,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.5,
-                        color: isDark ? Colors.white60 : Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    GestureDetector(
-                      onTap: () => viewModel.loadEvents(),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF152D8D),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(RemixIcons.refresh_line, size: 18, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              'Coba Lagi',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(RemixIcons.wifi_off_line, size: 56, color: isDark ? Colors.white24 : Colors.grey[300]),
+                      const SizedBox(height: 20),
+                      Text('Oops!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF2D3142))),
+                      const SizedBox(height: 8),
+                      Text(viewModel.errorMessage, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white60 : Colors.grey[600])),
+                      const SizedBox(height: 24),
+                      GestureDetector(
+                        onTap: () => viewModel.loadEvents(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                          decoration: BoxDecoration(color: const Color(0xFF152D8D), borderRadius: BorderRadius.circular(24)),
+                          child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(RemixIcons.refresh_line, size: 18, color: Colors.white), SizedBox(width: 8), Text('Coba Lagi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))]),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       );
     }
 
     if (filteredAgendas.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () async {
-          await context.read<AgendaViewModel>().loadEvents();
-        },
-        displacement: 200,
+        onRefresh: () async => await context.read<AgendaViewModel>().loadEvents(),
+        displacement: 40,
         color: Theme.of(context).colorScheme.primary,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-          padding: EdgeInsets.only(top: topPadding),
-          child: Align(
-            alignment: const Alignment(0, -0.4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  isDark
-                      ? 'assets/images/empty_state/not_found_dark.png'
-                      : 'assets/images/empty_state/not_found.png',
-                  width: 160,
-                  height: 160,
-                  errorBuilder: (_, __, ___) =>
-                      Icon(RemixIcons.calendar_close_line, size: 80, color: isDark ? Colors.white24 : Colors.grey[300]),
-                ),
-                Text(
-                  'Agenda Tidak Ditemukan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Maaf, kami tidak menemukan jadwal yang Anda cari.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isDark ? Colors.white60 : Colors.grey,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (viewModel.searchQuery.isNotEmpty || viewModel.selectedFilter != 'Semua')
-                  GestureDetector(
-                    onTap: viewModel.resetFilters,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF152D8D),
-                        borderRadius: BorderRadius.circular(24),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Align(
+                alignment: const Alignment(0, -0.2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(isDark ? 'assets/images/empty_state/not_found_dark.png' : 'assets/images/empty_state/not_found.png', width: 160, height: 160),
+                    Text('Agenda Tidak Ditemukan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                    const SizedBox(height: 8),
+                    Text('Maaf, kami tidak menemukan jadwal yang Anda cari.', textAlign: TextAlign.center, style: TextStyle(color: isDark ? Colors.white60 : Colors.grey, fontSize: 13)),
+                    const SizedBox(height: 24),
+                    if (viewModel.searchQuery.isNotEmpty || viewModel.selectedFilter != 'Semua')
+                      GestureDetector(
+                        onTap: viewModel.resetFilters,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                          decoration: BoxDecoration(color: const Color(0xFF152D8D), borderRadius: BorderRadius.circular(24)),
+                          child: const Text('Atur Ulang Filter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
                       ),
-                      child: const Text(
-                        'Atur Ulang Filter',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: () async {
-        await context.read<AgendaViewModel>().loadEvents();
-      },
-      displacement: 200,
-      triggerMode: RefreshIndicatorTriggerMode.anywhere,
+      onRefresh: () async => await context.read<AgendaViewModel>().loadEvents(),
+      displacement: 40,
       color: Theme.of(context).colorScheme.primary,
-      child: ListView.separated(
+      child: CustomScrollView(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-        padding: EdgeInsets.only(top: topPadding, left: 24, right: 24, bottom: bottomPadding),
-        itemCount: filteredAgendas.length + (viewModel.isLoadingMore ? 1 : 0),
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          if (index >= filteredAgendas.length) {
-            final dummy = AgendaModel(
-              id: 0,
-              title: '...',
-              slug: '',
-              description: '',
-              image: '',
-              eventDate: '2025-02-20',
-              eventTime: '09:00:00',
-              location: '...',
-              status: 'upcoming',
-            );
-            return Skeletonizer(
-              enabled: true,
-              child: _AgendaCard(data: dummy, skeletonStyle: true),
-            );
-          }
-          final item = filteredAgendas[index];
-          return GestureDetector(
-            onTap: () => context.push('/agenda/detail', extra: {'slug': item.slug, 'agenda': item}),
-            child: _AgendaCard(data: item),
-          );
-        },
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            sliver: SliverSafeArea(
+              top: false,
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index >= filteredAgendas.length) {
+                      final dummy = AgendaModel(id: 0, title: '...', slug: '', description: '', image: '', eventDate: '2025-02-20', eventTime: '09:00:00', location: '...', status: 'upcoming');
+                      return Skeletonizer(enabled: true, child: Padding(padding: const EdgeInsets.only(bottom: 16), child: _AgendaCard(data: dummy, skeletonStyle: true)));
+                    }
+                    final item = filteredAgendas[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: GestureDetector(
+                        onTap: () => context.push('/agenda/detail', extra: {'slug': item.slug, 'agenda': item}),
+                        child: _AgendaCard(data: item),
+                      ),
+                    );
+                  },
+                  childCount: filteredAgendas.length + (viewModel.isLoadingMore ? 1 : 0),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

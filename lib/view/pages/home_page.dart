@@ -866,7 +866,7 @@ class _HomeMenuGrid extends StatelessWidget {
                 Text(
                   item['label'],
                   textAlign: TextAlign.center,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,

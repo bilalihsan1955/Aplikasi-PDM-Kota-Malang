@@ -33,50 +33,41 @@ class JadwalSholatPage extends StatelessWidget {
         ? _cityTitleCase(prayer!.city)
         : 'Waktu sholat dan arah kiblat';
 
-    // PERBAIKAN SPACE: topPadding tetap 130, bottomPadding dikunci ke 24 (Sesuai Gallery)
-    double topPadding = MediaQuery.of(context).padding.top + 112;
-
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: Stack(
-          children: [
-            // 1. Lapisan Konten
-            Positioned.fill(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                // PERBAIKAN: Padding bawah HANYA 24 agar tidak terlalu besar
-                padding: EdgeInsets.only(top: topPadding, bottom: 24),
-                child: SafeArea(
-                  top: false,
-                  child: _JadwalContent(
-                    prayer: prayer,
-                    qiblaDegree: qiblaDegree,
-                    nextName: nextName,
-                    isDark: isDark,
-                  ),
-                ),
-              ),
+        // MENGGUNAKAN ARGUMENT APPBAR
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: _JadwalHeader(subtitle: subtitle),
+        ),
+        body: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          // Padding atas sekarang kecil karena sudah di bawah AppBar
+          padding: const EdgeInsets.only(top: 24, bottom: 24),
+          child: SafeArea(
+            top: false,
+            child: _JadwalContent(
+              prayer: prayer,
+              qiblaDegree: qiblaDegree,
+              nextName: nextName,
+              isDark: isDark,
             ),
-            // 2. Lapisan Header
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _JadwalHeader(subtitle: subtitle),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _JadwalHeader extends StatelessWidget {
+class _JadwalHeader extends StatelessWidget implements PreferredSizeWidget {
   const _JadwalHeader({required this.subtitle});
 
   final String subtitle;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(80);
 
   @override
   Widget build(BuildContext context) {

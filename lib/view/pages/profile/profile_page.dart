@@ -46,6 +46,8 @@ class ProfilePage extends StatelessWidget {
 
   // ===== SECTIONS =====
   Widget _infoSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dividerColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
     final infoMenus = [
       (RemixIcons.community_line, 'Profil Organisasi', '/about-pdm'),
       (RemixIcons.article_line, 'Berita & Pengumuman', '/berita'),
@@ -74,7 +76,7 @@ class ProfilePage extends StatelessWidget {
                 },
               ),
               if (index != infoMenus.length - 1)
-                Divider(height: 1, color: Theme.of(context).dividerTheme.color),
+                Divider(height: 1, thickness: 1, color: dividerColor),
             ],
           );
         }),
@@ -85,7 +87,8 @@ class ProfilePage extends StatelessWidget {
   Widget _settingsSection(BuildContext context) {
     final isPlatformDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final dividerColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
+
     return Consumer<ProfileViewModel>(
       builder: (context, viewModel, child) {
         bool currentSwitchValue = viewModel.themeMode == ThemeMode.system 
@@ -103,7 +106,7 @@ class ProfilePage extends StatelessWidget {
                 title: 'Akun Saya',
                 onTap: () => context.push('/profile/account'), // Perbaikan: Menambahkan Navigasi
               ),
-              Divider(height: 1, color: Theme.of(context).dividerTheme.color),
+              Divider(height: 1, thickness: 1, color: dividerColor),
               _menuItem(
                 context: context,
                 icon: currentSwitchValue ? RemixIcons.sun_line : RemixIcons.moon_line,
@@ -118,7 +121,7 @@ class ProfilePage extends StatelessWidget {
                   onChanged: viewModel.toggleDarkMode,
                 ),
               ),
-              Divider(height: 1, color: Theme.of(context).dividerTheme.color),
+              Divider(height: 1, thickness: 1, color: dividerColor),
               _menuItem(
                 context: context,
                 icon: RemixIcons.notification_3_line,
@@ -133,7 +136,7 @@ class ProfilePage extends StatelessWidget {
                   onChanged: viewModel.toggleNotifications,
                 ),
               ),
-              Divider(height: 1, color: Theme.of(context).dividerTheme.color),
+              Divider(height: 1, thickness: 1, color: dividerColor),
               _menuItem(context: context, icon: RemixIcons.question_line, title: 'Bantuan'),
             ],
           ),
