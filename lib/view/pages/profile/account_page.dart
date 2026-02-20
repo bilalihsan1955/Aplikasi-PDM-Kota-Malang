@@ -83,26 +83,32 @@ class _AccountPageState extends State<AccountPage> {
               ),
               child: SafeArea(
                 bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => context.pop(),
-                        icon: Icon(RemixIcons.arrow_left_line, 
-                          color: isDark ? Colors.white : Colors.black87, size: 22),
-                        iconSize: 48,
-                        padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => context.pop(),
+                            icon: Icon(RemixIcons.arrow_left_line,
+                                color: isDark ? Colors.white : Colors.black87, size: 22),
+                            iconSize: 48,
+                            padding: const EdgeInsets.all(12),
+                          ),
+                          const SizedBox(width: 4),
+                          const Expanded(
+                            child: Text(
+                              'Akun Saya',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      const Expanded(
-                        child: Text(
-                          'Akun Saya',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

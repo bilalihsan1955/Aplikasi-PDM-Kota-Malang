@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/app_style.dart';
 
 class AboutPdmPage extends StatefulWidget {
@@ -34,6 +35,15 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     super.dispose();
   }
 
+  Future<void> _launchGoogleMaps() async {
+    const lat = -7.949630143095969;
+    const lng = 112.60867657182543;
+    final Uri url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -44,20 +54,17 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // 1. Lapisan Konten Utama
           Positioned.fill(
             child: SingleChildScrollView(
               controller: _scrollController,
               physics: const ClampingScrollPhysics(),
               child: Column(
                 children: [
-                  // Gambar Background Immersive
                   SizedBox(
                     height: 400,
                     width: double.infinity,
                     child: Image.asset('assets/images/banner.png', fit: BoxFit.cover),
                   ),
-                  // Kartu Konten
                   Container(
                     transform: Matrix4.translationValues(0, -40, 0),
                     width: double.infinity,
@@ -68,7 +75,6 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Bagian 1: Informasi Teks
                         SafeArea(
                           top: false,
                           bottom: false,
@@ -100,11 +106,8 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 16),
                         _buildStrukturList(isDark),
-
-                        // Bagian 3: Program Kerja & Lokasi
                         SafeArea(
                           top: false,
                           child: Padding(
@@ -116,9 +119,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                                 const Text('Program Kerja Unggulan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 16),
                                 _buildProgramList(isDark),
-                                
                                 const SizedBox(height: 32),
-                                // SEKSI LOKASI (IDENTIK DENGAN AGENDA)
                                 _buildLocationHeader(),
                                 const SizedBox(height: 16),
                                 _buildMapPreview(isDark),
@@ -133,8 +134,6 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
               ),
             ),
           ),
-
-          // 2. Header Dinamis
           Positioned(
             top: 0,
             left: 0,
@@ -186,7 +185,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
       children: [
         const Text('Lokasi Kantor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         GestureDetector(
-          onTap: () {},
+          onTap: _launchGoogleMaps,
           child: const Text('View Map', style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 14)),
         ),
       ],
@@ -194,10 +193,10 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
   }
 
   Widget _buildMapPreview(bool isDark) {
-    const LatLng officeLocation = LatLng(-7.9666, 112.6326); // Koordinat PDM Malang (Contoh)
+    const LatLng officeLocation = LatLng(-7.9666, 112.6326);
 
     return Container(
-      height: 240,
+      height: 280,
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
@@ -210,12 +209,12 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             FlutterMap(
               options: const MapOptions(
                 initialCenter: officeLocation,
-                initialZoom: 15.0,
-                interactionOptions: InteractionOptions(flags: InteractiveFlag.none),
+                initialZoom: 16.0,
+                interactionOptions: InteractionOptions(flags: InteractiveFlag.all),
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                   userAgentPackageName: 'com.pdm_malang.app',
                 ),
                 MarkerLayer(
@@ -223,13 +222,13 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     Marker(
                       point: officeLocation,
                       width: 40, height: 40,
-                      child: const Icon(RemixIcons.map_pin_line, color: Colors.red, size: 40),
+                      rotate: false, // Marker tetap tegak lurus
+                      child: const Icon(Icons.location_on, color: Colors.red, size: 40),
                     ),
                   ],
                 ),
               ],
             ),
-            // Floating Info Card (Identik dengan Agenda)
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
@@ -245,7 +244,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(color: Color(0xFF00C853), shape: BoxShape.circle),
-                      child: const Icon(RemixIcons.map_pin_line, color: Colors.white, size: 20),
+                      child: const Icon(Icons.location_on, color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -258,10 +257,13 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle),
-                      child: const Icon(RemixIcons.compass_3_line, color: Color(0xFF1565C0), size: 20),
+                    GestureDetector(
+                      onTap: _launchGoogleMaps,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: const Color(0xFFE3F2FD), shape: BoxShape.circle),
+                        child: const Icon(Icons.near_me, color: Color(0xFF1565C0), size: 20),
+                      ),
                     ),
                   ],
                 ),

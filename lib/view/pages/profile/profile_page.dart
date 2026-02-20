@@ -23,6 +23,7 @@ class ProfilePage extends StatelessWidget {
           child: SafeArea(
             child: Column(
               children: [
+                const SizedBox(height: 8),
                 _header(context),
                 const SizedBox(height: 24),
                 _profileCard(context),

@@ -9,6 +9,8 @@ class AgendaModel {
   final String eventDate;
   final String eventTime;
   final String location;
+  final double? latitude;
+  final double? longitude;
   final String? organizer;
   final String? contactPerson;
   final String? contactPhone;
@@ -28,6 +30,8 @@ class AgendaModel {
     required this.eventDate,
     required this.eventTime,
     required this.location,
+    this.latitude,
+    this.longitude,
     this.organizer,
     this.contactPerson,
     this.contactPhone,
@@ -224,6 +228,8 @@ class AgendaModel {
       eventDate: (raw['event_date'] as String?) ?? '',
       eventTime: eventTimeValue,
       location: (raw['location'] as String?) ?? '',
+      latitude: (raw['latitude'] as num?)?.toDouble(),
+      longitude: (raw['longitude'] as num?)?.toDouble(),
       organizer: raw['organizer'] as String?,
       contactPerson: raw['contact_person'] as String?,
       contactPhone: raw['contact_phone'] as String?,

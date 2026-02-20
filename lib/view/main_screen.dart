@@ -30,7 +30,11 @@ class MainScreen extends StatelessWidget {
         bottomNavigationBar: NavbarWidgets(
           currentIndex: navigationShell.currentIndex,
           onTap: (index) {
-            // Memastikan selalu kembali ke halaman utama tab (root) saat Navbar ditekan
+            // Tab Home: langsung go ke '/' agar stack bersih (no flicker jadwal-sholat/menu)
+            if (index == 0) {
+              context.go('/');
+              return;
+            }
             navigationShell.goBranch(
               index,
               initialLocation: true,

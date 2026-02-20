@@ -69,7 +69,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ),
           Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
+            top: MediaQuery.of(context).padding.top + 8,
             right: 24,
             child: TextButton(
               onPressed: () => context.go('/login'),

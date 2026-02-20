@@ -47,6 +47,8 @@ dependencies:
   remixicon: ^1.4.1
   skeletonizer: ^2.1.2
   url_launcher: ^6.2.5
+  geolocator: ^13.0.2
+  flutter_compass: ^0.8.1
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +76,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/empty_state/
+    - assets/images/jadwal_sholat/
     - .env
   #   - images/a_dot_ham.jpeg
 

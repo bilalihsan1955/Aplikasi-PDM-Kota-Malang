@@ -19,6 +19,7 @@ class EmptyPlaceholderPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(

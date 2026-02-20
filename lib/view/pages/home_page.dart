@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -7,36 +8,67 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../view_models/home_view_model.dart';
 import '../../models/agenda_model.dart';
 import '../../models/news_model.dart';
+import '../../services/prayer_time_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _canRefresh = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _canRefresh = true);
+      });
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    await context.read<HomeViewModel>().refreshAll();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SingleChildScrollView(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const _Header(),
-              const SizedBox(height: 24),
-              const _SearchSection(),
-              const SizedBox(height: 24),
-              Consumer<HomeViewModel>(
-                builder: (_, vm, __) => _NewsSlide(
-                  currentIndex: vm.slideIndex,
-                  news: vm.news,
-                  loading: vm.newsLoading,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: const Color(0xFF152D8D),
+        notificationPredicate: (_) => _canRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                const _Header(),
+                const SizedBox(height: 24),
+                const _SearchSection(),
+                const SizedBox(height: 24),
+                Consumer<HomeViewModel>(
+                  builder: (_, vm, __) => _NewsSlide(
+                    currentIndex: vm.slideIndex,
+                    news: vm.featuredNews,
+                    loading: vm.featuredLoading,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              const _EventSection(),
-              const _HomeMenuSection(),
-              const SizedBox(height: 8),
-              const _NewsSection(),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 16),
+                const _PrayerQiblaSection(),
+                const SizedBox(height: 24),
+                const _EventSection(),
+                const _HomeMenuSection(),
+                const SizedBox(height: 8),
+                const _NewsSection(),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
@@ -163,6 +195,7 @@ class _NewsSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading && news.isEmpty) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Skeletonizer(
@@ -170,8 +203,57 @@ class _NewsSlide extends StatelessWidget {
           child: Container(
             height: 200,
             decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               borderRadius: BorderRadius.circular(24),
-              color: Colors.grey[300],
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/images/bg.webp',
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned(
+                    left: 20,
+                    right: 20,
+                    bottom: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Judul berita placeholder',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF2D3142),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Deskripsi singkat berita.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white70 : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -362,7 +444,9 @@ class _EventSectionState extends State<_EventSection> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeViewModel>().loadUpcomingEvents();
+      final vm = context.read<HomeViewModel>();
+      vm.loadUpcomingEvents();
+      vm.loadFeaturedNews();
     });
   }
 
@@ -405,19 +489,23 @@ class _EventSectionState extends State<_EventSection> {
               Skeletonizer(
                 enabled: true,
                 child: SizedBox(
-                  height: 120,
+                  height: 136,
                   child: PageView.builder(
                     padEnds: false,
+                    clipBehavior: Clip.none,
                     controller: PageController(viewportFraction: 0.88),
                     itemCount: 2,
                     itemBuilder: (context, index) {
-                      return _EventCard(
-                        event: dummy,
-                        margin: EdgeInsets.only(
-                          left: index == 0 ? 24 : 8,
-                          right: index == 1 ? 24 : 8,
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _EventCard(
+                          event: dummy,
+                          margin: EdgeInsets.only(
+                            left: index == 0 ? 24 : 8,
+                            right: index == 1 ? 24 : 8,
+                          ),
+                          skeletonStyle: true,
                         ),
-                        skeletonStyle: true,
                       );
                     },
                   ),
@@ -443,9 +531,9 @@ class _EventSectionState extends State<_EventSection> {
             const SizedBox(height: 8),
             if (isSingleCard)
               SizedBox(
-                height: 120,
+                height: 136,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
                   child: GestureDetector(
                     onTap: () => context.push('/agenda/detail', extra: {'slug': events[0].slug, 'agenda': events[0]}),
                     child: _EventCard(
@@ -457,21 +545,25 @@ class _EventSectionState extends State<_EventSection> {
               )
             else
               SizedBox(
-                height: 120,
+                height: 136,
                 child: PageView.builder(
                   padEnds: false,
+                  clipBehavior: Clip.none,
                   controller: PageController(viewportFraction: 0.88),
                   itemCount: visibleCount,
                   onPageChanged: viewModel.setEventPage,
                   itemBuilder: (context, index) {
                     final item = events[index];
-                    return GestureDetector(
-                      onTap: () => context.push('/agenda/detail', extra: {'slug': item.slug, 'agenda': item}),
-                      child: _EventCard(
-                        event: item,
-                        margin: EdgeInsets.only(
-                          left: index == 0 ? 24 : 8,
-                          right: index == visibleCount - 1 ? 24 : 8,
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: GestureDetector(
+                        onTap: () => context.push('/agenda/detail', extra: {'slug': item.slug, 'agenda': item}),
+                        child: _EventCard(
+                          event: item,
+                          margin: EdgeInsets.only(
+                            left: index == 0 ? 24 : 8,
+                            right: index == visibleCount - 1 ? 24 : 8,
+                          ),
                         ),
                       ),
                     );
@@ -514,11 +606,17 @@ class _EventCard extends StatelessWidget {
                 colors: [Color(0xFF39A658), Color(0xFF4A6FDB), Color(0XFF071D75)],
                 stops: [0.0, 0.3, 0.8],
               ),
-        color: skeletonStyle ? (isDark ? Colors.white12 : Colors.grey[300]) : null,
+        color: skeletonStyle ? (isDark ? const Color(0xFF1E1E1E) : Colors.white) : null,
         borderRadius: BorderRadius.circular(24),
+        border: skeletonStyle
+            ? Border.all(
+                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+                width: 1.5,
+              )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -569,10 +667,10 @@ class _EventDate extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = skeletonStyle
-        ? (isDark ? Colors.white24 : Colors.grey[400])
+        ? (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F0))
         : (isDark ? const Color(0xFF152D8D).withOpacity(0.8) : const Color(0xFFFCFCFC));
     final textColor = skeletonStyle
-        ? (isDark ? Colors.white54 : Colors.grey[600])
+        ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
         : (isDark ? Colors.white : const Color(0xFF2D3142));
     final child = Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -637,10 +735,10 @@ class _EventInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = skeletonStyle
-        ? (isDark ? Colors.white38 : Colors.grey[600])
+        ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
         : Colors.white;
     final subColor = skeletonStyle
-        ? (isDark ? Colors.white24 : Colors.grey[500])
+        ? (isDark ? Colors.white54 : Colors.grey[500])
         : Colors.white70;
     return Expanded(
       child: Column(
@@ -781,6 +879,381 @@ class _HomeMenuGrid extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PrayerQiblaSection extends StatefulWidget {
+  const _PrayerQiblaSection();
+
+  @override
+  State<_PrayerQiblaSection> createState() => _PrayerQiblaSectionState();
+}
+
+class _PrayerQiblaSectionState extends State<_PrayerQiblaSection> {
+  @override
+  void initState() {
+    super.initState();
+    final vm = context.read<HomeViewModel>();
+    if (vm.prayerTime == null && vm.prayerLoading) {
+      vm.loadPrayerData();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Consumer<HomeViewModel>(
+      builder: (_, vm, __) {
+        final loading = vm.prayerLoading;
+        final prayer = vm.prayerTime;
+        final qibla = vm.qiblaDirection;
+
+        return Skeletonizer(
+          enabled: loading && prayer == null,
+          effect: ShimmerEffect(
+            baseColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+            highlightColor: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF5F5F5),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => context.push(
+                        '/jadwal-sholat',
+                        extra: {'prayer': prayer, 'qibla': qibla},
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      child: _PrayerTimeCard(
+                        prayer: prayer,
+                        isDark: isDark,
+                        isSkeleton: loading && prayer == null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16), // Jarak antar card sholat & qiblat (ubah angka untuk atur)
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => context.push(
+                        '/jadwal-sholat',
+                        extra: {'prayer': prayer, 'qibla': qibla},
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      child: _QiblaCard(
+                        qiblaDegree: qibla,
+                        isDark: isDark,
+                        isSkeleton: loading && qibla == null,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Opacity gambar dekorasi di card Waktu Sholat & Qiblat (0.0 = transparan, 1.0 = solid).
+const double _cardDecorationImageOpacity = 0.8;
+
+class _PrayerTimeCard extends StatelessWidget {
+  const _PrayerTimeCard({
+    required this.prayer,
+    required this.isDark,
+    required this.isSkeleton,
+  });
+  final PrayerTimeResult? prayer;
+  final bool isDark;
+  final bool isSkeleton;
+
+  @override
+  Widget build(BuildContext context) {
+    final next = prayer?.nextPrayer;
+    // Kota dari API waktu sholat; huruf awal per kata kapital
+    final raw = prayer?.city ?? 'Lokasi';
+    final city = raw.isEmpty
+        ? raw
+        : raw
+            .split(' ')
+            .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase())
+            .join(' ');
+    final prayerName = next?.name ?? 'Subuh';
+    final prayerTime = next?.time ?? '00.00';
+
+    return Container(
+      constraints: const BoxConstraints(minHeight: 150),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: isSkeleton
+            ? null
+            : const LinearGradient(
+                colors: [Color(0xFF152D8D), Color(0xFF1E40AF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        color: isSkeleton ? (isDark ? const Color(0xFF1E1E1E) : Colors.white) : null,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSkeleton
+              ? (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9))
+              : Colors.white.withOpacity(0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    RemixIcons.map_pin_2_fill,
+                    size: 14,
+                    color: isSkeleton
+                        ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                        : Colors.white.withOpacity(0.8),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    city,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isSkeleton
+                          ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                          : Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                prayerName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isSkeleton
+                      ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                      : Colors.white.withOpacity(0.9),
+                ),
+              ),
+              Text(
+                prayerTime,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -1,
+                  color: isSkeleton
+                      ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                      : Colors.white,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSkeleton
+                      ? (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF0F0F0))
+                      : Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Waktu Sholat',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isSkeleton
+                        ? (isDark ? Colors.white54 : Colors.grey[500])
+                        : Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            right: -5,
+            top: 50,
+            bottom: 0,
+            child: Center(
+              child: Opacity(
+                opacity: _cardDecorationImageOpacity,
+                child: Image.asset(
+                  'assets/images/mosque-02.png',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QiblaCard extends StatelessWidget {
+  const _QiblaCard({
+    required this.qiblaDegree,
+    required this.isDark,
+    required this.isSkeleton,
+  });
+  final double? qiblaDegree;
+  final bool isDark;
+  final bool isSkeleton;
+
+  @override
+  Widget build(BuildContext context) {
+    final degree = qiblaDegree ?? 0;
+
+    return Container(
+      constraints: const BoxConstraints(minHeight: 150),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: isSkeleton
+            ? null
+            : const LinearGradient(
+                colors: [Color(0xFF39A658), Color(0xFF2D8E4A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        color: isSkeleton ? (isDark ? const Color(0xFF1E1E1E) : Colors.white) : null,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSkeleton
+              ? (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9))
+              : Colors.white.withOpacity(0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    RemixIcons.compass_3_fill,
+                    size: 14,
+                    color: isSkeleton
+                        ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                        : Colors.white.withOpacity(0.8),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Arah Kiblat',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isSkeleton
+                          ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                          : Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 56,
+                width: 56,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      height: 56,
+                      width: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSkeleton
+                            ? (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF0F0F0))
+                            : Colors.white.withOpacity(0.15),
+                        border: Border.all(
+                          color: isSkeleton
+                              ? (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFE0E0E0))
+                              : Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                    Transform.rotate(
+                      angle: degree * (math.pi / 180),
+                      child: Icon(
+                        RemixIcons.navigation_fill,
+                        size: 28,
+                        color: isSkeleton
+                            ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                            : Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSkeleton
+                      ? (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF0F0F0))
+                      : Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Dari Utara',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isSkeleton
+                        ? (isDark ? Colors.white54 : Colors.grey[500])
+                        : Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            right: -5,
+            top: 50,
+            bottom: 0,
+            child: Center(
+              child: Opacity(
+                opacity: _cardDecorationImageOpacity,
+                child: Image.asset(
+                  'assets/images/kaaba-01.png',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

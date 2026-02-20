@@ -72,6 +72,7 @@ class _CombinedHeader extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 8),
             _AnimatedHeader(),
             const SizedBox(height: 16),
             _CategoryChips(),
@@ -198,6 +199,9 @@ class _CategoryChips extends StatelessWidget {
     final viewModel = context.watch<AgendaViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = viewModel.isLoading && viewModel.filteredAgendas.isEmpty;
+    final hasError = !viewModel.isLoading && viewModel.errorMessage.isNotEmpty && viewModel.filteredAgendas.isEmpty;
+
+    if (hasError) return const SizedBox.shrink();
 
     return SizedBox(
       height: 40,
@@ -354,25 +358,59 @@ class _AgendaListState extends State<_AgendaList> {
             height: MediaQuery.of(context).size.height - topPadding - 100,
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(RemixIcons.error_warning_line, size: 48, color: Colors.grey),
-                    const SizedBox(height: 16),
+                    Icon(
+                      RemixIcons.wifi_off_line,
+                      size: 56,
+                      color: isDark ? Colors.white24 : Colors.grey[300],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Oops!',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF2D3142),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       viewModel.errorMessage,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white70 : Colors.grey[700],
+                        height: 1.5,
+                        color: isDark ? Colors.white60 : Colors.grey[600],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: () => viewModel.loadEvents(),
-                      icon: const Icon(RemixIcons.refresh_line, size: 20),
-                      label: const Text('Coba lagi'),
+                    GestureDetector(
+                      onTap: () => viewModel.loadEvents(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF152D8D),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(RemixIcons.refresh_line, size: 18, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'Coba Lagi',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

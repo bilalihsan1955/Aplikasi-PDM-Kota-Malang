@@ -60,6 +60,7 @@ class _CombinedHeader extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 8),
             _HeaderTitle(),
             const SizedBox(height: 16),
             _CategoryChips(),

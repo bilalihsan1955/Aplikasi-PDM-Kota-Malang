@@ -5,6 +5,7 @@ import '../models/agenda_model.dart';
 import '../models/news_model.dart';
 import '../services/news_api_service.dart';
 import '../services/event_api_service.dart';
+import '../services/prayer_time_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
   int _currentEventPage = 0;
@@ -18,17 +19,29 @@ class HomeViewModel extends ChangeNotifier {
   final EventApiService _eventApi = EventApiService();
   List<NewsModel> _news = [];
   bool _newsLoading = true;
+  List<NewsModel> _featuredNews = [];
+  bool _featuredLoading = true;
   List<AgendaModel> _events = [];
   bool _eventsLoading = true;
 
+  final PrayerTimeService _prayerApi = PrayerTimeService();
+  PrayerTimeResult? _prayerTime;
+  double? _qiblaDirection;
+  bool _prayerLoading = true;
+
   List<NewsModel> get news => _news;
   bool get newsLoading => _newsLoading;
+  List<NewsModel> get featuredNews => _featuredNews;
+  bool get featuredLoading => _featuredLoading;
   List<AgendaModel> get events => _events;
   bool get eventsLoading => _eventsLoading;
+  PrayerTimeResult? get prayerTime => _prayerTime;
+  double? get qiblaDirection => _qiblaDirection;
+  bool get prayerLoading => _prayerLoading;
 
   HomeViewModel() {
     _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      final count = _news.isEmpty ? 1 : _news.length;
+      final count = _featuredNews.isEmpty ? 1 : _featuredNews.length;
       _slideIndex = (_slideIndex + 1) % count;
       notifyListeners();
     });
@@ -51,6 +64,24 @@ class HomeViewModel extends ChangeNotifier {
       _news = [];
     }
     _newsLoading = false;
+    notifyListeners();
+  }
+
+  /// Muat berita featured (is_featured: true) untuk banner/slide di Home.
+  Future<void> loadFeaturedNews() async {
+    _featuredLoading = true;
+    notifyListeners();
+    try {
+      final result = await _newsApi.getNews(page: 1, perPage: 10);
+      if (result.success) {
+        _featuredNews = result.data.where((n) => n.isFeatured).toList();
+      } else {
+        _featuredNews = [];
+      }
+    } catch (_) {
+      _featuredNews = [];
+    }
+    _featuredLoading = false;
     notifyListeners();
   }
 
@@ -98,8 +129,49 @@ class HomeViewModel extends ChangeNotifier {
 
   List<Map<String, dynamic>> get homeMenus => _homeMenus;
 
+  /// Muat waktu sholat dan arah kiblat. Nama kota dari API waktu sholat (/location by lat/lng).
+  Future<void> loadPrayerData() async {
+    _prayerLoading = true;
+    notifyListeners();
+    try {
+      final position = await _prayerApi.getCurrentPosition();
+      final lat = position?.latitude;
+      final lng = position?.longitude;
+
+      final results = await Future.wait([
+        _prayerApi.getTodayPrayerTimes(lat: lat, lng: lng, useDeviceLocation: false),
+        _prayerApi.getQiblaDirection(lat: lat, lng: lng),
+      ]);
+      _prayerTime = results[0] as PrayerTimeResult?;
+      _qiblaDirection = results[1] as double?;
+    } catch (_) {}
+    _prayerLoading = false;
+    notifyListeners();
+  }
+
   void setEventPage(int index) {
     _currentEventPage = index;
     notifyListeners();
+  }
+
+  /// Refresh semua data Home: kosongkan data & tampilkan skeleton semua section,
+  /// lalu GET berurutan satu per satu.
+  Future<void> refreshAll() async {
+    _featuredNews = [];
+    _events = [];
+    _news = [];
+    _prayerTime = null;
+    _qiblaDirection = null;
+    _featuredLoading = true;
+    _eventsLoading = true;
+    _newsLoading = true;
+    _prayerLoading = true;
+    _slideIndex = 0;
+    notifyListeners();
+
+    await loadFeaturedNews();
+    await loadUpcomingEvents();
+    await loadPrayerData();
+    await loadLatestNews();
   }
 }

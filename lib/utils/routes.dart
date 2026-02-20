@@ -18,6 +18,8 @@ import '../view/pages/auth/register_page.dart';
 import '../view/pages/notification_page.dart';
 import '../view/pages/menu_list_page.dart';
 import '../view/pages/empty_placeholder_page.dart';
+import '../view/pages/jadwal_sholat_page.dart';
+import '../services/prayer_time_service.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -77,6 +79,23 @@ final GoRouter router = GoRouter(
                     final extra = state.extra is Map ? state.extra as Map<String, dynamic> : null;
                     final openSearch = extra?['openSearch'] == true;
                     return NoTransitionPage(child: MenuListPage(openSearch: openSearch));
+                  },
+                ),
+                GoRoute(
+                  path: 'jadwal-sholat',
+                  pageBuilder: (context, state) {
+                    final extra = state.extra is Map ? state.extra as Map<String, dynamic> : null;
+                    final prayer = extra?['prayer'] is PrayerTimeResult
+                        ? extra!['prayer'] as PrayerTimeResult
+                        : null;
+                    final qibla = extra?['qibla'] is double ? extra!['qibla'] as double : null;
+                    return CustomTransitionPage<void>(
+                      key: state.pageKey,
+                      child: JadwalSholatPage(prayer: prayer, qiblaDegree: qibla),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                      transitionsBuilder: (_, __, ___, child) => child,
+                    );
                   },
                 ),
               ],

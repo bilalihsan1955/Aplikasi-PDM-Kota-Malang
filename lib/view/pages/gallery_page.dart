@@ -32,7 +32,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 child: SafeArea(
                   child: Column(
                     children: [
-                      const SizedBox(height: 100), // Ruang untuk Header melayang
+                      const SizedBox(height: 90), // Ruang untuk Header melayang
                       _GalleryList(searchQuery: _searchQuery),
                       const SizedBox(height: 24), // Spasi akhir standar
                     ],
