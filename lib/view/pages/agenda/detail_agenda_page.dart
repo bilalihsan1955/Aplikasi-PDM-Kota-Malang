@@ -214,7 +214,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                  urlTemplate: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
                   userAgentPackageName: 'com.pdm_malang.app',
                 ),
                 MarkerLayer(
