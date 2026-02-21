@@ -26,8 +26,6 @@ class _MenuListPageState extends State<MenuListPage> {
     _isSearching = widget.openSearch;
   }
 
-  static const double _headerHeight = 160;
-
   void _setSearching(bool value) => setState(() => _isSearching = value);
   void _setSearchQuery(String value) => setState(() => _searchQuery = value);
   void _setCategory(String value) => setState(() => _selectedCategory = value);
@@ -44,29 +42,21 @@ class _MenuListPageState extends State<MenuListPage> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: _MenuList(
-                  searchQuery: _searchQuery,
-                  selectedCategory: _selectedCategory,
-                  headerHeight: _headerHeight,
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _CombinedHeader(
-                  isSearching: _isSearching,
-                  searchQuery: _searchQuery,
-                  onSearchingChanged: _setSearching,
-                  onSearchQueryChanged: _setSearchQuery,
-                  selectedCategory: _selectedCategory,
-                  onCategoryChanged: _setCategory,
-                ),
-              ),
-            ],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(160),
+            child: _CombinedHeader(
+              isSearching: _isSearching,
+              searchQuery: _searchQuery,
+              onSearchingChanged: _setSearching,
+              onSearchQueryChanged: _setSearchQuery,
+              selectedCategory: _selectedCategory,
+              onCategoryChanged: _setCategory,
+            ),
+          ),
+          body: _MenuList(
+            searchQuery: _searchQuery,
+            selectedCategory: _selectedCategory,
+            headerHeight: 0,
           ),
         ),
       ),
@@ -74,7 +64,7 @@ class _MenuListPageState extends State<MenuListPage> {
   }
 }
 
-class _CombinedHeader extends StatelessWidget {
+class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool isSearching;
   final String searchQuery;
   final ValueChanged<bool> onSearchingChanged;
@@ -90,6 +80,9 @@ class _CombinedHeader extends StatelessWidget {
     required this.selectedCategory,
     required this.onCategoryChanged,
   });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(160);
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +343,9 @@ class _MenuList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top + headerHeight;
+    final topPadding = headerHeight > 0
+        ? MediaQuery.of(context).padding.top + headerHeight
+        : 24.0;
     final bottomPadding = MediaQuery.of(context).padding.bottom + 24;
     final items = _filterItems(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
