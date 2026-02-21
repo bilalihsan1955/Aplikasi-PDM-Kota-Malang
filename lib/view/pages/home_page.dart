@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -1122,8 +1121,6 @@ class _QiblaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final degree = qiblaDegree ?? 0;
-
     return Container(
       constraints: const BoxConstraints(minHeight: 150),
       padding: const EdgeInsets.all(16),
@@ -1202,15 +1199,12 @@ class _QiblaCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Transform.rotate(
-                      angle: degree * (math.pi / 180),
-                      child: Icon(
-                        RemixIcons.navigation_fill,
-                        size: 28,
-                        color: isSkeleton
-                            ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
-                            : Colors.white,
-                      ),
+                    Icon(
+                      RemixIcons.navigation_fill,
+                      size: 28,
+                      color: isSkeleton
+                          ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+                          : Colors.white,
                     ),
                   ],
                 ),
@@ -1224,7 +1218,7 @@ class _QiblaCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Dari Utara',
+                  'Kompas Kiblat',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,

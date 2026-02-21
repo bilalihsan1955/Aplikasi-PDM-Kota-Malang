@@ -181,7 +181,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: Icon(RemixIcons.arrow_left_s_line, color: isDark ? Colors.white : Colors.black87, size: 28),
+                        icon: Icon(RemixIcons.arrow_left_line, color: isDark ? Colors.white : Colors.black87, size: 28),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
