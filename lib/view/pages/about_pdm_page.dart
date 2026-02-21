@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/app_style.dart';
+import '../widgets/back_button_app.dart';
 
 class AboutPdmPage extends StatefulWidget {
   const AboutPdmPage({super.key});
@@ -21,7 +22,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(() {
-      if (_scrollController.offset > 50) {
+      if (_scrollController.offset > 20) {
         if (!_isScrolled) setState(() => _isScrolled = true);
       } else {
         if (_isScrolled) setState(() => _isScrolled = false);
@@ -138,39 +139,80 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             top: 0,
             left: 0,
             right: 0,
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               decoration: BoxDecoration(
                 color: _isScrolled ? appBarColor : Colors.transparent,
-                boxShadow: _isScrolled ? [
-                  BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))
-                ] : [],
+                boxShadow: _isScrolled
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [],
               ),
               child: SafeArea(
                 bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      _circleNavButton(
-                        icon: RemixIcons.arrow_left_s_line,
-                        onTap: () => context.pop(),
-                        showWhiteBg: !_isScrolled,
-                        isDark: isDark,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: _isScrolled ? 1 : 0,
-                          child: const Text(
-                            'Tentang PDM Malang',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                child: _isScrolled
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Row(
+                              children: [
+                                BackButtonApp(onTap: () => context.pop()),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Tentang PDM Malang',
+                                          style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark ? Colors.white : const Color(0xFF2D3142),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Profil organisasi',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDark ? Colors.white70 : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(height: 16),
+                        ],
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        child: Row(
+                          children: [
+                            _circleNavButton(
+                              icon: RemixIcons.arrow_left_line,
+                              onTap: () => context.pop(),
+                              showWhiteBg: true,
+                              isDark: isDark,
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
               ),
             ),
           ),

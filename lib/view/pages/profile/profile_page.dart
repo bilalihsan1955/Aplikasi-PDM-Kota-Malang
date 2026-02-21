@@ -147,6 +147,7 @@ class ProfilePage extends StatelessWidget {
 
   // ===== COMPONENTS =====
   Widget _header(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: AppStyle.hPadding,
       child: Row(
@@ -158,17 +159,20 @@ class ProfilePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Profile',
+                  'Profil',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: -1,
-                    color: Theme.of(context).textTheme.titleLarge?.color,
+                    color: isDark ? Colors.white : const Color(0xFF2D3142),
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   'Informasi akun anda',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white70 : Colors.grey[600],
+                  ),
                 ),
               ],
             ),

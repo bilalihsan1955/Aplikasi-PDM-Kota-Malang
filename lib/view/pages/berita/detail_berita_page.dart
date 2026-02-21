@@ -5,6 +5,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../utils/app_style.dart';
 import '../../../models/news_model.dart';
 import '../../../services/news_api_service.dart';
+import '../../widgets/back_button_app.dart';
 
 class DetailBeritaPage extends StatefulWidget {
   final String? slug;
@@ -78,6 +79,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppStyle.scaffoldDark : Colors.white;
     final appBarColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final title = _news?.title ?? 'Berita Terkini';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -90,7 +92,8 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
             top: 0,
             left: 0,
             right: 0,
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               decoration: BoxDecoration(
                 color: _isScrolled ? appBarColor : Colors.transparent,
                 boxShadow: _isScrolled
@@ -105,42 +108,66 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
               ),
               child: SafeArea(
                 bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _circleNavButton(
-                        icon: RemixIcons.arrow_left_line,
-                        onTap: () => context.pop(),
-                        showWhiteBg: !_isScrolled,
-                        isDark: isDark,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: _isScrolled ? 1 : 0,
-                          child: Text(
-                            _news?.title ?? 'Berita Terkini',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                child: _isScrolled
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Row(
+                              children: [
+                                BackButtonApp(onTap: () => context.pop()),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark ? Colors.white : const Color(0xFF2D3142),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Detail berita',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDark ? Colors.white70 : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                          const SizedBox(height: 16),
+                        ],
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        child: Row(
+                          children: [
+                            _circleNavButton(
+                              icon: RemixIcons.arrow_left_line,
+                              onTap: () => context.pop(),
+                              showWhiteBg: true,
+                              isDark: isDark,
+                            ),
+                          ],
                         ),
                       ),
-                      _circleNavButton(
-                        icon: RemixIcons.share_line,
-                        onTap: () {},
-                        showWhiteBg: !_isScrolled,
-                        isDark: isDark,
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
           ),
@@ -368,7 +395,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
         ),
         child: Icon(
           icon,
-          color: showWhiteBg ? Colors.black : (isDark ? Colors.white : Colors.black87),
+          color: showWhiteBg ? Colors.black87 : (isDark ? Colors.white : Colors.black87),
           size: 20,
         ),
       ),

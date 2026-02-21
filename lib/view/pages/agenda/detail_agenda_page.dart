@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/app_style.dart';
 import '../../../models/agenda_model.dart';
 import '../../../services/event_api_service.dart';
+import '../../widgets/back_button_app.dart';
 
 class DetailAgendaPage extends StatefulWidget {
   final String? slug;
@@ -24,8 +25,6 @@ class DetailAgendaPage extends StatefulWidget {
 }
 
 class _DetailAgendaPageState extends State<DetailAgendaPage> {
-  final ScrollController _scrollController = ScrollController();
-  bool _isScrolled = false;
   AgendaModel? _loadedAgenda;
   bool _loading = false;
 
@@ -39,13 +38,6 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 10) {
-        if (!_isScrolled) setState(() => _isScrolled = true);
-      } else {
-        if (_isScrolled) setState(() => _isScrolled = false);
-      }
-    });
     if (widget.initialAgenda == null && widget.slug != null && widget.slug!.isNotEmpty) {
       _loadBySlug();
     }
@@ -63,12 +55,6 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   Future<void> _launchGoogleMaps() async {
@@ -92,7 +78,6 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final appBarColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final agendaTitle = _agenda?.title ?? 'Detail Agenda';
 
     if (_loading && _agenda == null) {
@@ -115,98 +100,52 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              physics: const ClampingScrollPhysics(),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 80),
-                      _buildBanner(isDark),
-                      const SizedBox(height: 24),
-                      _buildConferenceTag(),
-                      const SizedBox(height: 16),
-                      Text(
-                        agendaTitle,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildHostedInfo(),
-                      const SizedBox(height: 32),
-                      _buildDateTimeCard(context),
-                      const SizedBox(height: 16),
-                      _buildDetailsCard(isDark),
-                      const SizedBox(height: 32),
-                      _buildLocationHeader(),
-                      const SizedBox(height: 16),
-                      _buildMapPreview(isDark),
-                      const SizedBox(height: 32),
-                      const Text('Tentang Acara', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
-                      Text(
-                        _agenda?.displayDescription ?? '-',
-                        style: const TextStyle(fontSize: 15, height: 1.6),
-                      ),
-                      const SizedBox(height: 24),
-                      if ((_agenda?.registrationLink ?? '').trim().isNotEmpty) _buildRegisterButton(context),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: _DetailAgendaAppBar(title: agendaTitle),
+      ),
+      body: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                _buildBanner(isDark),
+                const SizedBox(height: 24),
+                _buildConferenceTag(),
+                const SizedBox(height: 16),
+                Text(
+                  agendaTitle,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
                 ),
-              ),
+                const SizedBox(height: 8),
+                _buildHostedInfo(),
+                const SizedBox(height: 32),
+                _buildDateTimeCard(context),
+                const SizedBox(height: 16),
+                _buildDetailsCard(isDark),
+                const SizedBox(height: 32),
+                _buildLocationHeader(),
+                const SizedBox(height: 16),
+                _buildMapPreview(isDark),
+                const SizedBox(height: 32),
+                const Text('Tentang Acara', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                Text(
+                  _agenda?.displayDescription ?? '-',
+                  style: const TextStyle(fontSize: 15, height: 1.6),
+                ),
+                const SizedBox(height: 24),
+                if ((_agenda?.registrationLink ?? '').trim().isNotEmpty) _buildRegisterButton(context),
+                const SizedBox(height: 24),
+              ],
             ),
           ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: appBarColor,
-                boxShadow: _isScrolled ? [
-                  BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))
-                ] : [],
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => context.pop(),
-                        icon: Icon(RemixIcons.arrow_left_line, color: isDark ? Colors.white : Colors.black87, size: 28),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: _isScrolled ? 1 : 0,
-                          child: Text(
-                            agendaTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(RemixIcons.share_line, color: isDark ? Colors.white : Colors.black87, size: 22),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -542,6 +481,81 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// App bar sama persis dengan halaman Gallery (BackButtonApp + judul + subtitle + ikon).
+class _DetailAgendaAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _DetailAgendaAppBar({required this.title});
+  final String title;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(80);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  BackButtonApp(onTap: () => context.pop()),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF2D3142),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Detail acara',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.white70 : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
     );
   }
 }
