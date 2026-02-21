@@ -235,7 +235,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
   }
 
   Widget _buildMapPreview(bool isDark) {
-    const LatLng officeLocation = LatLng(-7.9666, 112.6326);
+    const LatLng officeLocation = LatLng(-7.949650126353061, 112.60868403249327);
 
     return Container(
       height: 280,
@@ -256,7 +256,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                  urlTemplate: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
                   userAgentPackageName: 'com.pdm_malang.app',
                 ),
                 MarkerLayer(

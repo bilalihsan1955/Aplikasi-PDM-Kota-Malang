@@ -338,21 +338,39 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: Row(
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          SizedBox(height: 64, child: _buildCardDate(context)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('TANGGAL & WAKTU', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
-                Text(dateStr, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(timeStr, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-              ],
+          Positioned(
+            right: -20,
+            top: -20,
+            bottom: -20,
+            child: Opacity(
+              opacity: 0.15,
+              child: Image.asset(
+                'assets/images/pattern.png',
+                fit: BoxFit.cover,
+                height: 120,
+              ),
             ),
+          ),
+          Row(
+            children: [
+              SizedBox(height: 64, child: _buildCardDate(context)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('TANGGAL & WAKTU', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(dateStr, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(timeStr, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
