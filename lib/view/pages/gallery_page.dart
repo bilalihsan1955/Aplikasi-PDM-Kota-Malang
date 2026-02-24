@@ -4,6 +4,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:pdm_malang/models/gallery_model.dart';
 import 'package:pdm_malang/services/gallery_api_service.dart';
+import 'empty_placeholder_page.dart';
 import '../widgets/back_button_app.dart';
 
 class GalleryPage extends StatefulWidget {
@@ -20,7 +21,6 @@ class _GalleryPageState extends State<GalleryPage> {
   bool _loading = true;
   String? _error;
 
-  void _setSearching(bool value) => setState(() => _isSearching = value);
   void _setSearchQuery(String value) => setState(() => _searchQuery = value);
 
   @override
@@ -63,7 +63,12 @@ class _GalleryPageState extends State<GalleryPage> {
           child: _CombinedHeader(
             isSearching: _isSearching,
             onSearchChanged: _setSearchQuery,
-            onToggleSearch: _setSearching,
+            onToggleSearch: (value) {
+              setState(() {
+                _isSearching = value;
+                if (!value) _searchQuery = '';
+              });
+            },
           ),
         ),
         body: _GalleryList(
@@ -72,6 +77,7 @@ class _GalleryPageState extends State<GalleryPage> {
           loading: _loading,
           error: _error,
           onRetry: _loadGallery,
+          onResetFilter: () => setState(() => _searchQuery = ''),
         ),
       ),
     );
@@ -258,6 +264,7 @@ class _GalleryList extends StatelessWidget {
   final bool loading;
   final String? error;
   final Future<void> Function()? onRetry;
+  final VoidCallback? onResetFilter;
 
   const _GalleryList({
     required this.items,
@@ -265,6 +272,7 @@ class _GalleryList extends StatelessWidget {
     required this.loading,
     this.error,
     this.onRetry,
+    this.onResetFilter,
   });
 
   @override
@@ -367,11 +375,13 @@ class _GalleryList extends StatelessWidget {
           slivers: [
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(
-                child: Text(
-                  searchQuery.isEmpty ? 'Belum ada dokumentasi' : 'Tidak ditemukan',
-                  style: TextStyle(color: isDark ? Colors.white60 : Colors.grey[600]),
-                ),
+              child: EmptySearchStateWidget(
+                title: searchQuery.isEmpty ? 'Belum ada dokumentasi' : 'Galeri Tidak Ditemukan',
+                subtitle: searchQuery.isEmpty
+                    ? 'Belum ada dokumentasi galeri saat ini.'
+                    : 'Maaf, kami tidak menemukan dokumentasi yang Anda cari.',
+                showResetButton: searchQuery.isNotEmpty,
+                onResetTap: onResetFilter,
               ),
             ),
           ],

@@ -85,3 +85,79 @@ class EmptyPlaceholderPage extends StatelessWidget {
     );
   }
 }
+
+/// Tampilan saat pencarian/filter tidak ada hasil. Dipakai di list: Menu, Galeri, Amal Usaha (seperti Agenda & Berita).
+class EmptySearchStateWidget extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool showResetButton;
+  final VoidCallback? onResetTap;
+
+  const EmptySearchStateWidget({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    this.showResetButton = false,
+    this.onResetTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Align(
+      alignment: const Alignment(0, -0.2),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            isDark ? 'assets/images/empty_state/not_found_dark.png' : 'assets/images/empty_state/not_found.png',
+            width: 160,
+            height: 160,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF212121),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 50),
+            child: Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white60 : Colors.grey[600],
+                height: 1.4,
+              ),
+            ),
+          ),
+          if (showResetButton && onResetTap != null) ...[
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: onResetTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF152D8D),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Text(
+                  'Atur Ulang Filter',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

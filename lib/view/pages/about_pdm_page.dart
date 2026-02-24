@@ -6,6 +6,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pdm_malang/models/organization_model.dart';
+import 'package:pdm_malang/services/api_service.dart';
 import 'package:pdm_malang/services/organization_api_service.dart';
 import '../../../utils/app_style.dart';
 import '../widgets/back_button_app.dart';
@@ -166,7 +167,8 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     final description = _stripHtml(profile?.description.isNotEmpty == true
         ? profile!.description
         : 'Muhammadiyah adalah Gerakan Islam, Dakwah Amar Ma\'ruf Nahi Munkar dan Tajdid, bersumber pada Al-Qur\'an dan As-Sunnah.');
-    final logoUrl = profile?.logo ?? '';
+    // Gambar dari response: data.logo (contoh: "https://makotamu.org/storage/logo.png")
+    final logoUrl = _resolveLogoUrl(profile?.logo ?? '');
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -185,7 +187,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                     SizedBox(
                       height: 400,
                       width: double.infinity,
-                      child: logoUrl.startsWith('http')
+                      child: logoUrl.isNotEmpty && logoUrl.startsWith('http')
                           ? Image.network(
                               logoUrl,
                               fit: BoxFit.cover,
@@ -200,9 +202,9 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                                   ),
                                 );
                               },
-                              errorBuilder: (_, __, ___) => Image.asset('assets/images/banner.png', fit: BoxFit.cover),
+                              errorBuilder: (_, __, ___) => _buildStaticLogoImage(),
                             )
-                          : Image.asset('assets/images/banner.png', fit: BoxFit.cover),
+                          : _buildStaticLogoImage(),
                     ),
                     Container(
                       transform: Matrix4.translationValues(0, -40, 0),
@@ -368,6 +370,44 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
         .replaceAll(RegExp(r'<[^>]*>'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
+  }
+
+  /// Ambil URL gambar logo dari response: jika sudah full URL pakai as-is, jika path relatif gabung dengan origin API.
+  static String _resolveLogoUrl(String logo) {
+    if (logo.isEmpty) return '';
+    if (logo.startsWith('http://') || logo.startsWith('https://')) return logo;
+    try {
+      final base = ApiService.baseUrl;
+      final origin = Uri.parse(base).origin;
+      final path = logo.startsWith('/') ? logo : '/$logo';
+      return '$origin$path';
+    } catch (_) {
+      return logo;
+    }
+  }
+
+  Widget _buildLogoPlaceholder(bool isDark) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: isDark ? Colors.white12 : Colors.grey[300],
+      child: Icon(
+        RemixIcons.community_fill,
+        size: 80,
+        color: isDark ? Colors.white24 : Colors.grey[400],
+      ),
+    );
+  }
+
+  /// Gambar statis jika data logo dari response tidak ada atau gagal load.
+  Widget _buildStaticLogoImage() {
+    return Image.asset(
+      'assets/images/banner.png',
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (_, __, ___) => _buildLogoPlaceholder(Theme.of(context).brightness == Brightness.dark),
+    );
   }
 
   Widget _buildAboutPageSkeleton(bool isDark, Color cardColor) {

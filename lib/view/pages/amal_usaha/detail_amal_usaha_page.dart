@@ -4,9 +4,9 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pdm_malang/models/amal_usaha_model.dart';
-import '../../../utils/app_style.dart';
-import '../widgets/back_button_app.dart';
-import '../widgets/navbar_widgets.dart';
+import '../../../../utils/app_style.dart';
+import '../../widgets/back_button_app.dart';
+import '../../widgets/navbar_widgets.dart';
 
 class DetailAmalUsahaPage extends StatefulWidget {
   final AmalUsahaItem? item;

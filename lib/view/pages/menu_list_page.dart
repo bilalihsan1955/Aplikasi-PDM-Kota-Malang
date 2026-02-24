@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
+import 'empty_placeholder_page.dart';
 import '../../utils/app_style.dart';
 import '../widgets/back_button_app.dart';
 
@@ -26,7 +27,6 @@ class _MenuListPageState extends State<MenuListPage> {
     _isSearching = widget.openSearch;
   }
 
-  void _setSearching(bool value) => setState(() => _isSearching = value);
   void _setSearchQuery(String value) => setState(() => _searchQuery = value);
   void _setCategory(String value) => setState(() => _selectedCategory = value);
 
@@ -47,7 +47,12 @@ class _MenuListPageState extends State<MenuListPage> {
             child: _CombinedHeader(
               isSearching: _isSearching,
               searchQuery: _searchQuery,
-              onSearchingChanged: _setSearching,
+              onSearchingChanged: (value) {
+                setState(() {
+                  _isSearching = value;
+                  if (!value) _searchQuery = '';
+                });
+              },
               onSearchQueryChanged: _setSearchQuery,
               selectedCategory: _selectedCategory,
               onCategoryChanged: _setCategory,
@@ -349,38 +354,15 @@ class _MenuList extends StatelessWidget {
         : 24.0;
     final bottomPadding = MediaQuery.of(context).padding.bottom + 24;
     final items = _filterItems(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (items.isEmpty) {
       return Padding(
         padding: EdgeInsets.only(top: topPadding),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                RemixIcons.search_line,
-                size: 80,
-                color: isDark ? Colors.white24 : Colors.grey[300],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Menu tidak ditemukan',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Coba ubah kata kunci atau kategori',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white60 : Colors.grey[600],
-                ),
-              ),
-            ],
+          child: EmptySearchStateWidget(
+            title: 'Menu tidak ditemukan',
+            subtitle: 'Coba ubah kata kunci atau kategori.',
+            showResetButton: false,
           ),
         ),
       );

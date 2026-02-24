@@ -4,7 +4,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:pdm_malang/models/amal_usaha_model.dart';
 import 'package:pdm_malang/services/amal_usaha_api_service.dart';
-import '../widgets/back_button_app.dart';
+import '../empty_placeholder_page.dart';
+import '../../widgets/back_button_app.dart';
 
 /// Filter type API: pendidikan, kesehatan, sosial, ekonomi. Null = semua.
 const List<({String value, String label})> kAmalUsahaTypes = [
@@ -30,7 +31,6 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
   bool _loading = true;
   String? _error;
 
-  void _setSearching(bool value) => setState(() => _isSearching = value);
   void _setSearchQuery(String value) => setState(() => _searchQuery = value);
 
   @override
@@ -79,7 +79,12 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
             selectedType: _selectedType,
             loading: _loading,
             onSearchChanged: _setSearchQuery,
-            onToggleSearch: _setSearching,
+            onToggleSearch: (value) {
+              setState(() {
+                _isSearching = value;
+                if (!value) _searchQuery = '';
+              });
+            },
             onTypeSelected: (value) {
               final cached = AmalUsahaApiService.getCached(type: value.isEmpty ? null : value);
               if (cached != null) {
@@ -99,9 +104,17 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
         body: _AmalUsahaList(
           items: _items,
           searchQuery: _searchQuery,
+          selectedType: _selectedType,
           loading: _loading,
           error: _error,
           onRetry: _loadData,
+          onResetFilter: () {
+            setState(() {
+              _searchQuery = '';
+              _selectedType = '';
+            });
+            _loadData();
+          },
         ),
       ),
     );
@@ -380,16 +393,20 @@ class _SearchBar extends StatelessWidget {
 class _AmalUsahaList extends StatelessWidget {
   final List<AmalUsahaItem> items;
   final String searchQuery;
+  final String selectedType;
   final bool loading;
   final String? error;
   final Future<void> Function()? onRetry;
+  final VoidCallback? onResetFilter;
 
   const _AmalUsahaList({
     required this.items,
     required this.searchQuery,
+    required this.selectedType,
     required this.loading,
     this.error,
     this.onRetry,
+    this.onResetFilter,
   });
 
   @override
@@ -488,6 +505,7 @@ class _AmalUsahaList extends StatelessWidget {
           }).toList();
 
     if (filteredItems.isEmpty) {
+      final hasFilter = searchQuery.isNotEmpty || selectedType.isNotEmpty;
       return RefreshIndicator(
         onRefresh: () async {
           if (onRetry != null) await onRetry!();
@@ -499,11 +517,15 @@ class _AmalUsahaList extends StatelessWidget {
           slivers: [
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(
-                child: Text(
-                  searchQuery.isEmpty ? 'Belum ada data amal usaha' : 'Tidak ditemukan',
-                  style: TextStyle(color: isDark ? Colors.white60 : Colors.grey[600]),
-                ),
+              child: EmptySearchStateWidget(
+                title: searchQuery.isEmpty && selectedType.isEmpty
+                    ? 'Belum ada data amal usaha'
+                    : 'Amal Usaha Tidak Ditemukan',
+                subtitle: searchQuery.isEmpty && selectedType.isEmpty
+                    ? 'Belum ada data amal usaha saat ini.'
+                    : 'Maaf, kami tidak menemukan amal usaha yang Anda cari.',
+                showResetButton: hasFilter,
+                onResetTap: onResetFilter,
               ),
             ),
           ],
