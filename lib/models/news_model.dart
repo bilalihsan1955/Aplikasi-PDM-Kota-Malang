@@ -58,8 +58,8 @@ class NewsModel {
     }
   }
 
-  /// Untuk tampilan card: ringkasan (excerpt).
-  String get desc => excerpt;
+  /// Untuk tampilan card: ringkasan (excerpt) dengan HTML tag dihilangkan.
+  String get desc => _stripHtml(excerpt);
 
   /// Tanggal terbit format lengkap untuk halaman detail (contoh: "4 Feb 2025 • 10:00").
   String get publishedAtFormatted {

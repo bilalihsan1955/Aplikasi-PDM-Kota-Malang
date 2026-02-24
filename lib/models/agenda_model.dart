@@ -206,6 +206,15 @@ class AgendaModel {
     return s;
   }
 
+  /// Baca nilai double dari raw, coba key utama dulu lalu key alternatif (mis. latitude lalu lat).
+  static double? _readDouble(Map<String, dynamic> raw, String primaryKey, String alternateKey) {
+    final v = raw[primaryKey];
+    if (v != null && v is num) return v.toDouble();
+    final alt = raw[alternateKey];
+    if (alt != null && alt is num) return alt.toDouble();
+    return null;
+  }
+
   factory AgendaModel.fromJson(Map<String, dynamic> json) {
     final Map<String, dynamic> raw = (json['event'] is Map)
         ? Map<String, dynamic>.from(json['event'] as Map)
@@ -230,8 +239,8 @@ class AgendaModel {
       eventDate: (raw['event_date'] as String?) ?? '',
       eventTime: eventTimeValue,
       location: (raw['location'] as String?) ?? '',
-      latitude: (raw['latitude'] as num?)?.toDouble(),
-      longitude: (raw['longitude'] as num?)?.toDouble(),
+      latitude: _readDouble(raw, 'latitude', 'lat'),
+      longitude: _readDouble(raw, 'longitude', 'long'),
       organizer: raw['organizer'] as String?,
       contactPerson: raw['contact_person'] as String?,
       contactPhone: raw['contact_phone'] as String?,

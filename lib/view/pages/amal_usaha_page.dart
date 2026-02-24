@@ -2,21 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:pdm_malang/models/gallery_model.dart';
-import 'package:pdm_malang/services/gallery_api_service.dart';
+import 'package:pdm_malang/models/amal_usaha_model.dart';
+import 'package:pdm_malang/services/amal_usaha_api_service.dart';
 import '../widgets/back_button_app.dart';
 
-class GalleryPage extends StatefulWidget {
-  const GalleryPage({super.key});
+/// Filter type API: pendidikan, kesehatan, sosial, ekonomi. Null = semua.
+const List<({String value, String label})> kAmalUsahaTypes = [
+  (value: '', label: 'Semua'),
+  (value: 'pendidikan', label: 'Pendidikan'),
+  (value: 'kesehatan', label: 'Kesehatan'),
+  (value: 'sosial', label: 'Sosial'),
+  (value: 'ekonomi', label: 'Ekonomi'),
+];
+
+class AmalUsahaPage extends StatefulWidget {
+  const AmalUsahaPage({super.key});
 
   @override
-  State<GalleryPage> createState() => _GalleryPageState();
+  State<AmalUsahaPage> createState() => _AmalUsahaPageState();
 }
 
-class _GalleryPageState extends State<GalleryPage> {
+class _AmalUsahaPageState extends State<AmalUsahaPage> {
   bool _isSearching = false;
   String _searchQuery = '';
-  List<GalleryModel> _items = [];
+  String _selectedType = '';
+  List<AmalUsahaItem> _items = [];
   bool _loading = true;
   String? _error;
 
@@ -26,7 +36,7 @@ class _GalleryPageState extends State<GalleryPage> {
   @override
   void initState() {
     super.initState();
-    final cached = GalleryApiService.getCached();
+    final cached = AmalUsahaApiService.getCached(type: _selectedType.isEmpty ? null : _selectedType);
     if (cached != null) {
       setState(() {
         _items = cached;
@@ -34,21 +44,25 @@ class _GalleryPageState extends State<GalleryPage> {
         _error = null;
       });
     } else {
-      _loadGallery();
+      _loadData();
     }
   }
 
-  Future<void> _loadGallery() async {
+  Future<void> _loadData() async {
     setState(() {
       _loading = true;
       _error = null;
     });
-    final result = await GalleryApiService().getGallery();
+    final result = await AmalUsahaApiService().getAmalUsaha(
+      page: 1,
+      perPage: 20,
+      type: _selectedType.isEmpty ? null : _selectedType,
+    );
     if (!mounted) return;
     setState(() {
       _loading = false;
       _items = result.data;
-      _error = result.success ? null : (result.message.isNotEmpty ? result.message : 'Gagal memuat galeri');
+      _error = result.success ? null : (result.message.isNotEmpty ? result.message : 'Gagal memuat amal usaha');
     });
   }
 
@@ -59,38 +73,144 @@ class _GalleryPageState extends State<GalleryPage> {
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(110),
+          preferredSize: const Size.fromHeight(160),
           child: _CombinedHeader(
             isSearching: _isSearching,
+            selectedType: _selectedType,
+            loading: _loading,
             onSearchChanged: _setSearchQuery,
             onToggleSearch: _setSearching,
+            onTypeSelected: (value) {
+              final cached = AmalUsahaApiService.getCached(type: value.isEmpty ? null : value);
+              if (cached != null) {
+                setState(() {
+                  _selectedType = value;
+                  _items = cached;
+                  _loading = false;
+                  _error = null;
+                });
+              } else {
+                setState(() => _selectedType = value);
+                _loadData();
+              }
+            },
           ),
         ),
-        body: _GalleryList(
+        body: _AmalUsahaList(
           items: _items,
           searchQuery: _searchQuery,
           loading: _loading,
           error: _error,
-          onRetry: _loadGallery,
+          onRetry: _loadData,
         ),
       ),
     );
   }
 }
 
-class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
-  final bool isSearching;
-  final Function(String) onSearchChanged;
-  final Function(bool) onToggleSearch;
+class _TypeFilter extends StatelessWidget {
+  static const List<String> _skeletonLabels = ['Semua', 'Pendidikan', 'Kesehatan', 'Sosial', 'Ekonomi'];
 
-  const _CombinedHeader({
-    required this.isSearching,
-    required this.onSearchChanged,
-    required this.onToggleSearch,
+  final String selectedType;
+  final bool loading;
+  final ValueChanged<String> onSelected;
+
+  const _TypeFilter({
+    required this.selectedType,
+    required this.loading,
+    required this.onSelected,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(110);
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      height: 40,
+      child: loading
+          ? Skeletonizer(
+              enabled: true,
+              child: ListView.separated(
+                physics: const ClampingScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: _skeletonLabels.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _skeletonLabels[index],
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          : ListView.separated(
+              physics: const ClampingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              itemCount: kAmalUsahaTypes.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final t = kAmalUsahaTypes[index];
+                final isActive = selectedType == t.value;
+                return GestureDetector(
+                  onTap: () => onSelected(t.value),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFF152D8D)
+                          : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      t.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
+  final bool isSearching;
+  final String selectedType;
+  final bool loading;
+  final Function(String) onSearchChanged;
+  final Function(bool) onToggleSearch;
+  final ValueChanged<String> onTypeSelected;
+
+  const _CombinedHeader({
+    required this.isSearching,
+    required this.selectedType,
+    required this.loading,
+    required this.onSearchChanged,
+    required this.onToggleSearch,
+    required this.onTypeSelected,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(160);
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +238,12 @@ class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
               onToggleSearch: onToggleSearch,
             ),
             const SizedBox(height: 16),
+            _TypeFilter(
+              selectedType: selectedType,
+              loading: loading,
+              onSelected: onTypeSelected,
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -142,8 +268,8 @@ class _AnimatedHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
-        child: isSearching 
-            ? _SearchBar(onSearchChanged: onSearchChanged, onToggleSearch: onToggleSearch) 
+        child: isSearching
+            ? _SearchBar(onSearchChanged: onSearchChanged, onToggleSearch: onToggleSearch)
             : _HeaderTitle(onToggleSearch: onToggleSearch),
       ),
     );
@@ -152,12 +278,13 @@ class _AnimatedHeader extends StatelessWidget {
 
 class _HeaderTitle extends StatelessWidget {
   final Function(bool) onToggleSearch;
+
   const _HeaderTitle({required this.onToggleSearch});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Row(
       key: const ValueKey('headerTitle'),
       children: [
@@ -168,21 +295,17 @@ class _HeaderTitle extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Galeri',
-                  style: TextStyle(
-                    fontSize: 24, 
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF2D3142),
-                  ),
+              Text(
+                'Amal Usaha',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF2D3142),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Dokumentasi kegiatan',
+                'Unit-unit usaha Muhammadiyah',
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.white70 : Colors.grey[600],
@@ -192,10 +315,12 @@ class _HeaderTitle extends StatelessWidget {
           ),
         ),
         IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
           onPressed: () => onToggleSearch(true),
           icon: Icon(
-            RemixIcons.search_line, 
-            size: 28, 
+            RemixIcons.search_line,
+            size: 28,
             color: isDark ? Colors.white : Colors.black87,
           ),
         ),
@@ -235,7 +360,7 @@ class _SearchBar extends StatelessWidget {
                 color: isDark ? Colors.white : Colors.black87,
               ),
               decoration: const InputDecoration(
-                hintText: 'Cari dokumentasi...',
+                hintText: 'Cari amal usaha...',
                 hintStyle: TextStyle(color: Colors.grey),
                 border: InputBorder.none,
                 isDense: true,
@@ -252,14 +377,14 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-class _GalleryList extends StatelessWidget {
-  final List<GalleryModel> items;
+class _AmalUsahaList extends StatelessWidget {
+  final List<AmalUsahaItem> items;
   final String searchQuery;
   final bool loading;
   final String? error;
   final Future<void> Function()? onRetry;
 
-  const _GalleryList({
+  const _AmalUsahaList({
     required this.items,
     required this.searchQuery,
     required this.loading,
@@ -274,7 +399,9 @@ class _GalleryList extends StatelessWidget {
 
     if (loading) {
       return RefreshIndicator(
-        onRefresh: () async { if (onRetry != null) await onRetry!(); },
+        onRefresh: () async {
+          if (onRetry != null) await onRetry!();
+        },
         displacement: 40,
         color: theme.colorScheme.primary,
         child: CustomScrollView(
@@ -294,7 +421,7 @@ class _GalleryList extends StatelessWidget {
                       childAspectRatio: 0.8,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => const _GalleryCardSkeleton(),
+                      (context, index) => const _AmalUsahaCardSkeleton(),
                       childCount: 6,
                     ),
                   ),
@@ -307,7 +434,9 @@ class _GalleryList extends StatelessWidget {
     }
     if (error != null && error!.isNotEmpty) {
       return RefreshIndicator(
-        onRefresh: () async { if (onRetry != null) await onRetry!(); },
+        onRefresh: () async {
+          if (onRetry != null) await onRetry!();
+        },
         displacement: 40,
         color: theme.colorScheme.primary,
         child: CustomScrollView(
@@ -353,13 +482,16 @@ class _GalleryList extends StatelessWidget {
     final filteredItems = query.isEmpty
         ? items
         : items.where((item) {
-            return item.title.toLowerCase().contains(query) ||
-                item.description.toLowerCase().contains(query);
+            return item.name.toLowerCase().contains(query) ||
+                item.description.toLowerCase().contains(query) ||
+                item.typeLabel.toLowerCase().contains(query);
           }).toList();
 
     if (filteredItems.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () async { if (onRetry != null) await onRetry!(); },
+        onRefresh: () async {
+          if (onRetry != null) await onRetry!();
+        },
         displacement: 40,
         color: theme.colorScheme.primary,
         child: CustomScrollView(
@@ -369,7 +501,7 @@ class _GalleryList extends StatelessWidget {
               hasScrollBody: false,
               child: Center(
                 child: Text(
-                  searchQuery.isEmpty ? 'Belum ada dokumentasi' : 'Tidak ditemukan',
+                  searchQuery.isEmpty ? 'Belum ada data amal usaha' : 'Tidak ditemukan',
                   style: TextStyle(color: isDark ? Colors.white60 : Colors.grey[600]),
                 ),
               ),
@@ -380,7 +512,9 @@ class _GalleryList extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      onRefresh: () async { if (onRetry != null) await onRetry!(); },
+      onRefresh: () async {
+        if (onRetry != null) await onRetry!();
+      },
       displacement: 40,
       color: theme.colorScheme.primary,
       child: CustomScrollView(
@@ -400,7 +534,7 @@ class _GalleryList extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final item = filteredItems[index];
-                    return _GalleryCard(item: item);
+                    return _AmalUsahaCard(item: item);
                   },
                   childCount: filteredItems.length,
                 ),
@@ -413,8 +547,8 @@ class _GalleryList extends StatelessWidget {
   }
 }
 
-class _GalleryCardSkeleton extends StatelessWidget {
-  const _GalleryCardSkeleton();
+class _AmalUsahaCardSkeleton extends StatelessWidget {
+  const _AmalUsahaCardSkeleton();
 
   @override
   Widget build(BuildContext context) {
@@ -432,7 +566,7 @@ class _GalleryCardSkeleton extends StatelessWidget {
             Container(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
               color: Colors.grey[400],
-              child: const Text('Judul dokumentasi placeholder', maxLines: 2, overflow: TextOverflow.ellipsis),
+              child: const Text('Nama amal usaha placeholder', maxLines: 2, overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -441,29 +575,27 @@ class _GalleryCardSkeleton extends StatelessWidget {
   }
 }
 
-class _GalleryCard extends StatelessWidget {
-  final GalleryModel item;
+Widget _amalUsahaPlaceholderImage(bool isDark) {
+  return Container(
+    width: double.infinity,
+    height: double.infinity,
+    color: isDark ? Colors.white12 : Colors.grey[300],
+    child: Icon(RemixIcons.building_2_line, size: 48, color: Colors.grey[600]),
+  );
+}
 
-  const _GalleryCard({required this.item});
+class _AmalUsahaCard extends StatelessWidget {
+  final AmalUsahaItem item;
 
-  void _showImagePreview(BuildContext context) {
-    showDialog(
-      context: context,
-      useSafeArea: false,
-      builder: (context) => _ImagePreviewDialog(
-        imageUrl: item.image,
-        title: item.title,
-        description: item.description,
-      ),
-    );
-  }
+  const _AmalUsahaCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasNetworkImage = item.image.isNotEmpty && item.image.startsWith('http');
 
     return GestureDetector(
-      onTap: () => _showImagePreview(context),
+      onTap: () => context.push('/amal-usaha/detail', extra: item),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
@@ -480,25 +612,24 @@ class _GalleryCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                item.image,
-                fit: BoxFit.cover,
-                loadingBuilder: (_, child, progress) {
-                  if (progress == null) return child;
-                  return Skeletonizer(
-                    enabled: true,
-                    child: Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      color: isDark ? Colors.white12 : Colors.grey[300],
-                    ),
-                  );
-                },
-                errorBuilder: (_, __, ___) => Container(
-                  color: Colors.grey[300],
-                  child: Icon(RemixIcons.image_line, size: 48, color: Colors.grey[600]),
-                ),
-              ),
+              hasNetworkImage
+                  ? Image.network(
+                      item.image,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return Skeletonizer(
+                          enabled: true,
+                          child: Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: isDark ? Colors.white12 : Colors.grey[300],
+                          ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => _amalUsahaPlaceholderImage(isDark),
+                    )
+                  : _amalUsahaPlaceholderImage(isDark),
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -515,7 +646,9 @@ class _GalleryCard extends StatelessWidget {
                 ),
               ),
               Positioned(
-                left: 12, right: 12, bottom: 12,
+                left: 12,
+                right: 12,
+                bottom: 12,
                 child: Text(
                   item.title,
                   maxLines: 2,
@@ -536,99 +669,3 @@ class _GalleryCard extends StatelessWidget {
   }
 }
 
-class _ImagePreviewDialog extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final String description;
-
-  const _ImagePreviewDialog({
-    required this.imageUrl,
-    required this.title,
-    this.description = '',
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black.withOpacity(0.9),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: Center(
-              child: imageUrl.startsWith('http')
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                      loadingBuilder: (_, child, progress) {
-                        if (progress == null) return child;
-                        return const Center(child: CircularProgressIndicator(color: Colors.white));
-                      },
-                      errorBuilder: (_, __, ___) => const Center(
-                        child: Icon(RemixIcons.image_line, color: Colors.white54, size: 64),
-                      ),
-                    )
-                  : Image.asset(imageUrl, fit: BoxFit.contain, width: double.infinity),
-            ),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 20,
-            right: 20,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                    child: const Icon(RemixIcons.close_line, color: Colors.white, size: 24),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                  child: const Icon(RemixIcons.share_line, color: Colors.white, size: 22),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 40,
-            left: 24,
-            right: 24,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                if (description.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    description,
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Text(
-                  'Gunakan dua jari untuk memperbesar gambar',
-                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

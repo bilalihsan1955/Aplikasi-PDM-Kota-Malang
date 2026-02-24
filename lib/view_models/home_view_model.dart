@@ -120,6 +120,7 @@ class HomeViewModel extends ChangeNotifier {
     {'icon': RemixIcons.community_line, 'label': 'Profil'},
     {'icon': RemixIcons.article_line, 'label': 'Berita'},
     {'icon': RemixIcons.calendar_event_line, 'label': 'Agenda'},
+    {'icon': RemixIcons.building_2_line, 'label': 'Amal Usaha'},
     {'icon': RemixIcons.image_line, 'label': 'Dokumentasi'},
     {'icon': RemixIcons.notification_3_line, 'label': 'Pengumuman'},
     {'icon': RemixIcons.map_pin_line, 'label': 'Lokasi'},

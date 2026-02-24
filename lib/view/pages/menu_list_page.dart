@@ -322,6 +322,7 @@ class _MenuList extends StatelessWidget {
       _MenuItemData(RemixIcons.article_line, 'Berita & Pengumuman', 'Layanan', () => context.go('/berita')),
       _MenuItemData(RemixIcons.calendar_event_line, 'Agenda Kegiatan', 'Layanan', () => context.go('/agenda')),
       _MenuItemData(RemixIcons.image_line, 'Dokumentasi', 'Layanan', () => context.push('/gallery')),
+      _MenuItemData(RemixIcons.building_2_line, 'Amal Usaha', 'Layanan', () => context.push('/amal-usaha')),
       _MenuItemData(RemixIcons.notification_3_line, 'Pengumuman', 'Layanan', () => context.push('/notifications')),
       _MenuItemData(RemixIcons.map_pin_line, 'Lokasi Kantor', 'Informasi', () => context.push('/placeholder', extra: 'Lokasi Kantor')),
       _MenuItemData(RemixIcons.search_line, 'Cari', 'Lainnya', () => context.push('/placeholder', extra: 'Cari')),

@@ -11,6 +11,9 @@ import '../view/pages/agenda/detail_agenda_page.dart';
 import '../models/agenda_model.dart';
 import '../view/pages/about_pdm_page.dart';
 import '../view/pages/gallery_page.dart';
+import '../view/pages/amal_usaha_page.dart';
+import '../view/pages/detail_amal_usaha_page.dart';
+import '../models/amal_usaha_model.dart';
 import '../view/pages/profile/account_page.dart';
 import '../view/pages/auth/onboarding_page.dart';
 import '../view/pages/auth/login_page.dart';
@@ -47,7 +50,15 @@ final GoRouter router = GoRouter(
         return NoTransitionPage(child: EmptyPlaceholderPage(title: title));
       },
     ),
-
+    // Detail Amal Usaha — route root agar navigasi stabil (push path penuh)
+    GoRoute(
+      path: '/amal-usaha/detail',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final item = state.extra is AmalUsahaItem ? state.extra as AmalUsahaItem : null;
+        return NoTransitionPage(child: DetailAmalUsahaPage(item: item));
+      },
+    ),
     // App Shell Routes - With Navbar
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -68,6 +79,19 @@ final GoRouter router = GoRouter(
                 GoRoute(
                   path: 'gallery',
                   pageBuilder: (context, state) => const NoTransitionPage(child: GalleryPage()),
+                ),
+                GoRoute(
+                  path: 'amal-usaha',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: AmalUsahaPage()),
+                  routes: [
+                    GoRoute(
+                      path: 'detail',
+                      pageBuilder: (context, state) {
+                        final item = state.extra is AmalUsahaItem ? state.extra as AmalUsahaItem : null;
+                        return NoTransitionPage(child: DetailAmalUsahaPage(item: item));
+                      },
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'notifications',

@@ -23,7 +23,7 @@ class NotificationPage extends StatelessWidget {
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(130),
+            preferredSize: const Size.fromHeight(160),
             child: _CombinedHeader(),
           ),
           body: _NotificationListContent(),
@@ -35,7 +35,7 @@ class NotificationPage extends StatelessWidget {
 
 class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
-  Size get preferredSize => const Size.fromHeight(130);
+  Size get preferredSize => const Size.fromHeight(160);
 
   @override
   Widget build(BuildContext context) {

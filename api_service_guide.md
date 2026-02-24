@@ -159,6 +159,142 @@ GET /categories/{slug}
 
 ---
 
+## 📷 Gallery API
+
+### Get All Gallery
+```http
+GET /galleries?page=1&per_page=20
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| page | int | Nomor halaman (default: 1) |
+| per_page | int | Jumlah item per halaman (default: 20) |
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "title": "Kegiatan Ramadhan",
+      "description": "Dokumentasi kegiatan...",
+      "image": "https://makotamu.org/storage/gallery/image.jpg",
+      "type": "photo",
+      "created_at": "2026-01-27 10:00:00"
+    }
+  ]
+}
+```
+
+---
+
+## 🏛️ Organization API (About PDM)
+
+### Get Organization Profile
+```http
+GET /organization/profile
+Accept: application/json
+```
+
+**Response (200):**
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "Pimpinan Daerah Muhammadiyah Kota Malang",
+    "short_name": "PDM Kota Malang",
+    "description": "Deskripsi organisasi...",
+    "history": "Sejarah organisasi...",
+    "vision": "Visi organisasi...",
+    "mission": "Misi organisasi...",
+    "logo": "https://makotamu.org/storage/logo.png",
+    "address": "Jl.....",
+    "phone": "0341-123456",
+    "email": "info@makotamu.org",
+    "website": "https://makotamu.org",
+    "social_media": {
+      "facebook": "https://facebook.com/pdmmalang",
+      "instagram": "https://instagram.com/pdmmalang",
+      "youtube": "https://youtube.com/pdmmalang",
+      "twitter": "https://twitter.com/pdmmalang"
+    },
+    "established_year": 1920
+  }
+}
+```
+
+### Get Organization Structure
+```http
+GET /organization/structure
+Accept: application/json
+```
+
+**Response (200):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Dr. H. Ahmad",
+      "position": "Ketua",
+      "division": "Pimpinan",
+      "photo": "https://makotamu.org/storage/structure/photo.jpg",
+      "phone": "081234567890",
+      "email": "ketua@makotamu.org",
+      "order": 1,
+      "is_active": true
+    }
+  ]
+}
+```
+
+---
+
+## 🏢 Amal Usaha API
+
+### Get All Amal Usaha
+```http
+GET /amal-usaha?page=1&per_page=10&type=pendidikan
+Accept: application/json
+```
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| page | int | No | Nomor halaman (default: 1) |
+| per_page | int | No | Jumlah item per halaman (default: 10) |
+| type | string | No | Filter: `pendidikan`, `kesehatan`, `sosial`, `ekonomi` |
+
+**Response (200):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Universitas Muhammadiyah Malang",
+      "slug": "universitas-muhammadiyah-malang",
+      "type": "pendidikan",
+      "type_label": "Pendidikan",
+      "description": "Deskripsi...",
+      "image": "https://makotamu.org/storage/amal-usaha/image.jpg",
+      "logo": "https://makotamu.org/storage/amal-usaha/logo.jpg",
+      "address": "Jl. Raya Tlogomas No. 246",
+      "phone": "0341-123456",
+      "email": "info@umm.ac.id",
+      "website": "https://www.umm.ac.id",
+      "head_name": "Dr. Ahmad",
+      "established_year": 1980,
+      "is_active": true,
+      "created_at": "2026-01-27 10:00:00"
+    }
+  ]
+}
+```
+
+---
+
 ## 📷 Image URL Handling
 
 Gambar yang dikembalikan API sudah dalam format full URL:

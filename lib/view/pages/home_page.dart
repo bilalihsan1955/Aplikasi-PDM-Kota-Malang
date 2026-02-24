@@ -816,7 +816,7 @@ class _HomeMenuGrid extends StatelessWidget {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: viewModel.homeMenus.length,
+        itemCount: viewModel.homeMenus.length > 8 ? 8 : viewModel.homeMenus.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
           mainAxisSpacing: 0,
@@ -832,6 +832,7 @@ class _HomeMenuGrid extends StatelessWidget {
               if (item['label'] == 'Agenda') context.go('/agenda');
               if (item['label'] == 'Profil') context.go('/about-pdm');
               if (item['label'] == 'Dokumentasi') context.push('/gallery');
+              if (item['label'] == 'Amal Usaha') context.push('/amal-usaha');
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,
