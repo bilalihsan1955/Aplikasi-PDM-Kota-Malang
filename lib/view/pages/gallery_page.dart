@@ -428,21 +428,30 @@ class _GalleryCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.white12 : Colors.grey[300]!;
+    final barColor = isDark ? Colors.white24 : Colors.grey[400]!;
+    final textColor = isDark ? Colors.white24 : Colors.grey[600]!;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: Colors.grey[300],
+        color: bgColor,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: Container(color: Colors.grey[300])),
+            Expanded(child: Container(color: bgColor)),
             Container(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              color: Colors.grey[400],
-              child: const Text('Judul dokumentasi placeholder', maxLines: 2, overflow: TextOverflow.ellipsis),
+              color: barColor,
+              child: Text(
+                'Judul dokumentasi placeholder',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: textColor, fontSize: 14),
+              ),
             ),
           ],
         ),
@@ -505,8 +514,8 @@ class _GalleryCard extends StatelessWidget {
                   );
                 },
                 errorBuilder: (_, __, ___) => Container(
-                  color: Colors.grey[300],
-                  child: Icon(RemixIcons.image_line, size: 48, color: Colors.grey[600]),
+                  color: isDark ? Colors.white12 : Colors.grey[300],
+                  child: Icon(RemixIcons.image_line, size: 48, color: isDark ? Colors.white24 : Colors.grey[600]),
                 ),
               ),
               Positioned.fill(

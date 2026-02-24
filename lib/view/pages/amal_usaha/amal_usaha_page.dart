@@ -574,21 +574,30 @@ class _AmalUsahaCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.white12 : Colors.grey[300]!;
+    final barColor = isDark ? Colors.white24 : Colors.grey[400]!;
+    final textColor = isDark ? Colors.white24 : Colors.grey[600]!;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: Colors.grey[300],
+        color: bgColor,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: Container(color: Colors.grey[300])),
+            Expanded(child: Container(color: bgColor)),
             Container(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              color: Colors.grey[400],
-              child: const Text('Nama amal usaha placeholder', maxLines: 2, overflow: TextOverflow.ellipsis),
+              color: barColor,
+              child: Text(
+                'Nama amal usaha placeholder',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: textColor, fontSize: 14),
+              ),
             ),
           ],
         ),
@@ -602,7 +611,7 @@ Widget _amalUsahaPlaceholderImage(bool isDark) {
     width: double.infinity,
     height: double.infinity,
     color: isDark ? Colors.white12 : Colors.grey[300],
-    child: Icon(RemixIcons.building_2_line, size: 48, color: Colors.grey[600]),
+    child: Icon(RemixIcons.building_2_line, size: 48, color: isDark ? Colors.white24 : Colors.grey[600]),
   );
 }
 
