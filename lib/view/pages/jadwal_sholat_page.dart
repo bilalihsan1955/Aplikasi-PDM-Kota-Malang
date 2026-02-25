@@ -37,9 +37,8 @@ class JadwalSholatPage extends StatelessWidget {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        // MENGGUNAKAN ARGUMENT APPBAR
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(80),
+          preferredSize: const Size.fromHeight(110),
           child: _JadwalHeader(subtitle: subtitle),
         ),
         body: SingleChildScrollView(
@@ -67,7 +66,7 @@ class _JadwalHeader extends StatelessWidget implements PreferredSizeWidget {
   final String subtitle;
 
   @override
-  Size get preferredSize => const Size.fromHeight(80);
+  Size get preferredSize => const Size.fromHeight(110);
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +115,8 @@ class _JadwalHeader extends StatelessWidget implements PreferredSizeWidget {
                         const SizedBox(height: 4),
                         Text(
                           subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 14,
                             color: isDark ? Colors.white70 : Colors.grey[600],
