@@ -310,6 +310,8 @@ class _HeaderTitle extends StatelessWidget {
             children: [
               Text(
                 'Amal Usaha',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -319,6 +321,8 @@ class _HeaderTitle extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 'Unit-unit usaha Muhammadiyah',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.white70 : Colors.grey[600],

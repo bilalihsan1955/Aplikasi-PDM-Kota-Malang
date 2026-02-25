@@ -314,21 +314,21 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          'Tentang PDM Malang',
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark ? Colors.white : const Color(0xFF2D3142),
-                                          ),
+                                      Text(
+                                        'Tentang PDM Malang',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark ? Colors.white : const Color(0xFF2D3142),
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'Profil organisasi',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: isDark ? Colors.white70 : Colors.grey[600],

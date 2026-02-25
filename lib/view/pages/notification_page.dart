@@ -86,6 +86,8 @@ class _HeaderTitle extends StatelessWidget {
               children: [
                 Text(
                   'Notifikasi',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -95,6 +97,8 @@ class _HeaderTitle extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Informasi terbaru untuk anda',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? Colors.white70 : Colors.grey[600],
