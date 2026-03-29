@@ -117,15 +117,14 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   final List<Map<String, dynamic>> _homeMenus = [
+    {'icon': RemixIcons.home_heart_line, 'label': 'sholat'},
     {'icon': RemixIcons.community_line, 'label': 'Profil'},
     {'icon': RemixIcons.article_line, 'label': 'Berita'},
     {'icon': RemixIcons.calendar_event_line, 'label': 'Agenda'},
     {'icon': RemixIcons.building_2_line, 'label': 'Amal Usaha'},
     {'icon': RemixIcons.image_line, 'label': 'Dokumentasi'},
-    {'icon': RemixIcons.notification_3_line, 'label': 'Pengumuman'},
-    {'icon': RemixIcons.map_pin_line, 'label': 'Lokasi'},
+    {'icon': RemixIcons.calendar_2_line, 'label': 'KHGT'},
     {'icon': RemixIcons.search_line, 'label': 'Cari'},
-    {'icon': RemixIcons.share_line, 'label': 'Bagikan'},
   ];
 
   List<Map<String, dynamic>> get homeMenus => _homeMenus;

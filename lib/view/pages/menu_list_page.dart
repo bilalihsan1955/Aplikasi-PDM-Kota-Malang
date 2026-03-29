@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../view_models/home_view_model.dart';
 import 'empty_placeholder_page.dart';
 import '../../utils/app_style.dart';
 import '../widgets/back_button_app.dart';
@@ -327,15 +330,19 @@ class _MenuList extends StatelessWidget {
 
   static List<_MenuItemData> _buildAllItems(BuildContext context) {
     return [
-      _MenuItemData(RemixIcons.community_line, 'Profil Organisasi', 'Layanan', () => context.push('/about-pdm')),
-      _MenuItemData(RemixIcons.article_line, 'Berita & Pengumuman', 'Layanan', () => context.go('/berita')),
-      _MenuItemData(RemixIcons.calendar_event_line, 'Agenda Kegiatan', 'Layanan', () => context.go('/agenda')),
-      _MenuItemData(RemixIcons.image_line, 'Dokumentasi', 'Layanan', () => context.push('/gallery')),
-      _MenuItemData(RemixIcons.building_2_line, 'Amal Usaha', 'Layanan', () => context.push('/amal-usaha')),
-      _MenuItemData(RemixIcons.notification_3_line, 'Pengumuman', 'Layanan', () => context.push('/notifications')),
-      _MenuItemData(RemixIcons.map_pin_line, 'Lokasi Kantor', 'Informasi', () => context.push('/placeholder', extra: 'Lokasi Kantor')),
-      _MenuItemData(RemixIcons.search_line, 'Cari', 'Lainnya', () => context.push('/placeholder', extra: 'Cari')),
-      _MenuItemData(RemixIcons.share_line, 'Bagikan', 'Lainnya', () => context.push('/placeholder', extra: 'Bagikan')),
+      _MenuItemData(RemixIcons.home_heart_line, 'sholat', 'Informasi', () {
+        final vm = context.read<HomeViewModel>();
+        context.push('/jadwal-sholat', extra: {'prayer': vm.prayerTime, 'qibla': vm.qiblaDirection});
+      }),
+      _MenuItemData(RemixIcons.community_line, 'Profil Organisasi', 'Informasi', () => context.push('/about-pdm')),
+      _MenuItemData(RemixIcons.article_line, 'Berita & Pengumuman', 'Informasi', () => context.go('/berita')),
+      _MenuItemData(RemixIcons.calendar_event_line, 'Agenda Kegiatan', 'Informasi', () => context.go('/agenda')),
+      _MenuItemData(RemixIcons.image_line, 'Dokumentasi', 'Informasi', () => context.push('/gallery')),
+      _MenuItemData(RemixIcons.building_2_line, 'Amal Usaha', 'Informasi', () => context.push('/amal-usaha')),
+      _MenuItemData(RemixIcons.calendar_2_line, 'KHGT', 'Informasi', () {
+        final url = Uri.parse('https://khgt.muhammadiyah.or.id/kalendar-hijriah');
+        launchUrl(url, mode: LaunchMode.externalApplication);
+      }),
     ];
   }
 

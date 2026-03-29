@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../view_models/home_view_model.dart';
 import '../../models/agenda_model.dart';
 import '../../models/news_model.dart';
@@ -828,11 +829,18 @@ class _HomeMenuGrid extends StatelessWidget {
 
           return GestureDetector(
             onTap: () {
+              if (item['label'] == 'sholat') context.push('/jadwal-sholat', extra: {'prayer': viewModel.prayerTime, 'qibla': viewModel.qiblaDirection});
               if (item['label'] == 'Berita') context.go('/berita');
               if (item['label'] == 'Agenda') context.go('/agenda');
               if (item['label'] == 'Profil') context.go('/about-pdm');
               if (item['label'] == 'Dokumentasi') context.push('/gallery');
               if (item['label'] == 'Amal Usaha') context.push('/amal-usaha');
+              if (item['label'] == 'Notifikasi') context.push('/notifications');
+              if (item['label'] == 'KHG') {
+                final url = Uri.parse('https://khgt.muhammadiyah.or.id/kalendar-hijriah');
+                launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+              if (item['label'] == 'Cari') context.push('/menu');
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,
