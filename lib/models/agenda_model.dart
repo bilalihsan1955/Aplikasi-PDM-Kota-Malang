@@ -73,47 +73,31 @@ class AgendaModel {
     }
   }
 
-  /// Untuk card: waktu tampilan format "09.00 - selesai".
+  /// Untuk card (Home & Agenda List): format "09.00 - Selesai".
   String get time {
-    int? hour;
-    int? minute;
-    String raw = eventTime.trim();
-    if (raw.isNotEmpty) {
-      final parts = raw.replaceAll('.', ':').split(':');
-      if (parts.length >= 2) {
-        hour = int.tryParse(parts[0].trim());
-        minute = int.tryParse(parts[1].trim());
-      }
-      if (hour == null || minute == null) {
-        final match = RegExp(r'(\d{1,2})[.:](\d{2})').firstMatch(raw);
-        if (match != null) {
-          hour = int.tryParse(match.group(1)!);
-          minute = int.tryParse(match.group(2)!);
+    final raw = eventTime.trim();
+    if (raw.isEmpty) {
+      if (eventDate.contains('T') || eventDate.contains(' ')) {
+        final dt = DateTime.tryParse(eventDate);
+        if (dt != null && (dt.hour != 0 || dt.minute != 0)) {
+          return '${dt.hour.toString().padLeft(2, '0')}.${dt.minute.toString().padLeft(2, '0')} - Selesai';
         }
       }
+      return '';
     }
-    if ((hour == null || minute == null) && eventDate.isNotEmpty && (eventDate.contains(' ') || eventDate.contains('T'))) {
-      final dt = DateTime.tryParse(eventDate);
-      if (dt != null) {
-        hour = dt.hour;
-        minute = dt.minute;
-      }
+    final match = RegExp(r'(\d{1,2})[.:](\d{2})').firstMatch(raw);
+    if (match != null) {
+      final h = match.group(1)!.padLeft(2, '0');
+      final m = match.group(2)!.padLeft(2, '0');
+      return '$h.$m - Selesai';
     }
-    if (hour != null && minute != null) {
-      return _formatTimeRange(hour, minute, null, null);
-    }
-    if (raw.isNotEmpty) return '$raw - selesai';
-    return '';
+    return '$raw - Selesai';
   }
 
-  /// Format tampilan: "09.00 - selesai" atau "09.00 - 11.00" jika end time ada.
-  static String _formatTimeRange(int startH, int startM, int? endH, int? endM) {
-    final start = '${startH.toString().padLeft(2, '0')}.${startM.toString().padLeft(2, '0')}';
-    if (endH != null && endM != null) {
-      final end = '${endH.toString().padLeft(2, '0')}.${endM.toString().padLeft(2, '0')}';
-      return '$start - $end';
-    }
-    return '$start - selesai';
+  /// Untuk halaman detail: waktu murni sesuai respons API (misal 15:30 - 18:00 WIB).
+  String get timeDetail {
+    final raw = eventTime.trim();
+    return raw.isNotEmpty ? raw : time;
   }
 
   /// Nama kategori untuk filter chip.
@@ -126,10 +110,10 @@ class AgendaModel {
       final d = DateTime.tryParse(eventDate);
       if (d == null) return null;
       if (eventTime.isEmpty) return DateTime(d.year, d.month, d.day);
-      final parts = eventTime.split(':');
-      if (parts.length >= 2) {
-        final h = int.tryParse(parts[0]) ?? 0;
-        final m = int.tryParse(parts[1]) ?? 0;
+      final match = RegExp(r'(\d{1,2})[.:](\d{2})').firstMatch(eventTime);
+      if (match != null) {
+        final h = int.tryParse(match.group(1)!) ?? 0;
+        final m = int.tryParse(match.group(2)!) ?? 0;
         return DateTime(d.year, d.month, d.day, h, m);
       }
       return DateTime(d.year, d.month, d.day);
@@ -171,39 +155,28 @@ class AgendaModel {
   static String _readEventTime(Map<String, dynamic> raw, Map<String, dynamic> json) {
     String? t;
     t = raw['event_time']?.toString().trim();
-    if (t != null && t.isNotEmpty) return _normalizeTimeStr(t);
+    if (t != null && t.isNotEmpty) return t;
     t = raw['eventTime']?.toString().trim();
-    if (t != null && t.isNotEmpty) return _normalizeTimeStr(t);
+    if (t != null && t.isNotEmpty) return t;
     t = json['event_time']?.toString().trim();
-    if (t != null && t.isNotEmpty) return _normalizeTimeStr(t);
+    if (t != null && t.isNotEmpty) return t;
     t = json['eventTime']?.toString().trim();
-    if (t != null && t.isNotEmpty) return _normalizeTimeStr(t);
+    if (t != null && t.isNotEmpty) return t;
     for (final entry in raw.entries) {
       final k = entry.key.toString().toLowerCase();
       if ((k == 'event_time' || k == 'eventtime' || k == 'start_time' || k == 'time') && entry.value != null) {
         t = entry.value.toString().trim();
-        if (t.isNotEmpty) return _normalizeTimeStr(t);
+        if (t.isNotEmpty) return t;
       }
     }
     final dateStr = (raw['event_date'] ?? json['event_date'])?.toString().trim() ?? '';
     if (dateStr.contains(' ') || dateStr.contains('T')) {
       final dt = DateTime.tryParse(dateStr);
       if (dt != null && (dt.hour != 0 || dt.minute != 0)) {
-        return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:00';
+        return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
       }
     }
     return '';
-  }
-
-  /// Normalisasi "09.00", "09:00", "09:00:00" → "09:00:00" untuk parsing di getter time.
-  static String _normalizeTimeStr(String s) {
-    final parts = s.replaceAll('.', ':').split(':');
-    if (parts.length >= 2) {
-      final h = int.tryParse(parts[0].trim()) ?? 0;
-      final m = int.tryParse(parts[1].trim()) ?? 0;
-      return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:00';
-    }
-    return s;
   }
 
   /// Baca nilai double dari raw, coba key utama dulu lalu key alternatif (mis. latitude lalu lat).

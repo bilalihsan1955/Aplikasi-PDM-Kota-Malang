@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -164,9 +165,6 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     final profile = _profile;
     final name = profile?.name ?? 'Pimpinan Daerah Muhammadiyah Kota Malang';
     final shortName = profile?.shortName ?? 'PDM Kota Malang';
-    final description = _stripHtml(profile?.description.isNotEmpty == true
-        ? profile!.description
-        : 'Muhammadiyah adalah Gerakan Islam, Dakwah Amar Ma\'ruf Nahi Munkar dan Tajdid, bersumber pada Al-Qur\'an dan As-Sunnah.');
     // Gambar dari response: data.logo (contoh: "https://makotamu.org/storage/logo.png")
     final logoUrl = _resolveLogoUrl(profile?.logo ?? '');
 
@@ -231,16 +229,18 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                                     style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, height: 1.25),
                                   ),
                                   const SizedBox(height: 24),
-                                  Text(
-                                    description,
-                                    style: const TextStyle(fontSize: 16, height: 1.8, color: Colors.grey),
+                                  HtmlWidget(
+                                    profile?.description.isNotEmpty == true
+                                        ? profile!.description
+                                        : 'Muhammadiyah adalah Gerakan Islam, Dakwah Amar Ma\'ruf Nahi Munkar dan Tajdid, bersumber pada Al-Qur\'an dan As-Sunnah.',
+                                    textStyle: const TextStyle(fontSize: 16, height: 1.8, color: Colors.grey),
                                   ),
                                   const SizedBox(height: 32),
-                                  _buildSejarahSection(isDark, profile != null ? _stripHtml(profile.history) : null),
+                                  _buildSejarahSection(isDark, profile?.history),
                                   const SizedBox(height: 32),
                                   const Text('Visi & Misi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 16),
-                                  _buildVisiMisiCard(isDark, profile != null ? _stripHtml(profile.vision) : null, profile != null ? _stripHtml(profile.mission) : null),
+                                  _buildVisiMisiCard(isDark, profile?.vision, profile?.mission),
                                   const SizedBox(height: 32),
                                   const Text('Struktur Kepengurusan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                 ],
@@ -364,13 +364,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     );
   }
 
-  static String _stripHtml(String html) {
-    if (html.isEmpty) return html;
-    return html
-        .replaceAll(RegExp(r'<[^>]*>'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
+
 
   /// Ambil URL gambar logo dari response: jika sudah full URL pakai as-is, jika path relatif gabung dengan origin API.
   static String _resolveLogoUrl(String logo) {
@@ -747,7 +741,6 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     final raw = history?.trim().isNotEmpty == true
         ? history!
         : 'PDM Kota Malang telah berkontribusi sejak era kolonial dalam memajukan pendidikan dan kesehatan masyarakat di wilayah Malang Raya.';
-    final text = _stripHtml(raw);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -760,9 +753,9 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
         children: [
           const Text('Sejarah Singkat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.grey),
+          HtmlWidget(
+            raw,
+            textStyle: const TextStyle(fontSize: 14, height: 1.5, color: Colors.grey),
           ),
         ],
       ),
@@ -796,7 +789,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              Text(desc, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+              HtmlWidget(desc, textStyle: const TextStyle(color: Colors.grey, fontSize: 14)),
             ],
           ),
         ),

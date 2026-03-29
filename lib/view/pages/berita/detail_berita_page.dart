@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -349,9 +350,9 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                     const SizedBox(height: 24),
                     Divider(color: isDark ? Colors.white10 : Colors.grey[200]),
                     const SizedBox(height: 24),
-                    Text(
-                      news.displayContent,
-                      style: TextStyle(
+                    HtmlWidget(
+                      news.content.trim().isNotEmpty ? news.content : news.excerpt,
+                      textStyle: TextStyle(
                         fontSize: 16,
                         height: 1.8,
                         color: isDark ? Colors.white.withOpacity(0.8) : const Color(0xFF4A4A4A),

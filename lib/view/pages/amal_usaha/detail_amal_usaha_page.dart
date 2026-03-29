@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -61,7 +62,6 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
     }
 
     final hasNetworkImage = item.image.isNotEmpty && item.image.startsWith('http');
-    final descriptionText = _stripHtml(item.description);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -160,10 +160,10 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
                               ),
                             ],
                             const SizedBox(height: 24),
-                            if (descriptionText.isNotEmpty)
-                              Text(
-                                descriptionText,
-                                style: TextStyle(
+                            if (item.description.isNotEmpty)
+                              HtmlWidget(
+                                item.description,
+                                textStyle: TextStyle(
                                   fontSize: 16,
                                   height: 1.8,
                                   color: isDark ? Colors.white70 : Colors.grey[700],
@@ -439,13 +439,7 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
     }
   }
 
-  static String _stripHtml(String html) {
-    if (html.isEmpty) return html;
-    return html
-        .replaceAll(RegExp(r'<[^>]*>'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
+
 
   Widget _circleNavButton({
     required IconData icon,

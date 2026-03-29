@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -135,9 +136,9 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                 const SizedBox(height: 32),
                 const Text('Tentang Acara', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                Text(
-                  _agenda?.displayDescription ?? '-',
-                  style: const TextStyle(fontSize: 15, height: 1.6),
+                HtmlWidget(
+                  _agenda?.description ?? '-',
+                  textStyle: const TextStyle(fontSize: 15, height: 1.6),
                 ),
                 const SizedBox(height: 24),
                 if ((_agenda?.registrationLink ?? '').trim().isNotEmpty) _buildRegisterButton(context),
@@ -330,7 +331,7 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
 
   Widget _buildDateTimeCard(BuildContext context) {
     final dateStr = _agenda?.eventDateFormatted ?? '-';
-    final timeStr = _agenda?.time ?? '-';
+    final timeStr = _agenda?.timeDetail ?? '-';
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
