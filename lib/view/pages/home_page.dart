@@ -233,20 +233,47 @@ class _NewsSlide extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          children: [
+                            Skeleton.leaf(
+                              enabled: true,
+                              child: Text(
+                                'Kategori',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : Colors.white70,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Skeleton.leaf(
+                              enabled: true,
+                              child: Text(
+                                '0 menit lalu',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white60 : Colors.white60,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
                         Text(
                           'Judul berita placeholder',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF2D3142),
+                            color: isDark ? Colors.white : Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Text(
-                          'Deskripsi singkat berita.',
+                          'Deskripsi singkat berita yang memberikan gambaran konten.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? Colors.white70 : Colors.grey[600],
+                            color: isDark ? Colors.white70 : Colors.white70,
                           ),
                         ),
                       ],
@@ -395,6 +422,34 @@ class _NewsSlideCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      news.tag,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    news.time,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               Text(
                 news.title,
                 style: const TextStyle(
@@ -406,7 +461,7 @@ class _NewsSlideCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 news.desc,
                 maxLines: 1,
@@ -1296,29 +1351,49 @@ class _NewsSectionState extends State<_NewsSection> {
               ),
               const SizedBox(height: 8),
               if (loading && newsData.isEmpty)
-                Skeletonizer(
-                  enabled: true,
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 4,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemBuilder: (context, index) {
-                      final dummy = NewsModel.fromCard(
-                        tag: 'Kategori',
-                        time: '0 menit lalu',
-                        title: 'Judul berita placeholder',
-                        desc: 'Deskripsi singkat berita.',
-                        image: 'assets/images/bg.webp',
-                      );
-                      return _NewsCard(data: dummy, skeletonStyle: true);
-                    },
-                  ),
+                Column(
+                  children: [
+                    for (var i = 0; i < 2; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Skeletonizer(
+                                enabled: true,
+                                child: _NewsCard(
+                                  data: NewsModel.fromCard(
+                                    tag: 'Muhammadiyah', 
+                                    time: 'Diposting pada: 12 Januari 2024, 15:30 WIB', 
+                                    title: 'Judul berita skeleton yang sangat panjang untuk memastikan tampilan bones yang maksimal', 
+                                    desc: 'Deskripsi berita skeleton yang mencakup dua baris penuh untuk memberikan gambaran area skeleton yang lebih luas dan informatif bagi pengguna.', 
+                                    image: 'assets/images/bg.webp'
+                                  ),
+                                  skeletonStyle: true,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Skeletonizer(
+                                enabled: true,
+                                child: _NewsCard(
+                                  data: NewsModel.fromCard(
+                                    tag: 'Info PDM', 
+                                    time: 'Diposting pada: 13 Januari 2024, 09:15 WIB', 
+                                    title: 'Contoh judul berita placeholder lainnya yang juga panjang dan mendetail', 
+                                    desc: 'Deskripsi placeholder tambahan untuk memastikan konsistensi visual pada blok skeletonizer di seluruh halaman aplikasi.', 
+                                    image: 'assets/images/bg.webp'
+                                  ),
+                                  skeletonStyle: true,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 )
               else if (newsData.isEmpty)
                 Padding(
@@ -1336,23 +1411,33 @@ class _NewsSectionState extends State<_NewsSection> {
                   ),
                 )
               else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: newsData.length > 4 ? 4 : newsData.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.75,
-                  ),
-                  itemBuilder: (context, index) {
-                    final item = newsData[index];
-                    return GestureDetector(
-                      onTap: () => context.push('/berita/detail', extra: {'slug': item.slug, 'news': item}),
-                      child: _NewsCard(data: item),
-                    );
-                  },
+                Column(
+                  children: [
+                    for (var i = 0; i < (newsData.length > 4 ? 4 : newsData.length); i += 2)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => context.push('/berita/detail', extra: {'slug': newsData[i].slug, 'news': newsData[i]}),
+                                child: _NewsCard(data: newsData[i]),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: (i + 1 < newsData.length)
+                                  ? GestureDetector(
+                                      onTap: () => context.push('/berita/detail', extra: {'slug': newsData[i+1].slug, 'news': newsData[i+1]}),
+                                      child: _NewsCard(data: newsData[i+1]),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
             ],
           );
@@ -1399,7 +1484,7 @@ class _NewsCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1407,87 +1492,96 @@ class _NewsCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            flex: 4,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             child: Stack(
-              fit: StackFit.expand,
               children: [
-                _buildNewsImage(data.image, isDark),
-                Container(color: Colors.black.withOpacity(0.1)),
-                  Positioned(
-                    top: 12,
-                    left: 12,
+                AspectRatio(
+                  aspectRatio: 1.2,
+                  child: _buildNewsImage(data.image, isDark),
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Skeleton.leaf(
+                    enabled: skeletonStyle,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: skeletonStyle
-                            ? (isDark ? Colors.white24 : Colors.grey[300])
-                            : (isDark ? const Color(0XFF071D75) : const Color(0xFFD6DCEF)),
+                        color: isDark ? const Color(0XFF071D75) : const Color(0xFFD6DCEF),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
-                        data.tag,
+                        data.tag.isEmpty ? 'KATEGORI' : data.tag.toUpperCase(),
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: skeletonStyle
-                              ? (isDark ? Colors.white54 : Colors.grey[600])
-                              : (isDark ? const Color(0xFFD6DCEF) : const Color(0XFF071D75)),
+                          color: isDark ? const Color(0xFFD6DCEF) : const Color(0XFF071D75),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.time.isEmpty ? '–' : data.time,
-                    style: TextStyle(
-                      fontSize: 11, 
-                      color: isDark ? Colors.white54 : Colors.grey[500],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    data.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF2D3142),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Expanded(
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Skeleton.leaf(
+                  enabled: skeletonStyle,
+                  child: SizedBox(
+                    width: skeletonStyle ? 120 : null,
                     child: Text(
-                      data.desc,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                      data.time.isEmpty ? 'Memuat waktu...' : data.time,
                       style: TextStyle(
-                        fontSize: 12, 
-                        color: isDark ? Colors.white60 : Colors.grey[600],
+                        fontSize: 10,
+                        color: isDark ? Colors.white54 : Colors.grey[600],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                Skeleton.leaf(
+                  enabled: skeletonStyle,
+                  child: SizedBox(
+                    width: skeletonStyle ? double.infinity : null,
+                    child: Text(
+                      data.title.isEmpty ? 'Judul berita skeleton yang panjang' : data.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF2D3142),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Skeleton.leaf(
+                  enabled: skeletonStyle,
+                  child: SizedBox(
+                    width: skeletonStyle ? double.infinity : null,
+                    child: Text(
+                      data.desc.isEmpty ? 'Deskripsi berita placeholder yang mencakup dua baris untuk skeletonizer.' : data.desc,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

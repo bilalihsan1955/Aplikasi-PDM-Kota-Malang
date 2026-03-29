@@ -58,8 +58,12 @@ class NewsModel {
     }
   }
 
-  /// Untuk tampilan card: ringkasan (excerpt) dengan HTML tag dihilangkan.
-  String get desc => _stripHtml(excerpt);
+  /// Untuk tampilan card: ringkasan (excerpt) dengan HTML tag dihilangkan. 
+  /// Fallback ke [content] jika [excerpt] kosong.
+  String get desc {
+    final raw = excerpt.trim().isEmpty ? content : excerpt;
+    return _stripHtml(raw);
+  }
 
   /// Tanggal terbit format lengkap untuk halaman detail (contoh: "4 Feb 2025 • 10:00").
   String get publishedAtFormatted {
@@ -83,10 +87,20 @@ class NewsModel {
 
   static String _stripHtml(String html) {
     if (html.isEmpty) return html;
-    return html
-        .replaceAll(RegExp(r'<[^>]*>'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    
+    // 1. Ganti <br>, <p>, </div>, </li> dengan spasi agar teks tidak bersatu
+    String result = html.replaceAll(RegExp(r'<(br|p|div|li)[^>]*>', caseSensitive: false), ' ');
+    
+    // 2. Hapus semua tag lainnya
+    result = result.replaceAll(RegExp(r'<[^>]*>'), ' ');
+    
+    // 3. Hapus entity HTML common (&nbsp;, &amp;, &rsquo;, dll)
+    result = result.replaceAll(RegExp(r'&[^;]+;'), ' ');
+    
+    // 4. Sederhanakan whitespace (spasi, newline, tab) menjadi satu spasi saja
+    result = result.replaceAll(RegExp(r'\s+'), ' ');
+    
+    return result.trim();
   }
 
   /// Untuk data dummy (mis. di Home): buat model dari field tampilan card saja.

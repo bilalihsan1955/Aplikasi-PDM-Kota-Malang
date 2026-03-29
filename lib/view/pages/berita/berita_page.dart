@@ -321,49 +321,45 @@ class _NewsGridState extends State<_NewsGrid> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (viewModel.isLoading && filteredNews.isEmpty) {
-      final dummyNews = [
-        NewsModel.fromCard(
-          tag: 'Kategori',
-          time: '0 menit lalu',
-          title: 'Judul berita placeholder pertama untuk skeleton',
-          desc: 'Deskripsi singkat berita placeholder.',
-          image: 'assets/images/bg.webp',
-        ),
-        NewsModel.fromCard(
-          tag: 'Info',
-          time: '1 jam lalu',
-          title: 'Judul berita placeholder kedua',
-          desc: 'Deskripsi singkat untuk kartu skeleton.',
-          image: 'assets/images/profile.png',
-        ),
-      ];
       return RefreshIndicator(
-        onRefresh: () async {
-          await context.read<NewsViewModel>().loadNews();
-        },
-        displacement: 40,
-        color: Theme.of(context).colorScheme.primary,
+        onRefresh: () => viewModel.loadNews(),
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              sliver: SliverSafeArea(
-                top: false,
-                sliver: Skeletonizer.sliver(
-                  enabled: true,
-                  child: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.75,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _NewsCard(data: dummyNews[index % 2], skeletonStyle: true),
-                      childCount: 6,
-                    ),
-                  ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Skeletonizer(
+                              enabled: true,
+                              child: _NewsCard(
+                                data: NewsModel.fromCard(tag: '', time: '', title: '', desc: '', image: ''),
+                                skeletonStyle: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Skeletonizer(
+                              enabled: true,
+                              child: _NewsCard(
+                                data: NewsModel.fromCard(tag: '', time: '', title: '', desc: '', image: ''),
+                                skeletonStyle: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  childCount: 3,
                 ),
               ),
             ),
@@ -471,28 +467,69 @@ class _NewsGridState extends State<_NewsGrid> {
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
             sliver: SliverSafeArea(
               top: false,
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.75,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index >= filteredNews.length) {
-                      final dummy = NewsModel.fromCard(tag: '...', time: '...', title: 'Memuat...', desc: '...', image: 'assets/images/bg.webp');
-                      return Skeletonizer(enabled: true, child: _NewsCard(data: dummy, skeletonStyle: true));
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final rowItems = <NewsModel>[];
+                  final startIndex = index * 2;
+                  
+                  if (startIndex >= filteredNews.length) {
+                    if (viewModel.isLoadingMore && startIndex == filteredNews.length) {
+                       // Show one skeleton if at the very end and loading more
+                       final dummy = NewsModel.fromCard(
+                         tag: 'Kategori', 
+                         time: '10 Januari 2024, 10:00', 
+                         title: 'Memuat judul berita...', 
+                         desc: 'Memuat deskripsi berita selengkapnya di sini...', 
+                         image: 'assets/images/bg.webp'
+                       );
+                       return Padding(
+                         padding: const EdgeInsets.only(bottom: 16),
+                         child: Row(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Expanded(child: Skeletonizer(enabled: true, child: _NewsCard(data: dummy, skeletonStyle: true))),
+                             const SizedBox(width: 16),
+                             const Expanded(child: SizedBox.shrink()),
+                           ],
+                         ),
+                       );
                     }
-                    final item = filteredNews[index];
-                    return GestureDetector(
-                      onTap: () => context.push('/berita/detail', extra: {'slug': item.slug, 'news': item}),
-                      child: _NewsCard(data: item),
-                    );
-                  },
-                  childCount: filteredNews.length + (viewModel.isLoadingMore ? 1 : 0),
-                ),
+                    return null;
+                  }
+
+                  rowItems.add(filteredNews[startIndex]);
+                  if (startIndex + 1 < filteredNews.length) {
+                    rowItems.add(filteredNews[startIndex + 1]);
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => context.push('/berita/detail', extra: {'slug': rowItems[0].slug, 'news': rowItems[0]}),
+                            child: _NewsCard(data: rowItems[0]),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: rowItems.length > 1
+                              ? GestureDetector(
+                                  onTap: () => context.push('/berita/detail', extra: {'slug': rowItems[1].slug, 'news': rowItems[1]}),
+                                  child: _NewsCard(data: rowItems[1]),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                childCount: ((filteredNews.length + (viewModel.isLoadingMore ? 1 : 0)) / 2).ceil(),
               ),
+            ),
             ),
           ),
         ],
@@ -537,7 +574,7 @@ class _NewsCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -545,28 +582,23 @@ class _NewsCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            flex: 4,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildNewsImage(data.image, isDark),
-                  Container(
-                    color: Colors.black.withOpacity(0.1),
-                  ),
-                  Positioned(
-                    top: 12,
-                    left: 12,
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio: 1.2,
+                  child: _buildNewsImage(data.image, isDark),
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Skeleton.leaf(
+                    enabled: skeletonStyle,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: skeletonStyle
                             ? (isDark ? Colors.white24 : Colors.grey[300])
@@ -574,7 +606,7 @@ class _NewsCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
-                        data.tag.toUpperCase(),
+                        data.tag.isEmpty ? 'KATEGORI' : data.tag.toUpperCase(),
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
@@ -585,49 +617,65 @@ class _NewsCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.time,
-                    style: TextStyle(
-                      fontSize: 11, 
-                      color: isDark ? Colors.white54 : Colors.grey[500],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    data.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Expanded(
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Skeleton.leaf(
+                  enabled: skeletonStyle,
+                  child: SizedBox(
+                    width: skeletonStyle ? 120 : null,
                     child: Text(
-                      data.desc,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                      data.time.isEmpty ? 'Memuat waktu...' : data.time,
                       style: TextStyle(
-                        fontSize: 12, 
-                        color: isDark ? Colors.white60 : Colors.grey[600],
+                        fontSize: 10,
+                        color: isDark ? Colors.white54 : Colors.grey[600],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                Skeleton.leaf(
+                  enabled: skeletonStyle,
+                  child: SizedBox(
+                    width: skeletonStyle ? double.infinity : null,
+                    child: Text(
+                      data.title.isEmpty ? 'Judul berita skeleton yang panjang' : data.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF2D3142),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Skeleton.leaf(
+                  enabled: skeletonStyle,
+                  child: SizedBox(
+                    width: skeletonStyle ? double.infinity : null,
+                    child: Text(
+                      data.desc.isEmpty ? 'Deskripsi berita placeholder yang mencakup dua baris untuk skeletonizer.' : data.desc,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
