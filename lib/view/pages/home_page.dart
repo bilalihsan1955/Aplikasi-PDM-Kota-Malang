@@ -146,35 +146,39 @@ class _SearchSection extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: Container(
-            height: 56,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFF6F7FB),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE8ECF4),
-                width: 1,
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(0.06)
+                    : const Color(0xFFF6F7FB),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.08)
+                      : const Color(0xFFE8ECF4),
+                  width: 1,
+                ),
+              ),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Icon(
+                    RemixIcons.search_line,
+                    size: 22,
+                    color: isDark ? Colors.white54 : Colors.grey[500],
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Cari menu, layanan, informasi...',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isDark ? Colors.white38 : Colors.grey[500],
+                    ),
+                  ),
+                ],
               ),
             ),
-            alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                Icon(
-                  RemixIcons.search_line,
-                  size: 22,
-                  color: isDark ? Colors.white54 : Colors.grey[500],
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Cari menu, layanan, informasi...',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: isDark ? Colors.white38 : Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          ),
           ),
         ),
       ),
@@ -206,7 +210,9 @@ class _NewsSlide extends StatelessWidget {
               color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF1F4F9),
                 width: 1.5,
               ),
               boxShadow: [
@@ -222,10 +228,7 @@ class _NewsSlide extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    'assets/images/bg.webp',
-                    fit: BoxFit.cover,
-                  ),
+                  Image.asset('assets/images/bg.webp', fit: BoxFit.cover),
                   Positioned(
                     left: 20,
                     right: 20,
@@ -242,7 +245,9 @@ class _NewsSlide extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white70 : Colors.white70,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.white70,
                                 ),
                               ),
                             ),
@@ -253,7 +258,9 @@ class _NewsSlide extends StatelessWidget {
                                 '0 menit lalu',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? Colors.white60 : Colors.white60,
+                                  color: isDark
+                                      ? Colors.white60
+                                      : Colors.white60,
                                 ),
                               ),
                             ),
@@ -295,14 +302,18 @@ class _NewsSlide extends StatelessWidget {
             height: 200,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.grey[200],
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white10
+                  : Colors.grey[200],
             ),
             child: Center(
               child: Text(
                 'Berita belum tersedia',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.grey[600],
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white54
+                      : Colors.grey[600],
                 ),
               ),
             ),
@@ -315,7 +326,10 @@ class _NewsSlide extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: GestureDetector(
-        onTap: () => context.push('/berita/detail', extra: {'slug': item.slug, 'news': item}),
+        onTap: () => context.push(
+          '/berita/detail',
+          extra: {'slug': item.slug, 'news': item},
+        ),
         child: Container(
           height: 200,
           decoration: BoxDecoration(
@@ -355,18 +369,21 @@ class _NewsSlide extends StatelessWidget {
                     end: Offset.zero,
                   ).animate(curved),
                   child: FadeTransition(
-                    opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
+                    opacity: Tween<double>(
+                      begin: 0.0,
+                      end: 1.0,
+                    ).animate(curved),
                     child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.94, end: 1.0).animate(curved),
+                      scale: Tween<double>(
+                        begin: 0.94,
+                        end: 1.0,
+                      ).animate(curved),
                       child: child,
                     ),
                   ),
                 );
               },
-              child: _NewsSlideCard(
-                key: ValueKey<int>(item.id),
-                news: item,
-              ),
+              child: _NewsSlideCard(key: ValueKey<int>(item.id), news: item),
             ),
           ),
         ),
@@ -381,7 +398,8 @@ class _NewsSlideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageWidget = (news.image.startsWith('http://') || news.image.startsWith('https://'))
+    final imageWidget =
+        (news.image.startsWith('http://') || news.image.startsWith('https://'))
         ? Image.network(
             news.image,
             fit: BoxFit.cover,
@@ -390,14 +408,14 @@ class _NewsSlideCard extends StatelessWidget {
             errorBuilder: (_, __, ___) => _placeholder(),
           )
         : (news.image.isNotEmpty
-            ? Image.asset(
-                news.image,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-                errorBuilder: (_, __, ___) => _placeholder(),
-              )
-            : _placeholder());
+              ? Image.asset(
+                  news.image,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  errorBuilder: (_, __, ___) => _placeholder(),
+                )
+              : _placeholder());
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -425,7 +443,10 @@ class _NewsSlideCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -513,7 +534,9 @@ class _EventSectionState extends State<_EventSection> {
         final loading = viewModel.eventsLoading;
         // Maksimal 2 agenda yang akan datang; jika kosong section tidak ditampilkan
         const maxDisplay = 2;
-        final visibleCount = events.length > maxDisplay ? maxDisplay : events.length;
+        final visibleCount = events.length > maxDisplay
+            ? maxDisplay
+            : events.length;
 
         if (!loading && events.isEmpty) {
           return const SizedBox.shrink();
@@ -588,9 +611,16 @@ class _EventSectionState extends State<_EventSection> {
               SizedBox(
                 height: 136,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
+                  padding: const EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    bottom: 16,
+                  ),
                   child: GestureDetector(
-                    onTap: () => context.push('/agenda/detail', extra: {'slug': events[0].slug, 'agenda': events[0]}),
+                    onTap: () => context.push(
+                      '/agenda/detail',
+                      extra: {'slug': events[0].slug, 'agenda': events[0]},
+                    ),
                     child: _EventCard(
                       event: events[0],
                       margin: EdgeInsets.zero,
@@ -612,7 +642,10 @@ class _EventSectionState extends State<_EventSection> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: GestureDetector(
-                        onTap: () => context.push('/agenda/detail', extra: {'slug': item.slug, 'agenda': item}),
+                        onTap: () => context.push(
+                          '/agenda/detail',
+                          extra: {'slug': item.slug, 'agenda': item},
+                        ),
                         child: _EventCard(
                           event: item,
                           margin: EdgeInsets.only(
@@ -645,7 +678,11 @@ class _EventCard extends StatelessWidget {
   final EdgeInsets margin;
   final bool skeletonStyle;
 
-  const _EventCard({required this.event, required this.margin, this.skeletonStyle = false});
+  const _EventCard({
+    required this.event,
+    required this.margin,
+    this.skeletonStyle = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -658,14 +695,22 @@ class _EventCard extends StatelessWidget {
             : const RadialGradient(
                 center: Alignment.topLeft,
                 radius: 3,
-                colors: [Color(0xFF39A658), Color(0xFF4A6FDB), Color(0XFF071D75)],
+                colors: [
+                  Color(0xFF39A658),
+                  Color(0xFF4A6FDB),
+                  Color(0XFF071D75),
+                ],
                 stops: [0.0, 0.3, 0.8],
               ),
-        color: skeletonStyle ? (isDark ? const Color(0xFF1E1E1E) : Colors.white) : null,
+        color: skeletonStyle
+            ? (isDark ? const Color(0xFF1E1E1E) : Colors.white)
+            : null,
         borderRadius: BorderRadius.circular(24),
         border: skeletonStyle
             ? Border.all(
-                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF1F4F9),
                 width: 1.5,
               )
             : null,
@@ -723,7 +768,9 @@ class _EventDate extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = skeletonStyle
         ? (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F0))
-        : (isDark ? const Color(0xFF152D8D).withOpacity(0.8) : const Color(0xFFFCFCFC));
+        : (isDark
+              ? const Color(0xFF152D8D).withOpacity(0.8)
+              : const Color(0xFFFCFCFC));
     final textColor = skeletonStyle
         ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
         : (isDark ? Colors.white : const Color(0xFF2D3142));
@@ -815,7 +862,10 @@ class _EventInfo extends StatelessWidget {
             children: [
               Icon(RemixIcons.time_line, color: subColor, size: 16),
               const SizedBox(width: 4),
-              Text(event.time.isEmpty ? '–' : event.time, style: TextStyle(color: textColor)),
+              Text(
+                event.time.isEmpty ? '–' : event.time,
+                style: TextStyle(color: textColor),
+              ),
               Container(
                 height: 12,
                 width: 1,
@@ -872,7 +922,9 @@ class _HomeMenuGrid extends StatelessWidget {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: viewModel.homeMenus.length > 8 ? 8 : viewModel.homeMenus.length,
+        itemCount: viewModel.homeMenus.length > 8
+            ? 8
+            : viewModel.homeMenus.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
           mainAxisSpacing: 0,
@@ -884,7 +936,14 @@ class _HomeMenuGrid extends StatelessWidget {
 
           return GestureDetector(
             onTap: () {
-              if (item['label'] == 'sholat') context.push('/jadwal-sholat', extra: {'prayer': viewModel.prayerTime, 'qibla': viewModel.qiblaDirection});
+              if (item['label'] == 'sholat')
+                context.push(
+                  '/jadwal-sholat',
+                  extra: {
+                    'prayer': viewModel.prayerTime,
+                    'qibla': viewModel.qiblaDirection,
+                  },
+                );
               if (item['label'] == 'Berita') context.go('/berita');
               if (item['label'] == 'Agenda') context.go('/agenda');
               if (item['label'] == 'Profil') context.go('/about-pdm');
@@ -892,7 +951,9 @@ class _HomeMenuGrid extends StatelessWidget {
               if (item['label'] == 'Amal Usaha') context.push('/amal-usaha');
               if (item['label'] == 'Notifikasi') context.push('/notifications');
               if (item['label'] == 'KHG') {
-                final url = Uri.parse('https://khgt.muhammadiyah.or.id/kalendar-hijriah');
+                final url = Uri.parse(
+                  'https://khgt.muhammadiyah.or.id/kalendar-hijriah',
+                );
                 launchUrl(url, mode: LaunchMode.externalApplication);
               }
               if (item['label'] == 'Cari') context.push('/menu');
@@ -910,8 +971,12 @@ class _HomeMenuGrid extends StatelessWidget {
                         const Color(0xFFFFC300).withOpacity(0.25),
                         themeColor.withOpacity(0.25),
                       ],
-                      begin: index.isEven ? Alignment.topLeft : Alignment.bottomRight,
-                      end: index.isEven ? Alignment.bottomRight : Alignment.topLeft,
+                      begin: index.isEven
+                          ? Alignment.topLeft
+                          : Alignment.bottomRight,
+                      end: index.isEven
+                          ? Alignment.bottomRight
+                          : Alignment.topLeft,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
@@ -919,11 +984,7 @@ class _HomeMenuGrid extends StatelessWidget {
                       width: 1.5,
                     ),
                   ),
-                  child: Icon(
-                    item['icon'],
-                    color: themeColor,
-                    size: 28,
-                  ),
+                  child: Icon(item['icon'], color: themeColor, size: 28),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -977,8 +1038,12 @@ class _PrayerQiblaSectionState extends State<_PrayerQiblaSection> {
         return Skeletonizer(
           enabled: loading && prayer == null,
           effect: ShimmerEffect(
-            baseColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
-            highlightColor: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF5F5F5),
+            baseColor: isDark
+                ? const Color(0xFF2A2A2A)
+                : const Color(0xFFE0E0E0),
+            highlightColor: isDark
+                ? const Color(0xFF3A3A3A)
+                : const Color(0xFFF5F5F5),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1000,7 +1065,9 @@ class _PrayerQiblaSectionState extends State<_PrayerQiblaSection> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16), // Jarak antar card sholat & qiblat (ubah angka untuk atur)
+                  const SizedBox(
+                    width: 16,
+                  ), // Jarak antar card sholat & qiblat (ubah angka untuk atur)
                   Expanded(
                     child: InkWell(
                       onTap: () => context.push(
@@ -1046,9 +1113,13 @@ class _PrayerTimeCard extends StatelessWidget {
     final city = raw.isEmpty
         ? raw
         : raw
-            .split(' ')
-            .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase())
-            .join(' ');
+              .split(' ')
+              .map(
+                (w) => w.isEmpty
+                    ? w
+                    : w[0].toUpperCase() + w.substring(1).toLowerCase(),
+              )
+              .join(' ');
     final prayerName = next?.name ?? 'Subuh';
     final prayerTime = next?.time ?? '00.00';
 
@@ -1063,11 +1134,15 @@ class _PrayerTimeCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-        color: isSkeleton ? (isDark ? const Color(0xFF1E1E1E) : Colors.white) : null,
+        color: isSkeleton
+            ? (isDark ? const Color(0xFF1E1E1E) : Colors.white)
+            : null,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isSkeleton
-              ? (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9))
+              ? (isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF1F4F9))
               : Colors.white.withOpacity(0.15),
           width: 1.5,
         ),
@@ -1133,7 +1208,9 @@ class _PrayerTimeCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isSkeleton
-                      ? (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF0F0F0))
+                      ? (isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : const Color(0xFFF0F0F0))
                       : Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1196,11 +1273,15 @@ class _QiblaCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-        color: isSkeleton ? (isDark ? const Color(0xFF1E1E1E) : Colors.white) : null,
+        color: isSkeleton
+            ? (isDark ? const Color(0xFF1E1E1E) : Colors.white)
+            : null,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isSkeleton
-              ? (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9))
+              ? (isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF1F4F9))
               : Colors.white.withOpacity(0.15),
           width: 1.5,
         ),
@@ -1253,11 +1334,15 @@ class _QiblaCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isSkeleton
-                            ? (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF0F0F0))
+                            ? (isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : const Color(0xFFF0F0F0))
                             : Colors.white.withOpacity(0.15),
                         border: Border.all(
                           color: isSkeleton
-                              ? (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFE0E0E0))
+                              ? (isDark
+                                    ? Colors.white.withOpacity(0.05)
+                                    : const Color(0xFFE0E0E0))
                               : Colors.white.withOpacity(0.3),
                           width: 1.5,
                         ),
@@ -1277,7 +1362,9 @@ class _QiblaCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isSkeleton
-                      ? (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF0F0F0))
+                      ? (isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : const Color(0xFFF0F0F0))
                       : Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1364,11 +1451,14 @@ class _NewsSectionState extends State<_NewsSection> {
                                 enabled: true,
                                 child: _NewsCard(
                                   data: NewsModel.fromCard(
-                                    tag: 'Muhammadiyah', 
-                                    time: 'Diposting pada: 12 Januari 2024, 15:30 WIB', 
-                                    title: 'Judul berita skeleton yang sangat panjang untuk memastikan tampilan bones yang maksimal', 
-                                    desc: 'Deskripsi berita skeleton yang mencakup dua baris penuh untuk memberikan gambaran area skeleton yang lebih luas dan informatif bagi pengguna.', 
-                                    image: 'assets/images/bg.webp'
+                                    tag: 'Muhammadiyah',
+                                    time:
+                                        'Diposting pada: 12 Januari 2024, 15:30 WIB',
+                                    title:
+                                        'Judul berita skeleton yang sangat panjang untuk memastikan tampilan bones yang maksimal',
+                                    desc:
+                                        'Deskripsi berita skeleton yang mencakup dua baris penuh untuk memberikan gambaran area skeleton yang lebih luas dan informatif bagi pengguna.',
+                                    image: 'assets/images/bg.webp',
                                   ),
                                   skeletonStyle: true,
                                 ),
@@ -1380,11 +1470,14 @@ class _NewsSectionState extends State<_NewsSection> {
                                 enabled: true,
                                 child: _NewsCard(
                                   data: NewsModel.fromCard(
-                                    tag: 'Info PDM', 
-                                    time: 'Diposting pada: 13 Januari 2024, 09:15 WIB', 
-                                    title: 'Contoh judul berita placeholder lainnya yang juga panjang dan mendetail', 
-                                    desc: 'Deskripsi placeholder tambahan untuk memastikan konsistensi visual pada blok skeletonizer di seluruh halaman aplikasi.', 
-                                    image: 'assets/images/bg.webp'
+                                    tag: 'Info PDM',
+                                    time:
+                                        'Diposting pada: 13 Januari 2024, 09:15 WIB',
+                                    title:
+                                        'Contoh judul berita placeholder lainnya yang juga panjang dan mendetail',
+                                    desc:
+                                        'Deskripsi placeholder tambahan untuk memastikan konsistensi visual pada blok skeletonizer di seluruh halaman aplikasi.',
+                                    image: 'assets/images/bg.webp',
                                   ),
                                   skeletonStyle: true,
                                 ),
@@ -1413,7 +1506,11 @@ class _NewsSectionState extends State<_NewsSection> {
               else
                 Column(
                   children: [
-                    for (var i = 0; i < (newsData.length > 4 ? 4 : newsData.length); i += 2)
+                    for (
+                      var i = 0;
+                      i < (newsData.length > 4 ? 4 : newsData.length);
+                      i += 2
+                    )
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Row(
@@ -1421,7 +1518,13 @@ class _NewsSectionState extends State<_NewsSection> {
                           children: [
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => context.push('/berita/detail', extra: {'slug': newsData[i].slug, 'news': newsData[i]}),
+                                onTap: () => context.push(
+                                  '/berita/detail',
+                                  extra: {
+                                    'slug': newsData[i].slug,
+                                    'news': newsData[i],
+                                  },
+                                ),
                                 child: _NewsCard(data: newsData[i]),
                               ),
                             ),
@@ -1429,8 +1532,14 @@ class _NewsSectionState extends State<_NewsSection> {
                             Expanded(
                               child: (i + 1 < newsData.length)
                                   ? GestureDetector(
-                                      onTap: () => context.push('/berita/detail', extra: {'slug': newsData[i+1].slug, 'news': newsData[i+1]}),
-                                      child: _NewsCard(data: newsData[i+1]),
+                                      onTap: () => context.push(
+                                        '/berita/detail',
+                                        extra: {
+                                          'slug': newsData[i + 1].slug,
+                                          'news': newsData[i + 1],
+                                        },
+                                      ),
+                                      child: _NewsCard(data: newsData[i + 1]),
                                     )
                                   : const SizedBox.shrink(),
                             ),
@@ -1479,7 +1588,9 @@ class _NewsCard extends StatelessWidget {
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : const Color(0xFFF1F4F9),
           width: 1.5,
         ),
         boxShadow: [
@@ -1508,9 +1619,16 @@ class _NewsCard extends StatelessWidget {
                   child: Skeleton.leaf(
                     enabled: skeletonStyle,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0XFF071D75) : const Color(0xFFD6DCEF),
+                        color: skeletonStyle
+                            ? (isDark ? Colors.white38 : Colors.grey[400])
+                            : (isDark
+                                  ? const Color(0XFF071D75)
+                                  : const Color(0xFFD6DCEF)),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
@@ -1518,7 +1636,11 @@ class _NewsCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFD6DCEF) : const Color(0XFF071D75),
+                          color: skeletonStyle
+                              ? (isDark ? Colors.white54 : Colors.grey[600])
+                              : (isDark
+                                    ? const Color(0xFFD6DCEF)
+                                    : const Color(0XFF071D75)),
                         ),
                       ),
                     ),
@@ -1552,7 +1674,9 @@ class _NewsCard extends StatelessWidget {
                   child: SizedBox(
                     width: skeletonStyle ? double.infinity : null,
                     child: Text(
-                      data.title.isEmpty ? 'Judul berita skeleton yang panjang' : data.title,
+                      data.title.isEmpty
+                          ? 'Judul berita skeleton yang panjang'
+                          : data.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1570,7 +1694,9 @@ class _NewsCard extends StatelessWidget {
                   child: SizedBox(
                     width: skeletonStyle ? double.infinity : null,
                     child: Text(
-                      data.desc.isEmpty ? 'Deskripsi berita placeholder yang mencakup dua baris untuk skeletonizer.' : data.desc,
+                      data.desc.isEmpty
+                          ? 'Deskripsi berita placeholder yang mencakup dua baris untuk skeletonizer.'
+                          : data.desc,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1607,7 +1733,7 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: TextStyle(
-            fontSize: 18, 
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white : const Color(0xFF2D3142),
           ),

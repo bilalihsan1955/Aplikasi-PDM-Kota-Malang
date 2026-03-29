@@ -160,7 +160,9 @@ class _SearchBar extends StatelessWidget {
       height: 50,
       padding: const EdgeInsets.only(left: 12, right: 0),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB),
+        color: isDark
+            ? Colors.white.withOpacity(0.05)
+            : const Color(0xFFF6F7FB),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -192,7 +194,11 @@ class _SearchBar extends StatelessWidget {
               onTap: () => viewModel.setSearching(false),
               child: const Padding(
                 padding: EdgeInsets.all(12.0),
-                child: Icon(RemixIcons.close_line, size: 20, color: Colors.grey),
+                child: Icon(
+                  RemixIcons.close_line,
+                  size: 20,
+                  color: Colors.grey,
+                ),
               ),
             ),
           ),
@@ -204,14 +210,23 @@ class _SearchBar extends StatelessWidget {
 }
 
 class _CategoryChips extends StatelessWidget {
-  static const List<String> _skeletonChips = ['Semua', 'Kategori', 'Berita', 'Info', 'Update'];
+  static const List<String> _skeletonChips = [
+    'Semua',
+    'Kategori',
+    'Berita',
+    'Info',
+    'Update',
+  ];
 
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<NewsViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = viewModel.isLoading && viewModel.filteredNews.isEmpty;
-    final hasError = !viewModel.isLoading && viewModel.errorMessage.isNotEmpty && viewModel.filteredNews.isEmpty;
+    final hasError =
+        !viewModel.isLoading &&
+        viewModel.errorMessage.isNotEmpty &&
+        viewModel.filteredNews.isEmpty;
 
     if (hasError) return const SizedBox.shrink();
 
@@ -231,7 +246,9 @@ class _CategoryChips extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : const Color(0xFFF6F7FB),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -247,39 +264,45 @@ class _CategoryChips extends StatelessWidget {
               ),
             )
           : ListView.separated(
-                physics: const ClampingScrollPhysics(),
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: viewModel.categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final tag = viewModel.categories[index];
-                  final isActive = tag == viewModel.selectedTag;
+              physics: const ClampingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              itemCount: viewModel.categories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final tag = viewModel.categories[index];
+                final isActive = tag == viewModel.selectedTag;
 
-                  return GestureDetector(
-                    onTap: () => viewModel.setTag(tag),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
+                return GestureDetector(
+                  onTap: () => viewModel.setTag(tag),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFF152D8D)
+                          : (isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : const Color(0xFFF6F7FB)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      tag,
+                      style: TextStyle(
                         color: isActive
-                            ? const Color(0xFF152D8D)
-                            : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF6F7FB)),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        tag,
-                        style: TextStyle(
-                          color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                          fontSize: 13,
-                          fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-                        ),
+                            ? Colors.white
+                            : (isDark ? Colors.white70 : Colors.black87),
+                        fontSize: 13,
+                        fontWeight: isActive
+                            ? FontWeight.bold
+                            : FontWeight.w600,
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
@@ -329,38 +352,54 @@ class _NewsGridState extends State<_NewsGrid> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Skeletonizer(
-                              enabled: true,
-                              child: _NewsCard(
-                                data: NewsModel.fromCard(tag: '', time: '', title: '', desc: '', image: ''),
-                                skeletonStyle: true,
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  if (index >= 2) return null;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Skeletonizer(
+                            enabled: true,
+                            child: _NewsCard(
+                              data: NewsModel.fromCard(
+                                tag: 'Muhammadiyah',
+                                time:
+                                    'Diposting pada: 12 Januari 2024, 15:30 WIB',
+                                title:
+                                    'Judul berita skeleton yang sangat panjang untuk memastikan tampilan bones yang maksimal',
+                                desc:
+                                    'Deskripsi berita skeleton yang mencakup dua baris penuh untuk memberikan gambaran area skeleton yang lebih luas dan informatif bagi pengguna.',
+                                image: 'assets/images/bg.webp',
                               ),
+                              skeletonStyle: true,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Skeletonizer(
-                              enabled: true,
-                              child: _NewsCard(
-                                data: NewsModel.fromCard(tag: '', time: '', title: '', desc: '', image: ''),
-                                skeletonStyle: true,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Skeletonizer(
+                            enabled: true,
+                            child: _NewsCard(
+                              data: NewsModel.fromCard(
+                                tag: 'Info PDM',
+                                time:
+                                    'Diposting pada: 13 Januari 2024, 09:15 WIB',
+                                title:
+                                    'Contoh judul berita placeholder lainnya yang juga panjang dan mendetail',
+                                desc:
+                                    'Deskripsi placeholder tambahan untuk memastikan konsistensi visual pada blok skeletonizer di seluruh halaman aplikasi.',
+                                image: 'assets/images/bg.webp',
                               ),
+                              skeletonStyle: true,
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                  childCount: 3,
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                }, childCount: 2),
               ),
             ),
           ],
@@ -368,7 +407,9 @@ class _NewsGridState extends State<_NewsGrid> {
       );
     }
 
-    if (!viewModel.isLoading && viewModel.errorMessage.isNotEmpty && filteredNews.isEmpty) {
+    if (!viewModel.isLoading &&
+        viewModel.errorMessage.isNotEmpty &&
+        filteredNews.isEmpty) {
       return RefreshIndicator(
         onRefresh: () async {
           await context.read<NewsViewModel>().loadNews();
@@ -376,7 +417,9 @@ class _NewsGridState extends State<_NewsGrid> {
         displacement: 40,
         color: Theme.of(context).colorScheme.primary,
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: ClampingScrollPhysics(),
+          ),
           slivers: [
             SliverFillRemaining(
               hasScrollBody: false,
@@ -386,20 +429,62 @@ class _NewsGridState extends State<_NewsGrid> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(RemixIcons.wifi_off_line, size: 56, color: isDark ? Colors.white24 : Colors.grey[300]),
+                      Icon(
+                        RemixIcons.wifi_off_line,
+                        size: 56,
+                        color: isDark ? Colors.white24 : Colors.grey[300],
+                      ),
                       const SizedBox(height: 20),
-                      Text('Oops!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF2D3142))),
+                      Text(
+                        'Oops!',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF2D3142),
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text(viewModel.errorMessage, textAlign: TextAlign.center, style: TextStyle(fontSize: 14, height: 1.5, color: isDark ? Colors.white60 : Colors.grey[600])),
+                      Text(
+                        viewModel.errorMessage,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: isDark ? Colors.white60 : Colors.grey[600],
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       GestureDetector(
                         onTap: () => viewModel.loadNews(),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                          decoration: BoxDecoration(color: const Color(0xFF152D8D), borderRadius: BorderRadius.circular(24)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF152D8D),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [Icon(RemixIcons.refresh_line, size: 18, color: Colors.white), SizedBox(width: 8), Text('Coba Lagi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))],
+                            children: [
+                              Icon(
+                                RemixIcons.refresh_line,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Coba Lagi',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -421,7 +506,9 @@ class _NewsGridState extends State<_NewsGrid> {
         displacement: 40,
         color: Theme.of(context).colorScheme.primary,
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: ClampingScrollPhysics(),
+          ),
           slivers: [
             SliverFillRemaining(
               hasScrollBody: false,
@@ -430,18 +517,57 @@ class _NewsGridState extends State<_NewsGrid> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(isDark ? 'assets/images/empty_state/not_found_dark.png' : 'assets/images/empty_state/not_found.png', width: 160, height: 160, fit: BoxFit.contain),
-                    Text('Berita Tidak Ditemukan', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF212121))),
+                    Image.asset(
+                      isDark
+                          ? 'assets/images/empty_state/not_found_dark.png'
+                          : 'assets/images/empty_state/not_found.png',
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.contain,
+                    ),
+                    Text(
+                      'Berita Tidak Ditemukan',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF212121),
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Padding(padding: const EdgeInsets.symmetric(horizontal: 50), child: Text('Maaf, kami tidak menemukan berita yang Anda cari.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: isDark ? Colors.white60 : Colors.grey, height: 1.4))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 50),
+                      child: Text(
+                        'Maaf, kami tidak menemukan berita yang Anda cari.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white60 : Colors.grey,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 24),
-                    if (viewModel.searchQuery.isNotEmpty || viewModel.selectedTag != 'Semua')
+                    if (viewModel.searchQuery.isNotEmpty ||
+                        viewModel.selectedTag != 'Semua')
                       GestureDetector(
                         onTap: viewModel.resetFilters,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                          decoration: BoxDecoration(color: const Color(0xFF152D8D), borderRadius: BorderRadius.circular(24)),
-                          child: const Text('Atur Ulang Filter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF152D8D),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: const Text(
+                            'Atur Ulang Filter',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                   ],
@@ -461,75 +587,103 @@ class _NewsGridState extends State<_NewsGrid> {
       color: Theme.of(context).colorScheme.primary,
       child: CustomScrollView(
         controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: ClampingScrollPhysics(),
+        ),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
             sliver: SliverSafeArea(
               top: false,
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final rowItems = <NewsModel>[];
-                  final startIndex = index * 2;
-                  
-                  if (startIndex >= filteredNews.length) {
-                    if (viewModel.isLoadingMore && startIndex == filteredNews.length) {
-                       // Show one skeleton if at the very end and loading more
-                       final dummy = NewsModel.fromCard(
-                         tag: 'Kategori', 
-                         time: '10 Januari 2024, 10:00', 
-                         title: 'Memuat judul berita...', 
-                         desc: 'Memuat deskripsi berita selengkapnya di sini...', 
-                         image: 'assets/images/bg.webp'
-                       );
-                       return Padding(
-                         padding: const EdgeInsets.only(bottom: 16),
-                         child: Row(
-                           crossAxisAlignment: CrossAxisAlignment.start,
-                           children: [
-                             Expanded(child: Skeletonizer(enabled: true, child: _NewsCard(data: dummy, skeletonStyle: true))),
-                             const SizedBox(width: 16),
-                             const Expanded(child: SizedBox.shrink()),
-                           ],
-                         ),
-                       );
-                    }
-                    return null;
-                  }
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final rowItems = <NewsModel>[];
+                    final startIndex = index * 2;
 
-                  rowItems.add(filteredNews[startIndex]);
-                  if (startIndex + 1 < filteredNews.length) {
-                    rowItems.add(filteredNews[startIndex + 1]);
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => context.push('/berita/detail', extra: {'slug': rowItems[0].slug, 'news': rowItems[0]}),
-                            child: _NewsCard(data: rowItems[0]),
+                    if (startIndex >= filteredNews.length) {
+                      if (viewModel.isLoadingMore &&
+                          startIndex == filteredNews.length) {
+                        // Show one skeleton if at the very end and loading more
+                        final dummy = NewsModel.fromCard(
+                          tag: 'Kategori',
+                          time: '10 Januari 2024, 10:00',
+                          title: 'Memuat judul berita...',
+                          desc:
+                              'Memuat deskripsi berita selengkapnya di sini...',
+                          image: 'assets/images/bg.webp',
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Skeletonizer(
+                                  enabled: true,
+                                  child: _NewsCard(
+                                    data: dummy,
+                                    skeletonStyle: true,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              const Expanded(child: SizedBox.shrink()),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: rowItems.length > 1
-                              ? GestureDetector(
-                                  onTap: () => context.push('/berita/detail', extra: {'slug': rowItems[1].slug, 'news': rowItems[1]}),
-                                  child: _NewsCard(data: rowItems[1]),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                childCount: ((filteredNews.length + (viewModel.isLoadingMore ? 1 : 0)) / 2).ceil(),
+                        );
+                      }
+                      return null;
+                    }
+
+                    rowItems.add(filteredNews[startIndex]);
+                    if (startIndex + 1 < filteredNews.length) {
+                      rowItems.add(filteredNews[startIndex + 1]);
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => context.push(
+                                '/berita/detail',
+                                extra: {
+                                  'slug': rowItems[0].slug,
+                                  'news': rowItems[0],
+                                },
+                              ),
+                              child: _NewsCard(data: rowItems[0]),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: rowItems.length > 1
+                                ? GestureDetector(
+                                    onTap: () => context.push(
+                                      '/berita/detail',
+                                      extra: {
+                                        'slug': rowItems[1].slug,
+                                        'news': rowItems[1],
+                                      },
+                                    ),
+                                    child: _NewsCard(data: rowItems[1]),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  childCount:
+                      ((filteredNews.length +
+                                  (viewModel.isLoadingMore ? 1 : 0)) /
+                              2)
+                          .ceil(),
+                ),
               ),
-            ),
             ),
           ),
         ],
@@ -569,7 +723,9 @@ class _NewsCard extends StatelessWidget {
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : const Color(0xFFF1F4F9),
           width: 1.5,
         ),
         boxShadow: [
@@ -598,11 +754,16 @@ class _NewsCard extends StatelessWidget {
                   child: Skeleton.leaf(
                     enabled: skeletonStyle,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: skeletonStyle
-                            ? (isDark ? Colors.white24 : Colors.grey[300])
-                            : (isDark ? const Color(0xFF11683B) : const Color(0xFFD1EBDD)),
+                            ? (isDark ? Colors.white38 : Colors.grey[400])
+                            : (isDark
+                                  ? const Color(0xFF11683B)
+                                  : const Color(0xFFD1EBDD)),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
@@ -612,7 +773,9 @@ class _NewsCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: skeletonStyle
                               ? (isDark ? Colors.white54 : Colors.grey[600])
-                              : (isDark ? const Color(0xFFD1EBDD) : const Color(0xFF11683B)),
+                              : (isDark
+                                    ? const Color(0xFFD1EBDD)
+                                    : const Color(0xFF11683B)),
                         ),
                       ),
                     ),
@@ -646,7 +809,9 @@ class _NewsCard extends StatelessWidget {
                   child: SizedBox(
                     width: skeletonStyle ? double.infinity : null,
                     child: Text(
-                      data.title.isEmpty ? 'Judul berita skeleton yang panjang' : data.title,
+                      data.title.isEmpty
+                          ? 'Judul berita skeleton yang panjang'
+                          : data.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -664,7 +829,9 @@ class _NewsCard extends StatelessWidget {
                   child: SizedBox(
                     width: skeletonStyle ? double.infinity : null,
                     child: Text(
-                      data.desc.isEmpty ? 'Deskripsi berita placeholder yang mencakup dua baris untuk skeletonizer.' : data.desc,
+                      data.desc.isEmpty
+                          ? 'Deskripsi berita placeholder yang mencakup dua baris untuk skeletonizer.'
+                          : data.desc,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
