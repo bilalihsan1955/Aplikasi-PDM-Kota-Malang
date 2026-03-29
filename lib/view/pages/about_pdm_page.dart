@@ -770,6 +770,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
         ? mission!
         : 'Meningkatkan kualitas SDM dan menguatkan peran sosial organisasi.';
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _visiMisiItem(RemixIcons.star_line, 'Visi', visiText, isDark),
         const SizedBox(height: 12),
@@ -789,7 +790,28 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              HtmlWidget(desc, textStyle: const TextStyle(color: Colors.grey, fontSize: 14)),
+              HtmlWidget(
+                desc.trim(),
+                textStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                customStylesBuilder: (element) {
+                   if (element.localName == 'ul' || element.localName == 'ol') {
+                    return {
+                      'padding-inline-start': '1.4em',
+                      'margin': '0',
+                    };
+                  }
+                  if (element.localName == 'li') {
+                    return {
+                      'margin-bottom': '4px',
+                    };
+                  }
+                  return {
+                    'margin': '0',
+                    'padding': '0',
+                    'text-align': 'left',
+                  };
+                },
+              ),
             ],
           ),
         ),
