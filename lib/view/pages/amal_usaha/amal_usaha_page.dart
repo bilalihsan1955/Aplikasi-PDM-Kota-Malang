@@ -7,15 +7,7 @@ import 'package:pdm_malang/services/amal_usaha_api_service.dart';
 import '../empty_placeholder_page.dart';
 import '../../widgets/back_button_app.dart';
 
-/// Filter type API: pendidikan, kesehatan, sosial, ekonomi. Null = semua.
-const List<({String value, String label})> kAmalUsahaTypes = [
-  (value: '', label: 'Semua'),
-  (value: 'pendidikan', label: 'Pendidikan'),
-  (value: 'kesehatan', label: 'Kesehatan'),
-  (value: 'sosial', label: 'Sosial'),
-  (value: 'ekonomi', label: 'Ekonomi'),
-];
-
+// Filter type API diisi dinamis dari data API.
 class AmalUsahaPage extends StatefulWidget {
   const AmalUsahaPage({super.key});
 
@@ -27,6 +19,9 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
   bool _isSearching = false;
   String _searchQuery = '';
   String _selectedType = '';
+  List<({String value, String label})> _availableTypes = [
+    (value: '', label: 'Semua'),
+  ];
   List<AmalUsahaItem> _items = [];
   bool _loading = true;
   String? _error;
@@ -42,10 +37,28 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
         _items = cached;
         _loading = false;
         _error = null;
+        
+        // Extract categories immediately from cached data
+        if (_selectedType.isEmpty) {
+          _updateAvailableTypes(cached);
+        }
       });
     } else {
       _loadData();
     }
+  }
+
+  void _updateAvailableTypes(List<AmalUsahaItem> data) {
+    final Map<String, String> uniqueTypes = {};
+    for (final item in data) {
+      if (item.type.isNotEmpty && item.typeLabel.isNotEmpty) {
+        uniqueTypes[item.type] = item.typeLabel;
+      }
+    }
+    _availableTypes = [
+      (value: '', label: 'Semua'),
+      ...uniqueTypes.entries.map((e) => (value: e.key, label: e.value)).toList()
+    ];
   }
 
   Future<void> _loadData() async {
@@ -63,6 +76,11 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
       _loading = false;
       _items = result.data;
       _error = result.success ? null : (result.message.isNotEmpty ? result.message : 'Gagal memuat amal usaha');
+      
+      // Update available types dynamically from data if on "Semua" tab
+      if (result.success && _selectedType.isEmpty) {
+        _updateAvailableTypes(result.data);
+      }
     });
   }
 
@@ -77,6 +95,7 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
           child: _CombinedHeader(
             isSearching: _isSearching,
             selectedType: _selectedType,
+            types: _availableTypes,
             loading: _loading,
             onSearchChanged: _setSearchQuery,
             onToggleSearch: (value) {
@@ -124,11 +143,13 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
 class _TypeFilter extends StatelessWidget {
   static const List<String> _skeletonLabels = ['Semua', 'Pendidikan', 'Kesehatan', 'Sosial', 'Ekonomi'];
 
+  final List<({String value, String label})> types;
   final String selectedType;
   final bool loading;
   final ValueChanged<String> onSelected;
 
   const _TypeFilter({
+    required this.types,
     required this.selectedType,
     required this.loading,
     required this.onSelected,
@@ -172,10 +193,10 @@ class _TypeFilter extends StatelessWidget {
               physics: const ClampingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: kAmalUsahaTypes.length,
+              itemCount: types.length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
-                final t = kAmalUsahaTypes[index];
+                final t = types[index];
                 final isActive = selectedType == t.value;
                 return GestureDetector(
                   onTap: () => onSelected(t.value),
@@ -208,6 +229,7 @@ class _TypeFilter extends StatelessWidget {
 class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool isSearching;
   final String selectedType;
+  final List<({String value, String label})> types;
   final bool loading;
   final Function(String) onSearchChanged;
   final Function(bool) onToggleSearch;
@@ -216,6 +238,7 @@ class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
   const _CombinedHeader({
     required this.isSearching,
     required this.selectedType,
+    required this.types,
     required this.loading,
     required this.onSearchChanged,
     required this.onToggleSearch,
@@ -252,6 +275,7 @@ class _CombinedHeader extends StatelessWidget implements PreferredSizeWidget {
             ),
             const SizedBox(height: 16),
             _TypeFilter(
+              types: types,
               selectedType: selectedType,
               loading: loading,
               onSelected: onTypeSelected,
@@ -682,6 +706,11 @@ class _AmalUsahaCard extends StatelessWidget {
               ),
               Positioned(
                 left: 12,
+                top: 12,
+                child: _buildCategoryTag(context, item.typeLabel),
+              ),
+              Positioned(
+                left: 12,
                 right: 12,
                 bottom: 12,
                 child: Text(
@@ -698,6 +727,26 @@ class _AmalUsahaCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTag(BuildContext context, String typeLabel) {
+    if (typeLabel.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF11683B) : const Color(0xFFD1EBDD),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(
+        typeLabel[0].toUpperCase() + typeLabel.substring(1).toLowerCase(),
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: isDark ? const Color(0xFFD1EBDD) : const Color(0xFF11683B),
         ),
       ),
     );

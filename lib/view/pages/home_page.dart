@@ -1572,7 +1572,7 @@ class _NewsCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
-                        data.tag.isEmpty ? 'KATEGORI' : data.tag.toUpperCase(),
+                        data.tag.isEmpty ? 'Kategori' : data.tag[0].toUpperCase() + data.tag.substring(1).toLowerCase(),
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,

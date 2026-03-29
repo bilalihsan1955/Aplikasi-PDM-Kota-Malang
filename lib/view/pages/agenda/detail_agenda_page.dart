@@ -296,7 +296,8 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   }
 
   Widget _buildConferenceTag() {
-    final label = (_agenda?.categoryName ?? 'Agenda').toUpperCase();
+    final cat = _agenda?.categoryName ?? 'Agenda';
+    final label = cat.isEmpty ? '' : cat[0].toUpperCase() + cat.substring(1).toLowerCase();
     if (label.isEmpty) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),

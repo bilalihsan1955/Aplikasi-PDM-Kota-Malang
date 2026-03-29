@@ -428,7 +428,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(100)),
-                  child: const Text('PROFIL ORGANISASI', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  child: const Text('Profil organisasi', style: TextStyle(fontSize: 10, color: Colors.grey)),
                 ),
                 const SizedBox(height: 20),
                 Container(height: 28, width: 280, color: Colors.grey[300]),
@@ -733,7 +733,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(color: AppStyle.accent.withOpacity(0.1), borderRadius: BorderRadius.circular(100)),
-      child: const Text('PROFIL ORGANISASI', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppStyle.accent, letterSpacing: 0.8)),
+      child: const Text('Profil organisasi', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppStyle.accent, letterSpacing: 0.8)),
     );
   }
 

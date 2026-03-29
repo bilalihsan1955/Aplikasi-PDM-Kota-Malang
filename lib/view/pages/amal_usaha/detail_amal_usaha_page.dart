@@ -301,7 +301,8 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
   }
 
   Widget _buildCategoryTag(String typeLabel) {
-    final label = typeLabel.isNotEmpty ? typeLabel.toUpperCase() : 'AMAL USAHA';
+    if (typeLabel.isEmpty) return const SizedBox.shrink();
+    final label = typeLabel[0].toUpperCase() + typeLabel.substring(1).toLowerCase();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(

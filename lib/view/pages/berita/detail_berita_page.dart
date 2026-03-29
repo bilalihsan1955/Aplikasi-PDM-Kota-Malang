@@ -242,7 +242,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildCategoryTag('CORPORATE'),
+                    _buildCategoryTag('Corporate'),
                     const SizedBox(height: 20),
                     const Text(
                       'Q3 Financial Results: Strategic Growth in Asian Markets',
@@ -319,7 +319,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildCategoryTag(news.tag.trim().isEmpty ? 'BERITA' : news.tag.toUpperCase()),
+                    _buildCategoryTag(news.tag.trim().isEmpty ? 'Berita' : news.tag[0].toUpperCase() + news.tag.substring(1).toLowerCase()),
                     const SizedBox(height: 20),
                     Text(
                       news.title,
@@ -430,7 +430,7 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildCategoryTag('KATEGORI'),
+                      _buildCategoryTag('Kategori'),
                       const SizedBox(height: 20),
                       const Text(
                         'Judul berita placeholder yang cukup panjang untuk dua baris',
