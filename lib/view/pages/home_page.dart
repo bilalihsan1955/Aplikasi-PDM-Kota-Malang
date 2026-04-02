@@ -8,7 +8,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../view_models/home_view_model.dart';
 import '../../models/agenda_model.dart';
 import '../../models/news_model.dart';
+import '../../services/auth/auth_local_service.dart';
 import '../../services/prayer_time_service.dart';
+import '../widgets/user_avatar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -90,14 +92,21 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Hi, Bilal Al Ihsan',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -1,
-                    color: Theme.of(context).textTheme.titleLarge?.color,
-                  ),
+                FutureBuilder(
+                  future: AuthLocalService().getCachedUser(),
+                  builder: (context, snapshot) {
+                    final name = snapshot.data?.name.trim();
+                    final displayName = (name == null || name.isEmpty) ? 'Pengguna' : name;
+                    return Text(
+                      'Hi, $displayName',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -1,
+                        color: Theme.of(context).textTheme.titleLarge?.color,
+                      ),
+                    );
+                  },
                 ),
                 Text(
                   'Bagaimana kabarmu hari ini',
@@ -115,12 +124,15 @@ class _Header extends StatelessWidget {
                 color: const Color(0xFF152D8D),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/images/profile.png',
-                  fit: BoxFit.cover,
-                ),
+              child: FutureBuilder(
+                future: AuthLocalService().getCachedUser(),
+                builder: (context, snapshot) {
+                  return UserAvatar(
+                    user: snapshot.data,
+                    size: 50,
+                    borderRadius: BorderRadius.circular(24),
+                  );
+                },
               ),
             ),
           ),

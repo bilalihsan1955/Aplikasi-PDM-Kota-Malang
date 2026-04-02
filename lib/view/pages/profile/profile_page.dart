@@ -3,7 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../../view_models/profile_view_model.dart';
+import '../../../view_models/auth_view_model.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/glass_confirm_dialog.dart';
+import '../../../utils/top_snackbar.dart';
+import '../../../services/auth/auth_local_service.dart';
+import '../../widgets/user_avatar.dart';
+import '../../widgets/press_feedback.dart';
 import '../../widgets/back_button_app.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -19,26 +25,50 @@ class ProfilePage extends StatelessWidget {
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SingleChildScrollView(
-          child: SafeArea(
-            child: Column(
+        body: Consumer<AuthViewModel>(
+          builder: (context, authVm, _) {
+            final isSubmitting = authVm.isSubmitting;
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final overlayColor = isDark
+                ? Colors.black.withOpacity(0.25)
+                : Colors.black.withOpacity(0.12);
+
+            return Stack(
+              fit: StackFit.expand,
               children: [
-                const SizedBox(height: 8),
-                _header(context),
-                const SizedBox(height: 24),
-                _profileCard(context),
-                const SizedBox(height: 24),
-                _section('Informasi'),
-                _infoSection(context),
-                const SizedBox(height: 24),
-                _section('Pengaturan'),
-                _settingsSection(context),
-                const SizedBox(height: 24),
-                _logout(context),
-                const SizedBox(height: 24),
+                AbsorbPointer(
+                  absorbing: isSubmitting,
+                  child: SingleChildScrollView(
+                    child: SafeArea(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          _header(context),
+                          const SizedBox(height: 24),
+                          _profileCard(context),
+                          const SizedBox(height: 24),
+                          _section('Informasi'),
+                          _infoSection(context),
+                          const SizedBox(height: 24),
+                          _section('Pengaturan'),
+                          _settingsSection(context),
+                          const SizedBox(height: 24),
+                          _logout(context),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (isSubmitting)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(color: overlayColor),
+                    ),
+                  ),
               ],
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -183,43 +213,78 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _profileCard(BuildContext context) {
-    return Container(
-      margin: AppStyle.hPadding,
-      padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(context),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppStyle.accent.withOpacity(0.2), width: 2),
-            ),
-            child: _avatar(context),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bilal Al Ihsan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
-                    color: Theme.of(context).textTheme.titleLarge?.color,
-                  ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardRadius = BorderRadius.circular(20);
+    return Padding(
+      padding: AppStyle.hPadding,
+      child: PressFeedback(
+        onTap: () => context.push('/profile/account'),
+        borderRadius: cardRadius,
+        pressedOverlayColor: isDark
+            ? Colors.white.withOpacity(0.04)
+            : Colors.black.withOpacity(0.03),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: _cardDecoration(context),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppStyle.accent.withOpacity(0.2), width: 2),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Anggota Organisasi',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                child: FutureBuilder(
+                  future: AuthLocalService().getCachedUser(),
+                  builder: (context, snapshot) {
+                    return UserAvatar(
+                      user: snapshot.data,
+                      size: 64,
+                      borderRadius: BorderRadius.circular(32),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FutureBuilder(
+                      future: AuthLocalService().getCachedUser(),
+                      builder: (context, snapshot) {
+                        final name = snapshot.data?.name.trim();
+                        final displayName = (name == null || name.isEmpty) ? 'Pengguna' : name;
+                        return Text(
+                          displayName,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
+                            color: Theme.of(context).textTheme.titleLarge?.color,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    FutureBuilder(
+                      future: AuthLocalService().getCachedUser(),
+                      builder: (context, snapshot) {
+                        final pos = snapshot.data?.position?.trim();
+                        final displayPos =
+                            (pos == null || pos.isEmpty) ? 'Anggota Organisasi' : pos;
+                        return Text(
+                          displayPos,
+                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -298,43 +363,71 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _logout(BuildContext context) {
-    return Container(
-      margin: AppStyle.hPadding,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: _cardDecoration(context),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(RemixIcons.logout_box_r_line, color: Colors.redAccent),
-          SizedBox(width: 8),
-          Text(
-            'Logout',
-            style: TextStyle(
-              color: Colors.redAccent,
-              fontWeight: FontWeight.w600,
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderRadius = BorderRadius.circular(20);
+
+    return Padding(
+      padding: AppStyle.hPadding,
+      child: PressFeedback(
+        onTap: () => _showLogoutDialog(context),
+        borderRadius: borderRadius,
+        pressedOverlayColor: isDark
+            ? Colors.white.withOpacity(0.04)
+            : Colors.black.withOpacity(0.03),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: _cardDecoration(context),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(RemixIcons.logout_box_r_line, color: Colors.redAccent),
+              SizedBox(width: 8),
+              Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _avatar(BuildContext context) {
-    return Container(
-      height: 64,
-      width: 64,
-      decoration: BoxDecoration(
-        color: AppStyle.primary,
-        borderRadius: BorderRadius.circular(32),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: Image.asset(
-          'assets/images/profile.png',
-          fit: BoxFit.cover,
-        ),
+  Future<void> _showLogoutDialog(BuildContext context) async {
+    final ok = await showGlassConfirmDialog(
+      context: context,
+      title: 'Keluar dari akun?',
+      message: 'Anda akan logout dan data lokal akan dihapus dari perangkat.',
+      confirmText: 'Logout',
+      cancelText: 'Batal',
+      icon: RemixIcons.logout_box_r_line,
+      iconColor: Colors.redAccent,
+      confirmGradient: const RadialGradient(
+        center: Alignment.topLeft,
+        radius: 4,
+        colors: [
+          Color(0xFFFF5252),
+          Color(0xFFB71C1C),
+        ],
+        stops: [0.0, 1.0],
       ),
     );
+
+    if (ok != true) return;
+
+    final result = await context.read<AuthViewModel>().logout();
+    if (!context.mounted) return;
+
+    showTopSnackBar(context, result.message, isError: !result.success);
+
+    if (result.success) {
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!context.mounted) return;
+      context.go('/login');
+    }
   }
 
   BoxDecoration _cardDecoration(BuildContext context) {

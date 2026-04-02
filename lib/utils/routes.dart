@@ -15,9 +15,11 @@ import '../view/pages/amal_usaha/amal_usaha_page.dart';
 import '../view/pages/amal_usaha/detail_amal_usaha_page.dart';
 import '../models/amal_usaha_model.dart';
 import '../view/pages/profile/account_page.dart';
+import '../view/pages/profile/change_password_page.dart';
 import '../view/pages/auth/onboarding_page.dart';
 import '../view/pages/auth/login_page.dart';
 import '../view/pages/auth/register_page.dart';
+import '../view/pages/auth/forgot_password_page.dart';
 import '../view/pages/notification_page.dart';
 import '../view/pages/menu_list_page.dart';
 import '../view/pages/empty_placeholder_page.dart';
@@ -26,10 +28,11 @@ import '../services/prayer_time_service.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-final GoRouter router = GoRouter(
-  navigatorKey: _rootNavigatorKey,
-  initialLocation: '/onboarding',
-  routes: [
+GoRouter createAppRouter({required String initialLocation}) {
+  return GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: initialLocation,
+    routes: [
     // Auth Routes - Full Screen
     GoRoute(
       path: '/onboarding',
@@ -42,6 +45,14 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/register',
       pageBuilder: (context, state) => const NoTransitionPage(child: RegisterPage()),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      pageBuilder: (context, state) {
+        final extra = state.extra;
+        final preset = extra is String ? extra : '';
+        return NoTransitionPage(child: ForgotPasswordPage(initialEmail: preset));
+      },
     ),
     GoRoute(
       path: '/placeholder',
@@ -193,6 +204,10 @@ final GoRouter router = GoRouter(
                   path: 'account',
                   pageBuilder: (context, state) => const NoTransitionPage(child: AccountPage()),
                 ),
+                GoRoute(
+                  path: 'change-password',
+                  pageBuilder: (context, state) => const NoTransitionPage(child: ChangePasswordPage()),
+                ),
               ],
             ),
           ],
@@ -200,4 +215,5 @@ final GoRouter router = GoRouter(
       ],
     ),
   ],
-);
+  );
+}

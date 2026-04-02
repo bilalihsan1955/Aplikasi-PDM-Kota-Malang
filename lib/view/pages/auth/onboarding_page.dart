@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
+import '../../../services/auth/auth_local_service.dart';
 import '../../../utils/app_style.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -31,6 +32,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
       'image': 'assets/images/banner.png',
     },
   ];
+
+  Future<void> _finishOnboarding(BuildContext context) async {
+    await AuthLocalService().setOnboardingCompleted();
+    if (!context.mounted) return;
+    context.go('/login');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +79,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             top: MediaQuery.of(context).padding.top + 8,
             right: 24,
             child: TextButton(
-              onPressed: () => context.go('/login'),
+              onPressed: () => _finishOnboarding(context),
               child: Text(
                 'Lewati',
                 style: TextStyle(
@@ -128,7 +135,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             if (isLastPage) {
-              context.go('/login');
+              _finishOnboarding(context);
             } else {
               _pageController.nextPage(
                 duration: const Duration(milliseconds: 500),

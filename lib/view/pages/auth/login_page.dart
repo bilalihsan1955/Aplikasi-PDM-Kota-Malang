@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/top_snackbar.dart';
+import '../../../view_models/auth_view_model.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,6 +16,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,27 +34,51 @@ class _LoginPageState extends State<LoginPage> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SingleChildScrollView(
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  const SizedBox(height: 40),
-                  _buildHeader(isDark),
-                  const SizedBox(height: 48),
-                  _buildForm(isDark),
-                  const SizedBox(height: 8),
-                  _buildLoginButton(context),
-                  const SizedBox(height: 24),
-                  _buildRegisterLink(context, isDark),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
+        body: Consumer<AuthViewModel>(
+          builder: (context, authVm, _) {
+            final isSubmitting = authVm.isSubmitting;
+            final enabled = !isSubmitting;
+            final overlayColor = isDark
+                ? Colors.black.withOpacity(0.25)
+                : Colors.black.withOpacity(0.12);
+
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                AbsorbPointer(
+                  absorbing: isSubmitting,
+                  child: SingleChildScrollView(
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            const SizedBox(height: 40),
+                            _buildHeader(isDark),
+                            const SizedBox(height: 48),
+                            _buildForm(isDark, enabled: enabled),
+                            const SizedBox(height: 8),
+                            _buildLoginButton(context, isSubmitting: isSubmitting),
+                            const SizedBox(height: 24),
+                            _buildRegisterLink(context, isDark),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (isSubmitting)
+                  Positioned.fill(
+                    child: Container(
+                      color: overlayColor,
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -72,7 +109,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildForm(bool isDark) {
+  Widget _buildForm(
+    bool isDark, {
+    required bool enabled,
+  }) {
     return Column(
       children: [
         _buildTextField(
@@ -80,6 +120,9 @@ class _LoginPageState extends State<LoginPage> {
           hint: 'Masukkan email Anda',
           icon: RemixIcons.user_line,
           isDark: isDark,
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          enabled: enabled,
         ),
         const SizedBox(height: 20),
         _buildTextField(
@@ -90,12 +133,18 @@ class _LoginPageState extends State<LoginPage> {
           isPasswordVisible: _isPasswordVisible,
           onToggleVisibility: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
           isDark: isDark,
+          controller: _passwordController,
+          keyboardType: TextInputType.text,
+          enabled: enabled,
         ),
         const SizedBox(height: 4),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: () {},
+            onPressed: () {
+              final preset = _emailController.text.trim();
+              context.push('/forgot-password', extra: preset);
+            },
             child: const Text(
               'Lupa Password?',
               style: TextStyle(
@@ -117,6 +166,10 @@ class _LoginPageState extends State<LoginPage> {
     bool? isPasswordVisible,
     VoidCallback? onToggleVisibility,
     required bool isDark,
+    TextEditingController? controller,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    required bool enabled,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,6 +195,7 @@ class _LoginPageState extends State<LoginPage> {
           child: TextField(
             obscureText: isPassword && !(isPasswordVisible ?? false),
             style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            enabled: enabled,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
@@ -153,19 +207,25 @@ class _LoginPageState extends State<LoginPage> {
                         color: Colors.grey,
                         size: 20,
                       ),
-                      onPressed: onToggleVisibility,
+                      onPressed: enabled ? onToggleVisibility : null,
                     )
                   : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 16),
             ),
+            controller: controller,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildLoginButton(BuildContext context) {
+  Widget _buildLoginButton(
+    BuildContext context, {
+    required bool isSubmitting,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -188,24 +248,54 @@ class _LoginPageState extends State<LoginPage> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => context.go('/'),
+          onTap: isSubmitting
+              ? null
+              : () async {
+                  final vm = context.read<AuthViewModel>();
+                  final result = await vm.login(
+                    email: _emailController.text,
+                    password: _passwordController.text,
+                  );
+
+                  if (!mounted) return;
+                  showTopSnackBar(context, result.message,
+                      isError: !result.success);
+
+                  if (result.success) {
+                    await Future.delayed(const Duration(milliseconds: 450));
+                    if (!mounted) return;
+                    context.go('/');
+                  }
+                },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text(
-                  'Masuk ke Akun',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            child: isSubmitting
+                ? const Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text(
+                        'Masuk ke Akun',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(RemixIcons.login_box_line,
+                          color: Colors.white, size: 20),
+                    ],
                   ),
-                ),
-                SizedBox(width: 8),
-                Icon(RemixIcons.login_box_line, color: Colors.white, size: 20),
-              ],
-            ),
           ),
         ),
       ),

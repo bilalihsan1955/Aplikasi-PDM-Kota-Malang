@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:pdm_malang/services/auth/auth_local_service.dart';
 import 'package:pdm_malang/utils/routes.dart';
 import 'package:pdm_malang/view_models/home_view_model.dart';
 import 'package:pdm_malang/view_models/agenda_view_model.dart';
 import 'package:pdm_malang/view_models/news_view_model.dart';
 import 'package:pdm_malang/view_models/profile_view_model.dart';
 import 'package:pdm_malang/view_models/notification_view_model.dart';
+import 'package:pdm_malang/view_models/auth_view_model.dart';
 import 'package:pdm_malang/utils/app_style.dart';
 
 void main() async {
@@ -21,6 +23,8 @@ void main() async {
     await dotenv.load(fileName: '.env');
   } catch (_) {}
 
+  final initialLocation = await AuthLocalService().resolveInitialLocation();
+
   runApp(
     MultiProvider(
       providers: [
@@ -29,14 +33,24 @@ void main() async {
         ChangeNotifierProvider(create: (_) => NewsViewModel()),
         ChangeNotifierProvider(create: (_) => ProfileViewModel()),
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
       ],
-      child: const MyApp(),
+      child: MyApp(initialLocation: initialLocation),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  final String initialLocation;
+
+  const MyApp({super.key, required this.initialLocation});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final _router = createAppRouter(initialLocation: widget.initialLocation);
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +127,7 @@ class MyApp extends StatelessWidget {
           child: child!,
         );
       },
-      routerConfig: router,
+      routerConfig: _router,
     );
   }
 }

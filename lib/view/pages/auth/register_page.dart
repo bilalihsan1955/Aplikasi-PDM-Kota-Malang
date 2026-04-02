@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/top_snackbar.dart';
+import '../../../view_models/auth_view_model.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -14,6 +18,22 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -22,27 +42,51 @@ class _RegisterPageState extends State<RegisterPage> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SingleChildScrollView(
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  const SizedBox(height: 40),
-                  _buildHeader(isDark),
-                  const SizedBox(height: 48),
-                  _buildForm(isDark),
-                  const SizedBox(height: 32),
-                  _buildRegisterButton(context),
-                  const SizedBox(height: 24),
-                  _buildLoginLink(context, isDark),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
+        body: Consumer<AuthViewModel>(
+          builder: (context, authVm, _) {
+            final isSubmitting = authVm.isSubmitting;
+            final enabled = !isSubmitting;
+            final overlayColor = isDark
+                ? Colors.black.withOpacity(0.25)
+                : Colors.black.withOpacity(0.12);
+
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                AbsorbPointer(
+                  absorbing: isSubmitting,
+                  child: SingleChildScrollView(
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            const SizedBox(height: 40),
+                            _buildHeader(isDark),
+                            const SizedBox(height: 48),
+                            _buildForm(isDark, enabled: enabled),
+                            const SizedBox(height: 32),
+                            _buildRegisterButton(context, isSubmitting),
+                            const SizedBox(height: 24),
+                            _buildLoginLink(context, isDark),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (isSubmitting)
+                  Positioned.fill(
+                    child: Container(
+                      color: overlayColor,
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -73,7 +117,10 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildForm(bool isDark) {
+  Widget _buildForm(
+    bool isDark, {
+    required bool enabled,
+  }) {
     return Column(
       children: [
         _buildTextField(
@@ -81,6 +128,8 @@ class _RegisterPageState extends State<RegisterPage> {
           hint: 'Masukkan nama lengkap Anda',
           icon: RemixIcons.user_line,
           isDark: isDark,
+          controller: _nameController,
+          enabled: enabled,
         ),
         const SizedBox(height: 20),
         _buildTextField(
@@ -88,6 +137,22 @@ class _RegisterPageState extends State<RegisterPage> {
           hint: 'Masukkan alamat email Anda',
           icon: RemixIcons.mail_line,
           isDark: isDark,
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          enabled: enabled,
+        ),
+        const SizedBox(height: 20),
+        _buildTextField(
+          label: 'Nomor Telepon',
+          hint: 'Masukkan nomor telepon Anda',
+          icon: RemixIcons.phone_line,
+          isDark: isDark,
+          keyboardType: TextInputType.phone,
+          controller: _phoneController,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+          enabled: enabled,
         ),
         const SizedBox(height: 20),
         _buildTextField(
@@ -98,6 +163,8 @@ class _RegisterPageState extends State<RegisterPage> {
           isPasswordVisible: _isPasswordVisible,
           onToggleVisibility: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
           isDark: isDark,
+          controller: _passwordController,
+          enabled: enabled,
         ),
         const SizedBox(height: 20),
         _buildTextField(
@@ -108,6 +175,8 @@ class _RegisterPageState extends State<RegisterPage> {
           isPasswordVisible: _isConfirmPasswordVisible,
           onToggleVisibility: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
           isDark: isDark,
+          controller: _confirmPasswordController,
+          enabled: enabled,
         ),
       ],
     );
@@ -121,6 +190,10 @@ class _RegisterPageState extends State<RegisterPage> {
     bool? isPasswordVisible,
     VoidCallback? onToggleVisibility,
     required bool isDark,
+    TextEditingController? controller,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    required bool enabled,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,6 +219,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: TextField(
             obscureText: isPassword && !(isPasswordVisible ?? false),
             style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            enabled: enabled,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
@@ -157,19 +231,22 @@ class _RegisterPageState extends State<RegisterPage> {
                         color: Colors.grey,
                         size: 20,
                       ),
-                      onPressed: onToggleVisibility,
+                      onPressed: enabled ? onToggleVisibility : null,
                     )
                   : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 16),
             ),
+            controller: controller,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRegisterButton(BuildContext context) {
+  Widget _buildRegisterButton(BuildContext context, bool isSubmitting) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -192,24 +269,55 @@ class _RegisterPageState extends State<RegisterPage> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => context.go('/'),
+          onTap: isSubmitting
+              ? null
+              : () async {
+                  final vm = context.read<AuthViewModel>();
+                  final result = await vm.register(
+                    name: _nameController.text,
+                    email: _emailController.text,
+                    phone: _phoneController.text,
+                    password: _passwordController.text,
+                    passwordConfirmation: _confirmPasswordController.text,
+                  );
+
+                  if (!mounted) return;
+                  showTopSnackBar(context, result.message, isError: !result.success);
+
+                  if (result.success) {
+                    await Future.delayed(const Duration(milliseconds: 450));
+                    if (!mounted) return;
+                    context.go('/');
+                  }
+                },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text(
-                  'Buat Akun Baru',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            child: isSubmitting
+                ? const Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text(
+                        'Buat Akun Baru',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(RemixIcons.user_add_line, color: Colors.white, size: 20),
+                    ],
                   ),
-                ),
-                SizedBox(width: 8),
-                Icon(RemixIcons.user_add_line, color: Colors.white, size: 20),
-              ],
-            ),
           ),
         ),
       ),
