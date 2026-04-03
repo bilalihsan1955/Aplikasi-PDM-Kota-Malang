@@ -153,7 +153,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                'Buat kata sandi baru yang kuat. Gunakan kombinasi huruf dan angka sesuai kebijakan sistem.',
+                                'Masukkan kata sandi baru.',
                                 style: TextStyle(
                                   fontSize: 14,
                                   height: 1.45,
@@ -164,8 +164,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               _buildPasswordField(
                                 isDark: isDark,
                                 label: 'Kata sandi baru',
-                                hintText:
-                                    'Minimal sesuai aturan server — misalnya huruf besar, kecil, dan angka',
+                                hintText: 'Kata sandi baru',
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
                                 onToggleObscure: () =>
@@ -175,8 +174,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               _buildPasswordField(
                                 isDark: isDark,
                                 label: 'Konfirmasi kata sandi',
-                                hintText:
-                                    'Ketik ulang persis sama agar sistem dapat memverifikasi',
+                                hintText: 'Ulangi kata sandi',
                                 controller: _confirmController,
                                 obscureText: _obscureConfirm,
                                 onToggleObscure: () =>

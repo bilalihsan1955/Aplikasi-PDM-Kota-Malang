@@ -14,6 +14,15 @@ class AuthViewModel extends ChangeNotifier {
   final AuthApiService _apiService;
   final AuthLocalService _localService;
 
+  /// GET `/user` ke jaringan **hanya sekali** per hidup proses app; setelah sukses, pakai cache saja.
+  static bool _userEndpointFetchedThisProcess = false;
+
+  static bool get userEndpointFetchedThisProcess => _userEndpointFetchedThisProcess;
+
+  static void invalidateUserEndpointSync() {
+    _userEndpointFetchedThisProcess = false;
+  }
+
   AuthViewModel({
     AuthApiService? apiService,
     AuthLocalService? localService,
@@ -70,6 +79,7 @@ class AuthViewModel extends ChangeNotifier {
       if (result.success && result.user != null && result.token != null) {
         await _localService.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
+        invalidateUserEndpointSync();
       }
 
       return result;
@@ -112,6 +122,7 @@ class AuthViewModel extends ChangeNotifier {
       if (result.success && result.user != null && result.token != null) {
         await _localService.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
+        invalidateUserEndpointSync();
       }
 
       return result;
@@ -140,6 +151,7 @@ class AuthViewModel extends ChangeNotifier {
       if (token == null || token.isEmpty) {
         // Jika token tidak ada, tetap bersihkan data lokal.
         await _localService.clearAllLocalData();
+        invalidateUserEndpointSync();
         return AuthActionResult.success('Logout successful');
       }
 
@@ -147,6 +159,7 @@ class AuthViewModel extends ChangeNotifier {
 
       if (result.success) {
         await _localService.clearAllLocalData();
+        invalidateUserEndpointSync();
       }
 
       return result;
@@ -157,6 +170,49 @@ class AuthViewModel extends ChangeNotifier {
     } finally {
       _isSubmitting = false;
       notifyListeners();
+    }
+  }
+
+  /// GET `/user` — **HTTP hanya sekali** per proses app; selanjutnya baca cache (halaman Akun).
+  Future<AuthProfileUpdateResult> fetchCurrentUser() async {
+    final token = await _localService.getToken();
+    if (token == null || token.isEmpty) {
+      return AuthProfileUpdateResult.failure(
+        message: 'Sesi tidak valid. Silakan login lagi.',
+      );
+    }
+
+    if (_userEndpointFetchedThisProcess) {
+      final u =
+          AuthLocalService.peekCachedUserSync() ?? await _localService.getCachedUser();
+      return AuthProfileUpdateResult.success(
+        message: 'OK',
+        user: u,
+      );
+    }
+
+    try {
+      final result = await _apiService.fetchCurrentUser(token: token);
+      if (result.success && result.user != null) {
+        final cached = await _localService.getCachedUser();
+        final merged = cached != null
+            ? result.user!.mergedWithServer(cached)
+            : result.user!;
+        await _localService.saveCachedUser(merged);
+        prefetchAuthAvatarUrl(merged.avatar);
+        _userEndpointFetchedThisProcess = true;
+        return AuthProfileUpdateResult.success(
+          message: result.message,
+          user: merged,
+        );
+      }
+      return result;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[AuthViewModel][fetchCurrentUser] $e');
+      return AuthProfileUpdateResult.failure(
+        message: 'Terjadi kesalahan. Silakan coba lagi.',
+      );
     }
   }
 
@@ -196,8 +252,17 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (result.success && result.user != null) {
-        await _localService.saveCachedUser(result.user!);
-        prefetchAuthAvatarUrl(result.user!.avatar);
+        final prev = await _localService.getCachedUser();
+        final merged = prev != null
+            ? result.user!.mergedWithServer(prev)
+            : result.user!;
+        await _localService.saveCachedUser(merged);
+        prefetchAuthAvatarUrl(merged.avatar);
+        _userEndpointFetchedThisProcess = true;
+        return AuthProfileUpdateResult.success(
+          message: result.message,
+          user: merged,
+        );
       }
 
       return result;

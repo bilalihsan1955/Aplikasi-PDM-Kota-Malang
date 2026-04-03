@@ -407,7 +407,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               obscureText: _obscurePassword,
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
-                hintText: 'Minimal sesuai kebijakan server',
+                hintText: 'Kata sandi baru',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                 prefixIcon: Icon(RemixIcons.lock_line, color: AppStyle.primary, size: 22),
                 suffixIcon: IconButton(

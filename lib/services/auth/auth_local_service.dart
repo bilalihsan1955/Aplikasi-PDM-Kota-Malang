@@ -12,29 +12,42 @@ class AuthLocalService {
   /// Diset sekali setelah onboarding; tidak ikut dihapus saat logout.
   static const String _onboardingCompletedKey = 'onboarding_completed';
 
+  /// Mirror user terakhir (login / GET prefs) agar UI bisa tampil instan tanpa menunggu async.
+  static AuthUser? _ramUserCache;
+
+  static AuthUser? peekCachedUserSync() => _ramUserCache;
+
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   Future<AuthUser?> getCachedUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_authUserKey);
-      if (raw == null || raw.trim().isEmpty) return null;
+      if (raw == null || raw.trim().isEmpty) {
+        _ramUserCache = null;
+        return null;
+      }
       final decoded = jsonDecode(raw);
+      AuthUser? user;
       if (decoded is Map<String, dynamic>) {
-        return AuthUser.fromJson(decoded);
+        user = AuthUser.fromJson(decoded);
+      } else if (decoded is Map) {
+        user = AuthUser.fromJson(Map<String, dynamic>.from(decoded));
+      } else {
+        user = null;
       }
-      if (decoded is Map) {
-        return AuthUser.fromJson(Map<String, dynamic>.from(decoded));
-      }
-      return null;
+      _ramUserCache = user;
+      return user;
     } catch (e) {
       // ignore: avoid_print
       print('[AuthLocalService] Gagal baca cache user: $e');
+      _ramUserCache = null;
       return null;
     }
   }
 
   Future<void> saveCachedUser(AuthUser user) async {
+    _ramUserCache = user;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_authUserKey, jsonEncode(user.toJson()));
@@ -54,10 +67,23 @@ class AuthLocalService {
     }
   }
 
+  /// Menyimpan token baru hanya jika berbeda dari yang tersimpan (mis. hasil `/auth/refresh`).
+  Future<void> updateStoredTokenIfDifferent(String newToken) async {
+    final current = await getToken();
+    if (current == newToken) return;
+    try {
+      await _secureStorage.write(key: _authTokenKey, value: newToken);
+    } catch (e) {
+      // ignore: avoid_print
+      print('[AuthLocalService] Gagal update token: $e');
+    }
+  }
+
   Future<void> saveSession({
     required AuthUser user,
     required String token,
   }) async {
+    _ramUserCache = user;
     final prefs = await SharedPreferences.getInstance();
 
     // Cache user data (non-token).
@@ -138,6 +164,8 @@ class AuthLocalService {
       // ignore: avoid_print
       print('[AuthLocalService] Gagal deleteAll secure storage: $e');
     }
+
+    _ramUserCache = null;
   }
 }
 

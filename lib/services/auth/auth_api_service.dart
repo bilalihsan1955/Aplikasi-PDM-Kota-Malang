@@ -6,6 +6,7 @@ import '../../models/auth_user_model.dart';
 import '../../services/api_service.dart';
 import 'auth_action_result.dart';
 import 'auth_profile_update_result.dart';
+import 'auth_refresh_result.dart';
 import 'auth_register_result.dart';
 import 'password_reset_result.dart';
 
@@ -181,6 +182,65 @@ class AuthApiService {
     }
   }
 
+  /// POST `/auth/refresh` — header JSON saja, tanpa `Authorization`.
+  /// Body: `{ "token": "<bundle atau refresh secret, min 36 karakter>" }`.
+  Future<AuthRefreshResult> refreshToken({required String token}) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/auth/refresh');
+      final response = await http.post(
+        uri,
+        headers: _headers,
+        body: jsonEncode({'token': token}),
+      );
+
+      final dynamic decoded =
+          response.body.isNotEmpty ? jsonDecode(response.body) : null;
+      final Map<String, dynamic> map =
+          decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+
+      final successFlag = map['success'] == true;
+      final message = map['message']?.toString().trim() ?? '';
+
+      if (response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          successFlag) {
+        final data = map['data'];
+        final newTok = data is Map ? data['token']?.toString() : null;
+        if (newTok != null && newTok.isNotEmpty) {
+          return AuthRefreshResult.ok(
+            message: message.isNotEmpty ? message : 'Token refreshed',
+            newToken: newTok,
+          );
+        }
+        _logAuthApiError('auth/refresh', response, map);
+        return AuthRefreshResult.fail(
+          message: message.isNotEmpty
+              ? message
+              : 'Respons refresh tidak berisi token.',
+        );
+      }
+
+      final shouldInvalidate =
+          response.statusCode == 401 || response.statusCode == 403;
+
+      _logAuthApiError('auth/refresh', response, map);
+      return AuthRefreshResult.fail(
+        message: message.isNotEmpty
+            ? message
+            : shouldInvalidate
+                ? 'Refresh token tidak valid atau kedaluwarsa.'
+                : 'Gagal memperbarui token. Silakan coba lagi.',
+        invalidateSession: shouldInvalidate,
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('[AuthApiService][auth/refresh] $e');
+      return AuthRefreshResult.fail(
+        message: 'Terjadi kesalahan jaringan. Silakan coba lagi.',
+      );
+    }
+  }
+
   Map<String, List<String>>? _parseErrors(dynamic raw) {
     if (raw is! Map) return null;
     final out = <String, List<String>>{};
@@ -235,6 +295,53 @@ class AuthApiService {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       };
+
+  /// GET `/user` — profil terkini; header JSON + Bearer JWT.
+  Future<AuthProfileUpdateResult> fetchCurrentUser({required String token}) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/user');
+      final response = await http.get(
+        uri,
+        headers: _authJsonHeaders(token),
+      );
+
+      final dynamic decoded =
+          response.body.isNotEmpty ? jsonDecode(response.body) : null;
+      final Map<String, dynamic> map =
+          decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+
+      final ok = map['success'] == true;
+      if (response.statusCode >= 200 && response.statusCode < 300 && ok) {
+        final data = map['data'];
+        final rawUser = data is Map ? data['user'] : null;
+        final userMap = rawUser is Map<String, dynamic>
+            ? rawUser
+            : rawUser is Map
+                ? Map<String, dynamic>.from(rawUser)
+                : null;
+
+        if (userMap != null) {
+          final user = AuthUser.fromJson(userMap);
+          return AuthProfileUpdateResult.success(
+            message: map['message']?.toString() ?? 'OK',
+            user: user,
+          );
+        }
+      }
+
+      _logAuthApiError('user', response, map);
+      return AuthProfileUpdateResult.failure(
+        message: _validationDisplayMessage(map, 'Gagal memuat data profil'),
+        errors: _parseErrors(map['errors']),
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('[AuthApiService][user] $e');
+      return AuthProfileUpdateResult.failure(
+        message: 'Terjadi kesalahan. Silakan coba lagi.',
+      );
+    }
+  }
 
   /// POST `/user/update` — header JSON + Bearer token; multipart jika ada [avatarBytes].
   /// Mengunggah dari byte (bukan `fromPath`) supaya aman jika file cache image_picker sudah dihapus OS.

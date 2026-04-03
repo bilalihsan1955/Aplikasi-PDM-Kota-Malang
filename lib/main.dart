@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:pdm_malang/services/auth/auth_local_service.dart';
+import 'package:pdm_malang/services/auth/auth_startup.dart';
 import 'package:pdm_malang/utils/routes.dart';
 import 'package:pdm_malang/view_models/home_view_model.dart';
 import 'package:pdm_malang/view_models/agenda_view_model.dart';
@@ -16,7 +17,6 @@ import 'package:pdm_malang/utils/app_style.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Mengaktifkan mode edge-to-edge secara total
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   try {
@@ -51,6 +51,21 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final _router = createAppRouter(initialLocation: widget.initialLocation);
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLocation == '/') {
+      _backgroundTokenRefresh();
+    }
+  }
+
+  Future<void> _backgroundTokenRefresh() async {
+    final redirectTo = await tryRefreshTokenInBackground();
+    if (redirectTo != null && mounted) {
+      _router.go(redirectTo);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
