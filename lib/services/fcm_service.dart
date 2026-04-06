@@ -110,6 +110,9 @@ class FCMService {
 
   bool _localNotifsInitialized = false;
 
+  /// Saluran khusus pengingat sholat (IMPORTANCE_MAX + USAGE_ALARM). ID baru agar tidak terkunci ke channel lama.
+  static const String _prayerReminderChannelId = 'pdm_malang_prayer_alarms_v2';
+
   /// ID notifikasi lokal pengingat sholat: 5 wajib × 2 (teks “5 mnt” + masuk waktu).
   static const int _prayerReminderIdStart = 92010;
 
@@ -120,6 +123,12 @@ class FCMService {
   static const Duration _prayerOnTimeScheduleAdvance = Duration(minutes: 1);
 
   static const int _prayerReminderSlotCount = 10;
+  /// ID lama penjadwalan tes (dibersihkan saat pembatalan pengingat).
+  static const int _legacyPrayerDiagnosticNotificationId = 92001;
+
+  /// Argumen terakhir [syncPrayerScheduleNotifications] — dipakai ulang setelah user kembali dari pengaturan izin.
+  String? _lastPrayerSyncCity;
+  List<(String name, String timeRaw)>? _lastPrayerSyncPrayers;
 
   // Storage keys
   static const String _subscribedTopicsKey = 'subscribed_topics';
@@ -276,30 +285,50 @@ class FCMService {
       onDidReceiveNotificationResponse: _handleLocalNotificationTap,
     );
 
-    // Create notification channel for Android
+    // Create notification channels for Android
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'pdm_malang_channel',
-      'PDM Malang Notifications',
-      description: 'Notifikasi untuk PDM Malang',
+      'Makotamu',
+      description: 'Notifikasi Makotamu',
       importance: Importance.high,
     );
 
-    await _localNotifications
+    final androidPlugin = _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidPlugin?.createNotificationChannel(channel);
+
+    // Wajib: pengingat sholat memakai channel ini ([_prayerReminderChannelId]). Tanpa createChannel,
+    // AlarmManager tetap memicu receiver tetapi notifikasi sering tidak tampil saat app terminated.
+    await androidPlugin?.createNotificationChannel(
+      AndroidNotificationChannel(
+        _prayerReminderChannelId,
+        'Pengingat waktu sholat',
+        description:
+            'Alarm dan reminder jadwal sholat saat aplikasi tidak dibuka',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+      ),
+    );
 
     _localNotifsInitialized = true;
   }
 
   /// Izin + init plugin untuk penjadwalan notifikasi lokal (jadwal sholat).
   /// `false` = izin notifikasi ditolak user.
-  Future<bool> ensureLocalNotificationsPermitted() async {
+  Future<bool> ensureLocalNotificationsReadyForTest() async {
     await _initializeLocalNotifications();
     if (defaultTargetPlatform == TargetPlatform.android) {
       final android = _localNotifications
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
+      try {
+        final alreadyOn = await android?.areNotificationsEnabled();
+        if (alreadyOn == true) return true;
+      } catch (_) {}
       final granted = await android?.requestNotificationsPermission();
       if (granted == false) return false;
       return true;
@@ -332,23 +361,45 @@ class FCMService {
     await android?.requestExactAlarmsPermission();
   }
 
-  /// Sekali setelah instal: minta izin notifikasi lalu buka pengaturan alarm & pengingat.
-  /// Kunjungan berikutnya hanya [openAndroidAlarmReminderSettingsIfDenied] bila perlu.
+  /// Pertama buka Jadwal (Android): izin notifikasi → jeda → izin alarm tepat → cek ulang & buka pengaturan jika perlu.
   Future<void> runJadwalPageAndroidPermissionOnboarding() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    await Future<void>.delayed(const Duration(milliseconds: 120));
     await _initializeLocalNotifications();
     final android = _localNotifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    if (!await JadwalPermissionOnboardingPrefs.isDone()) {
+    final firstJadwal = !await JadwalPermissionOnboardingPrefs.isDone();
+    if (firstJadwal) {
       await android?.requestNotificationsPermission();
+      await Future<void>.delayed(const Duration(milliseconds: 500));
       await android?.requestExactAlarmsPermission();
       await JadwalPermissionOnboardingPrefs.markDone();
-      return;
+    } else {
+      try {
+        final enabled = await android?.areNotificationsEnabled();
+        if (enabled == false) {
+          await android?.requestNotificationsPermission();
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('[FCM] areNotificationsEnabled: $e');
+      }
     }
 
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     await openAndroidAlarmReminderSettingsIfDenied();
+  }
+
+  /// Panggil setelah app kembali ke foreground (mis. dari layar izin alarm) agar jadwal dijadwalkan ulang.
+  Future<void> replayLastPrayerScheduleNotificationsIfAny() async {
+    if (kIsWeb) return;
+    final city = _lastPrayerSyncCity;
+    final prayers = _lastPrayerSyncPrayers;
+    if (city == null || prayers == null) return;
+    await syncPrayerScheduleNotifications(city: city, prayers: prayers);
   }
 
   /// Judul & isi saat **masuk waktu** sholat.
@@ -399,7 +450,7 @@ class FCMService {
     return '${p.$1.toString().padLeft(2, '0')}.${p.$2.toString().padLeft(2, '0')}';
   }
 
-  /// Hanya slot jadwal sholat harian (92010–).
+  /// Hanya slot jadwal sholat harian (92010–92019).
   Future<void> _cancelPrayerReminderSlotsOnly() async {
     if (kIsWeb) return;
     await _initializeLocalNotifications();
@@ -413,10 +464,16 @@ class FCMService {
     }
   }
 
-  /// Batalkan semua slot pengingat jadwal sholat harian.
+  /// Batalkan semua slot pengingat jadwal + ID tes lama bila masih tersisa di perangkat.
   Future<void> cancelAllPrayerScheduleReminders() async {
     if (kIsWeb) return;
     await _cancelPrayerReminderSlotsOnly();
+    try {
+      await _localNotifications.cancel(_legacyPrayerDiagnosticNotificationId);
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('[FCM] cancel legacy test id: $e\n$st');
+    }
   }
 
   /// Sinkronkan notifikasi lokal hari ini: salinan “5 menit” (jadwal 6 mnt) + masuk waktu (jadwal 1 mnt lebih awal).
@@ -427,17 +484,22 @@ class FCMService {
   }) async {
     if (kIsWeb) return;
     if (!await PrayerAlarmReminderPrefs.isEnabled()) {
+      _lastPrayerSyncCity = null;
+      _lastPrayerSyncPrayers = null;
       await cancelAllPrayerScheduleReminders();
       return;
     }
     if (prayers.length * 2 > _prayerReminderSlotCount) return;
+    _lastPrayerSyncCity = city;
+    _lastPrayerSyncPrayers = List<(String name, String timeRaw)>.from(prayers);
 
-    final permitted = await ensureLocalNotificationsPermitted();
+    final permitted = await ensureLocalNotificationsReadyForTest();
     if (!permitted) {
       await cancelAllPrayerScheduleReminders();
       return;
     }
     await _initializeLocalNotifications();
+    await _ensureAndroidExactAlarmForPrayerReminders();
     await _cancelPrayerReminderSlotsOnly();
 
     final now = tz.TZDateTime.now(tz.local);
@@ -502,11 +564,15 @@ class FCMService {
     required String body,
   }) async {
     const androidDetails = AndroidNotificationDetails(
-      'pdm_malang_channel',
-      'PDM Malang Notifications',
-      channelDescription: 'Notifikasi untuk PDM Malang',
-      importance: Importance.high,
-      priority: Priority.high,
+      _prayerReminderChannelId,
+      'Pengingat waktu sholat',
+      channelDescription:
+          'Alarm dan reminder jadwal sholat; memakai saluran prioritas tinggi',
+      importance: Importance.max,
+      priority: Priority.max,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
       icon: '@mipmap/ic_launcher',
     );
     const iosDetails = DarwinNotificationDetails(
@@ -537,12 +603,37 @@ class FCMService {
           }),
         );
 
+    // Urutan: alarmClock (setAlarmClock) paling diutamakan Doze/OEM saat app di-swipe/terminated;
+    // lalu exactAllowWhileIdle; terakhir inexact.
     try {
-      await doSchedule(AndroidScheduleMode.exactAllowWhileIdle);
+      await doSchedule(AndroidScheduleMode.alarmClock);
+    } catch (e) {
+      try {
+        // ignore: avoid_print
+        print('[FCM] zonedSchedule alarmClock gagal, coba exactAllowWhileIdle: $e');
+        await doSchedule(AndroidScheduleMode.exactAllowWhileIdle);
+      } catch (e2) {
+        // ignore: avoid_print
+        print('[FCM] zonedSchedule exact gagal, pakai inexactAllowWhileIdle: $e2');
+        await doSchedule(AndroidScheduleMode.inexactAllowWhileIdle);
+      }
+    }
+  }
+
+  /// Pastikan alarm tepat boleh dijadwalkan (terminasi proses / Doze). USE_EXACT_ALARM memperkuat ini.
+  Future<void> _ensureAndroidExactAlarmForPrayerReminders() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    final android = _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return;
+    try {
+      final can = await android.canScheduleExactNotifications();
+      if (can == true) return;
+      await android.requestExactAlarmsPermission();
     } catch (e) {
       // ignore: avoid_print
-      print('[FCM] zonedSchedule exact gagal, pakai inexact: $e');
-      await doSchedule(AndroidScheduleMode.inexactAllowWhileIdle);
+      print('[FCM] _ensureAndroidExactAlarmForPrayerReminders: $e');
     }
   }
 
@@ -580,8 +671,8 @@ class FCMService {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'pdm_malang_channel',
-      'PDM Malang Notifications',
-      channelDescription: 'Notifikasi untuk PDM Malang',
+      'Makotamu',
+      channelDescription: 'Notifikasi Makotamu',
       importance: Importance.high,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
@@ -600,7 +691,7 @@ class FCMService {
 
     await _localNotifications.show(
       message.hashCode,
-      message.notification?.title ?? 'PDM Malang',
+      message.notification?.title ?? 'Makotamu',
       message.notification?.body ?? '',
       details,
       payload: jsonEncode(_localNotificationPayloadMap(message)),

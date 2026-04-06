@@ -17,7 +17,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   final List<Map<String, String>> _onboardingData = [
     {
-      'title': 'Selamat Datang di PDM Malang',
+      'title': 'Selamat Datang di Makotamu',
       'description': 'Platform digital resmi Pimpinan Daerah Muhammadiyah Kota Malang untuk informasi dan koordinasi umat.',
       'image': 'assets/images/banner.png',
     },

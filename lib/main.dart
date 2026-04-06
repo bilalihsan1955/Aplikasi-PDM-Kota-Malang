@@ -147,6 +147,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(FCMService().syncRegisteredTokenToBackend());
+      unawaited(FCMService().replayLastPrayerScheduleNotificationsIfAny());
     }
   }
 
@@ -181,7 +182,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final themeMode = profileViewModel.themeMode;
 
     return MaterialApp.router(
-      title: 'PDM Malang',
+      title: 'Makotamu',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       themeAnimationDuration: const Duration(milliseconds: 150),

@@ -36,14 +36,13 @@ class _JadwalSholatPageState extends State<JadwalSholatPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.prayer == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await FCMService().runJadwalPageAndroidPermissionOnboarding();
+      if (!mounted) return;
+      if (widget.prayer == null) {
         context.read<HomeViewModel>().loadPrayerData();
-      });
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FCMService().runJadwalPageAndroidPermissionOnboarding();
+      }
     });
   }
 
