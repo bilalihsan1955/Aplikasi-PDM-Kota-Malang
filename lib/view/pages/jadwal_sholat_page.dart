@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import '../../services/fcm_service.dart';
 import '../../services/prayer_time_service.dart';
 import '../../view_models/home_view_model.dart';
 import '../widgets/back_button_app.dart';
 
-class JadwalSholatPage extends StatelessWidget {
+class JadwalSholatPage extends StatefulWidget {
   const JadwalSholatPage({super.key, this.prayer});
 
   final PrayerTimeResult? prayer;
@@ -26,32 +29,59 @@ class JadwalSholatPage extends StatelessWidget {
   }
 
   @override
+  State<JadwalSholatPage> createState() => _JadwalSholatPageState();
+}
+
+class _JadwalSholatPageState extends State<JadwalSholatPage> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prayer == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<HomeViewModel>().loadPrayerData();
+      });
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FCMService().runJadwalPageAndroidPermissionOnboarding();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subtitle = prayer != null
-        ? _cityTitleCase(prayer!.city)
-        : 'Waktu sholat';
 
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(110),
-          child: _JadwalHeader(subtitle: subtitle),
-        ),
-        body: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.only(top: 24, bottom: 24),
-          child: SafeArea(
-            top: false,
-            child: _JadwalContent(
-              prayer: prayer,
-              isDark: isDark,
+    return Consumer<HomeViewModel>(
+      builder: (context, vm, _) {
+        final prayer = widget.prayer ?? vm.prayerTime;
+        final loadingExtra = widget.prayer == null && vm.prayerLoading;
+        final subtitle = prayer != null
+            ? JadwalSholatPage._cityTitleCase(prayer.city)
+            : (loadingExtra ? 'Memuat jadwal…' : 'Waktu sholat');
+
+        return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(110),
+              child: _JadwalHeader(subtitle: subtitle),
+            ),
+            body: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.only(top: 24, bottom: 24),
+              child: SafeArea(
+                top: false,
+                child: _JadwalContent(
+                  prayer: prayer,
+                  isDark: isDark,
+                  prayerLoadingExtra: loadingExtra,
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -296,10 +326,13 @@ class _JadwalContent extends StatelessWidget {
   const _JadwalContent({
     required this.prayer,
     required this.isDark,
+    this.prayerLoadingExtra = false,
   });
 
   final PrayerTimeResult? prayer;
   final bool isDark;
+  /// True saat data diambil dari API (deep link / notifikasi tanpa extra).
+  final bool prayerLoadingExtra;
 
   @override
   Widget build(BuildContext context) {
@@ -310,40 +343,268 @@ class _JadwalContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (prayer != null) ...[
-            _NextPrayerBlueBanner(prayer: prayer!, isDark: isDark),
-            const SizedBox(height: 20),
+          if (prayerLoadingExtra && prayer == null)
+            _JadwalLoadingSkeleton(isDark: isDark)
+          else ...[
+            if (prayer != null) ...[
+              _NextPrayerBlueBanner(prayer: prayer!, isDark: isDark),
+              const SizedBox(height: 20),
+            ],
+            _WhiteScheduleSection(
+              isDark: isDark,
+              title: 'Jadwal Sholat',
+              icon: RemixIcons.time_line,
+              child: prayer == null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'Data jadwal tidak tersedia',
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    )
+                  : _PrayerScheduleList(
+                      prayer: prayer!,
+                      nextPrayerName: nextName,
+                      isDark: isDark,
+                    ),
+            ),
+            const SizedBox(height: 16),
+            Consumer<HomeViewModel>(
+              builder: (context, vm, _) {
+                return _KiblatShortcutCard(
+                  isDark: isDark,
+                  qiblaDegree: vm.qiblaDirection,
+                );
+              },
+            ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading: shimmer grayscale pada kartu berikutnya, section jadwal, dan kiblat.
+class _JadwalLoadingSkeleton extends StatelessWidget {
+  const _JadwalLoadingSkeleton({required this.isDark});
+
+  final bool isDark;
+
+  static ShimmerEffect _shimmer(bool isDark) => ShimmerEffect(
+        baseColor:
+            isDark ? const Color(0xFF262626) : const Color(0xFFD5D5D5),
+        highlightColor:
+            isDark ? const Color(0xFF404040) : const Color(0xFFF0F0F0),
+      );
+
+  static final _placeholderPrayer = PrayerTimeResult(
+    fajr: '04.00',
+    sunrise: '05.30',
+    dhuhr: '12.00',
+    asr: '15.30',
+    maghrib: '18.00',
+    isha: '19.15',
+    city: 'Kota placeholder',
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = isDark ? Colors.white60 : const Color(0xFF5C6370);
+    final titleCol = isDark ? Colors.white : const Color(0xFF2D3142);
+    final cardBg = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3);
+    final borderCol = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : const Color(0xFFE0E0E0);
+
+    return Skeletonizer(
+      enabled: true,
+      effect: _shimmer(isDark),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borderCol, width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Sholat berikutnya',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: muted,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Dzuhur',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              height: 1.05,
+                              color: titleCol,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '12.00',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w400,
+                              color: muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 88,
+                      height: 88,
+                      child: Icon(
+                        RemixIcons.time_line,
+                        size: 52,
+                        color: muted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(RemixIcons.map_pin_2_fill, size: 16, color: muted),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Nama kota',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: muted,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : const Color(0xFFE8E8E8),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '0 mnt',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: titleCol,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           _WhiteScheduleSection(
             isDark: isDark,
             title: 'Jadwal Sholat',
             icon: RemixIcons.time_line,
-            child: prayer == null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'Data jadwal tidak tersedia',
-                        style: TextStyle(
-                          color: isDark ? Colors.white70 : Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  )
-                : _PrayerScheduleList(
-                    prayer: prayer!,
-                    nextPrayerName: nextName,
-                    isDark: isDark,
-                  ),
+            headerIconNeutral: true,
+            child: _PrayerScheduleList(
+              prayer: _placeholderPrayer,
+              nextPrayerName: 'Dzuhur',
+              isDark: isDark,
+              grayscaleSkeleton: true,
+            ),
           ),
           const SizedBox(height: 16),
-          Consumer<HomeViewModel>(
-            builder: (context, vm, _) {
-              return _KiblatShortcutCard(
-                isDark: isDark,
-                qiblaDegree: vm.qiblaDirection,
-              );
-            },
+          Material(
+            color: Colors.transparent,
+            child: Ink(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : const Color(0xFFF1F4F9),
+                  width: 1.5,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : const Color(0xFFF0F2F7),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        RemixIcons.compass_3_fill,
+                        size: 26,
+                        color: muted,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Kompas kiblat',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: titleCol,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Menghitung arah kiblat…',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      RemixIcons.arrow_right_s_line,
+                      color: muted,
+                      size: 22,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -454,12 +715,15 @@ class _WhiteScheduleSection extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.child,
+    this.headerIconNeutral = false,
   });
 
   final bool isDark;
   final String title;
   final IconData icon;
   final Widget child;
+  /// Ikon judul abu-abu (placeholder / skeleton) tanpa aksen biru.
+  final bool headerIconNeutral;
 
   @override
   Widget build(BuildContext context) {
@@ -496,7 +760,9 @@ class _WhiteScheduleSection extends StatelessWidget {
                   Icon(
                     icon,
                     size: 22,
-                    color: isDark ? const Color(0xFF93A9E8) : const Color(0xFF152D8D),
+                    color: headerIconNeutral
+                        ? (isDark ? Colors.white54 : const Color(0xFF757575))
+                        : (isDark ? const Color(0xFF93A9E8) : const Color(0xFF152D8D)),
                   ),
                   const SizedBox(width: 10),
                   Text(
@@ -528,11 +794,14 @@ class _PrayerScheduleList extends StatelessWidget {
     required this.prayer,
     this.nextPrayerName,
     required this.isDark,
+    this.grayscaleSkeleton = false,
   });
 
   final PrayerTimeResult prayer;
   final String? nextPrayerName;
   final bool isDark;
+  /// Warna netral untuk placeholder di dalam [Skeletonizer] (tanpa aksen biru).
+  final bool grayscaleSkeleton;
 
   @override
   Widget build(BuildContext context) {
@@ -546,13 +815,20 @@ class _PrayerScheduleList extends StatelessWidget {
     ];
 
     final nameColor = isDark ? Colors.white.withOpacity(0.92) : const Color(0xFF2D3142);
-    final timeColor = isDark ? Colors.white : const Color(0xFF152D8D);
+    final timeColor = grayscaleSkeleton
+        ? (isDark ? Colors.white70 : const Color(0xFF4A4A4A))
+        : (isDark ? Colors.white : const Color(0xFF152D8D));
     final rowBg = isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFF4F6FA);
-    final rowBgNext = isDark
-        ? const Color(0xFF152D8D).withOpacity(0.22)
-        : const Color(0xFFE8EEF9);
-    final prayerIconTint =
-        isDark ? const Color(0xFF93A9E8) : const Color(0xFF152D8D);
+    final rowBgNext = grayscaleSkeleton
+        ? (isDark
+            ? Colors.white.withOpacity(0.1)
+            : const Color(0xFFE0E0E0))
+        : (isDark
+            ? const Color(0xFF152D8D).withOpacity(0.22)
+            : const Color(0xFFE8EEF9));
+    final prayerIconTint = grayscaleSkeleton
+        ? (isDark ? Colors.white54 : const Color(0xFF6E6E6E))
+        : (isDark ? const Color(0xFF93A9E8) : const Color(0xFF152D8D));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -569,7 +845,12 @@ class _PrayerScheduleList extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: isNext
                   ? Border.all(
-                      color: const Color(0xFF152D8D).withOpacity(isDark ? 0.5 : 0.35),
+                      color: grayscaleSkeleton
+                          ? (isDark
+                              ? Colors.white.withOpacity(0.2)
+                              : const Color(0xFFBDBDBD))
+                          : const Color(0xFF152D8D)
+                              .withOpacity(isDark ? 0.5 : 0.35),
                       width: 1,
                     )
                   : null,
@@ -605,7 +886,9 @@ class _PrayerScheduleList extends StatelessWidget {
                         child: Icon(
                           RemixIcons.arrow_right_circle_fill,
                           size: 18,
-                          color: const Color(0xFF152D8D),
+                          color: grayscaleSkeleton
+                              ? (isDark ? Colors.white54 : const Color(0xFF757575))
+                              : const Color(0xFF152D8D),
                         ),
                       ),
                     Text(

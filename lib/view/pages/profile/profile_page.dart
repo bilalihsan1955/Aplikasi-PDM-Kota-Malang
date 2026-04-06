@@ -175,6 +175,27 @@ class ProfilePage extends StatelessWidget {
                 Divider(height: 1, thickness: 1, color: dividerColor),
                 _menuItem(
                   context: context,
+                  icon: RemixIcons.alarm_line,
+                  title: 'Alarm & pengingat Sholat',
+                  trailing: Switch(
+                    value: viewModel.prayerAlarmReminderEnabled,
+                    activeColor: AppStyle.accent,
+                    activeTrackColor: AppStyle.accent.withOpacity(0.1),
+                    inactiveThumbColor: isDark
+                        ? Colors.white.withOpacity(0.6)
+                        : Colors.grey[400],
+                    inactiveTrackColor: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.grey[200],
+                    trackOutlineColor: MaterialStateProperty.all(
+                      Colors.transparent,
+                    ),
+                    onChanged: viewModel.setPrayerAlarmReminderEnabled,
+                  ),
+                ),
+                Divider(height: 1, thickness: 1, color: dividerColor),
+                _menuItem(
+                  context: context,
                   icon: RemixIcons.question_line,
                   title: 'Bantuan',
                   onTap: () => pushInAppWebView(
@@ -346,6 +367,7 @@ class ProfilePage extends StatelessWidget {
     required BuildContext context,
     required IconData icon,
     required String title,
+    String? subtitle,
     Widget? trailing,
     VoidCallback? onTap,
   }) {
@@ -381,15 +403,32 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? Colors.white.withOpacity(0.9)
-                    : const Color(0xFF2D3142),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.9)
+                        : const Color(0xFF2D3142),
+                  ),
+                ),
+                if (subtitle != null && subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.25,
+                      color: isDark ? Colors.white54 : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           trailing ??

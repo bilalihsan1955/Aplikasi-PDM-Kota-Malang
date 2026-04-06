@@ -13,11 +13,35 @@ class PrayerTimeService {
   static const double _defaultLng = 112.6326;
   static const String _defaultCityName = 'KOTA MALANG';
 
-  String get _waktuSholatBaseUrl {
-    final url = dotenv.env['WAKTU_SHOLAT_API_URL']?.trim();
-    if (url != null && url.isNotEmpty) return url.replaceAll(RegExp(r'/$'), '');
-    return 'https://waktu-sholat.vercel.app';
+  String _trimBase(String? raw, String fallback) {
+    final url = raw?.trim();
+    if (url == null || url.isEmpty) return fallback;
+    return url.replaceAll(RegExp(r'/$'), '');
   }
+
+  /// Jadwal + lokasi (waktu-sholat / deploy Anda). Env: `WAKTU_SHOLAT_API_URL`.
+  String get _waktuSholatBaseUrl => _trimBase(
+        dotenv.env['WAKTU_SHOLAT_API_URL'],
+        'https://waktu-sholat.vercel.app',
+      );
+
+  /// Arah kiblat (default Aladhan). Env: `QIBLA_API_BASE_URL`.
+  String get _qiblaApiBaseUrl => _trimBase(
+        dotenv.env['QIBLA_API_BASE_URL'],
+        'https://api.aladhan.com/v1',
+      );
+
+  /// Fallback jadwal MyQuran. Env: `MYQURAN_API_BASE_URL`.
+  String get _myquranApiBaseUrl => _trimBase(
+        dotenv.env['MYQURAN_API_BASE_URL'],
+        'https://api.myquran.com/v2',
+      );
+
+  /// Reverse geocode (Nominatim). Env: `NOMINATIM_BASE_URL`.
+  String get _nominatimBaseUrl => _trimBase(
+        dotenv.env['NOMINATIM_BASE_URL'],
+        'https://nominatim.openstreetmap.org',
+      );
 
   List<Map<String, String>>? _cityListCache;
 
@@ -228,7 +252,7 @@ class PrayerTimeService {
       final dateStr =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final uri = Uri.parse(
-        'https://api.myquran.com/v2/sholat/jadwal/$defaultCityId/$dateStr',
+        '$_myquranApiBaseUrl/sholat/jadwal/$defaultCityId/$dateStr',
       );
       final response = await http.get(uri);
       if (response.statusCode != 200) return null;
@@ -254,7 +278,7 @@ class PrayerTimeService {
   Future<String?> _reverseGeocodeCity(double lat, double lng) async {
     try {
       final uri = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse'
+        '$_nominatimBaseUrl/reverse'
         '?lat=$lat&lon=$lng&format=json&addressdetails=1',
       );
       final response = await http.get(
@@ -283,7 +307,7 @@ class PrayerTimeService {
   Future<List<Map<String, String>>> _getCityList() async {
     if (_cityListCache != null) return _cityListCache!;
     try {
-      final uri = Uri.parse('https://api.myquran.com/v2/sholat/kota/semua');
+      final uri = Uri.parse('$_myquranApiBaseUrl/sholat/kota/semua');
       final response = await http.get(uri);
       if (response.statusCode != 200) return [];
       final body = jsonDecode(response.body);
@@ -339,7 +363,7 @@ class PrayerTimeService {
     }
     try {
       final uri = Uri.parse(
-        'https://api.aladhan.com/v1/qibla/$latitude/$longitude',
+        '$_qiblaApiBaseUrl/qibla/$latitude/$longitude',
       );
       final response = await http.get(uri);
       if (response.statusCode != 200) return null;

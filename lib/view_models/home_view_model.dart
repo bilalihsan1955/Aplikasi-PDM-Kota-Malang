@@ -5,6 +5,7 @@ import '../models/agenda_model.dart';
 import '../models/news_model.dart';
 import '../services/news_api_service.dart';
 import '../services/event_api_service.dart';
+import '../services/fcm_service.dart';
 import '../services/prayer_time_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -142,8 +143,25 @@ class HomeViewModel extends ChangeNotifier {
         _prayerApi.getTodayPrayerTimes(lat: lat, lng: lng, useDeviceLocation: false),
         _prayerApi.getQiblaDirection(lat: lat, lng: lng),
       ]);
-      _prayerTime = results[0] as PrayerTimeResult?;
+      final prayer = results[0] as PrayerTimeResult?;
+      _prayerTime = prayer;
       _qiblaDirection = results[1] as double?;
+      if (prayer != null) {
+        unawaited(
+          FCMService().syncPrayerScheduleNotifications(
+            city: prayer.city,
+            prayers: [
+              ('Subuh', prayer.fajr),
+              ('Dzuhur', prayer.dhuhr),
+              ('Ashar', prayer.asr),
+              ('Maghrib', prayer.maghrib),
+              ('Isya', prayer.isha),
+            ],
+          ),
+        );
+      } else {
+        unawaited(FCMService().cancelAllPrayerScheduleReminders());
+      }
     } catch (_) {}
     _prayerLoading = false;
     notifyListeners();

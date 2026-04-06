@@ -1,11 +1,16 @@
 import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/notification_model.dart';
 import 'api_service.dart';
+import 'prayer_alarm_reminder_prefs.dart';
+import 'jadwal_permission_onboarding_prefs.dart';
 import 'auth/auth_local_service.dart';
 import 'fcm_device_payload.dart';
 
@@ -48,6 +53,25 @@ class FCMService {
     }
   }
 
+  /// Cold start dari tap notifikasi **lokal** (bukan FCM), mis. pengingat jadwal — isi tray.
+  static Future<NotificationModel?> notificationModelFromLocalNotificationLaunch() async {
+    final i = FCMService();
+    await i._initializeLocalNotifications();
+    final details = await i._localNotifications.getNotificationAppLaunchDetails();
+    if (details?.didNotificationLaunchApp != true) return null;
+    final payload = details!.notificationResponse?.payload;
+    if (payload == null || payload.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map) return null;
+      return NotificationModel.fromJson(Map<String, dynamic>.from(decoded));
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('[FCM] notificationModelFromLocalNotificationLaunch: $e\n$st');
+      return null;
+    }
+  }
+
   // --- Gate: izin lokasi diminta setelah dialog izin notifikasi selesai ---
   static final List<Completer<void>> _locationAfterNotifWaiters = [];
   static bool _locationGateReleased = false;
@@ -83,6 +107,14 @@ class FCMService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final ApiService _apiService = ApiService();
+
+  bool _localNotifsInitialized = false;
+
+  /// ID notifikasi lokal pengingat sholat: 5 wajib × 2 (5 menit sebelum + tepat waktu).
+  static const int _prayerReminderIdStart = 92010;
+  static const int _prayerReminderSlotCount = 10;
+  /// ID lama tes — dibersihkan saat cancel.
+  static const int _legacyTestNotificationId = 92001;
 
   // Storage keys
   static const String _subscribedTopicsKey = 'subscribed_topics';
@@ -217,6 +249,8 @@ class FCMService {
 
   // Initialize local notifications
   Future<void> _initializeLocalNotifications() async {
+    if (_localNotifsInitialized) return;
+
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -249,6 +283,244 @@ class FCMService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+
+    _localNotifsInitialized = true;
+  }
+
+  /// Izin + init plugin untuk penjadwalan notifikasi lokal (jadwal sholat).
+  /// `false` = izin notifikasi ditolak user.
+  Future<bool> ensureLocalNotificationsReadyForTest() async {
+    await _initializeLocalNotifications();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final android = _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      final granted = await android?.requestNotificationsPermission();
+      if (granted == false) return false;
+      return true;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final ios = _localNotifications
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      final ok = await ios?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (ok == false) return false;
+      return true;
+    }
+    return true;
+  }
+
+  /// Android: jika alarm presisi belum diizinkan, buka layar pengaturan sistem.
+  /// Dipanggil saat membuka halaman jadwal sholat (bukan first-open).
+  Future<void> openAndroidAlarmReminderSettingsIfDenied() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    await _initializeLocalNotifications();
+    final android = _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    final can = await android?.canScheduleExactNotifications();
+    if (can == true) return;
+    await android?.requestExactAlarmsPermission();
+  }
+
+  /// Sekali setelah instal: minta izin notifikasi lalu buka pengaturan alarm & pengingat.
+  /// Kunjungan berikutnya hanya [openAndroidAlarmReminderSettingsIfDenied] bila perlu.
+  Future<void> runJadwalPageAndroidPermissionOnboarding() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    await _initializeLocalNotifications();
+    final android = _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    if (!await JadwalPermissionOnboardingPrefs.isDone()) {
+      await android?.requestNotificationsPermission();
+      await android?.requestExactAlarmsPermission();
+      await JadwalPermissionOnboardingPrefs.markDone();
+      return;
+    }
+
+    await openAndroidAlarmReminderSettingsIfDenied();
+  }
+
+  /// Judul & isi saat **masuk waktu** sholat.
+  static ({String title, String body}) prayerScheduleReminderNotificationCopy({
+    required String prayerName,
+    required String timeDot,
+    required String city,
+  }) {
+    final name = prayerName.trim().isEmpty ? 'Sholat' : prayerName.trim();
+    final when = timeDot.trim().isEmpty ? '—.–' : timeDot.trim();
+    final place = city.trim().isEmpty ? 'Lokasi Anda' : city.trim();
+    final title = 'Waktu $name';
+    final body = '$when · $place\n'
+        'Tetap sholat di awal waktu. Buka app untuk jadwal lengkap & arah kiblat.';
+    return (title: title, body: body);
+  }
+
+  /// Judul & isi **5 menit sebelum** waktu sholat.
+  static ({String title, String body}) prayerFiveMinuteBeforeNotificationCopy({
+    required String prayerName,
+    required String timeDot,
+    required String city,
+  }) {
+    final name = prayerName.trim().isEmpty ? 'Sholat' : prayerName.trim();
+    final when = timeDot.trim().isEmpty ? '—.–' : timeDot.trim();
+    final place = city.trim().isEmpty ? 'Lokasi Anda' : city.trim();
+    final title = '5 menit lagi · $name';
+    final body = 'Waktu $name pukul $when · $place\n'
+        'Siapkan diri untuk sholat tepat waktu.';
+    return (title: title, body: body);
+  }
+
+  (int, int)? _parsePrayerClock(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    final parts = s.replaceAll('.', ':').split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0].trim());
+    final m = int.tryParse(parts[1].trim());
+    if (h == null || m == null) return null;
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return (h, m);
+  }
+
+  String _clockToDot(String raw) {
+    final p = _parsePrayerClock(raw);
+    if (p == null) return raw.trim();
+    return '${p.$1.toString().padLeft(2, '0')}.${p.$2.toString().padLeft(2, '0')}';
+  }
+
+  /// Batalkan semua slot pengingat jadwal (dan id tes lama).
+  Future<void> cancelAllPrayerScheduleReminders() async {
+    if (kIsWeb) return;
+    await _initializeLocalNotifications();
+    for (var i = 0; i < _prayerReminderSlotCount; i++) {
+      await _localNotifications.cancel(_prayerReminderIdStart + i);
+    }
+    await _localNotifications.cancel(_legacyTestNotificationId);
+  }
+
+  /// Sinkronkan notifikasi lokal hari ini: 5 menit sebelum + tepat waktu, per sholat fardhu.
+  /// Panggil setelah jadwal harian berhasil dimuat. Ganti jadwal lama.
+  Future<void> syncPrayerScheduleNotifications({
+    required String city,
+    required List<(String name, String timeRaw)> prayers,
+  }) async {
+    if (kIsWeb) return;
+    if (!await PrayerAlarmReminderPrefs.isEnabled()) {
+      await cancelAllPrayerScheduleReminders();
+      return;
+    }
+    if (prayers.length * 2 > _prayerReminderSlotCount) return;
+
+    final permitted = await ensureLocalNotificationsReadyForTest();
+    if (!permitted) {
+      await cancelAllPrayerScheduleReminders();
+      return;
+    }
+    await _initializeLocalNotifications();
+    await cancelAllPrayerScheduleReminders();
+
+    final now = tz.TZDateTime.now(tz.local);
+    for (var i = 0; i < prayers.length; i++) {
+      final name = prayers[i].$1;
+      final raw = prayers[i].$2;
+      final clock = _parsePrayerClock(raw);
+      if (clock == null) continue;
+      final at = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        clock.$1,
+        clock.$2,
+      );
+      final timeDot = _clockToDot(raw);
+      final before = at.subtract(const Duration(minutes: 5));
+
+      if (before.isAfter(now)) {
+        final pre = prayerFiveMinuteBeforeNotificationCopy(
+          prayerName: name,
+          timeDot: timeDot,
+          city: city,
+        );
+        await _zonedSchedulePrayerReminder(
+          id: _prayerReminderIdStart + i * 2,
+          when: before,
+          title: pre.title,
+          body: pre.body,
+        );
+      }
+
+      if (at.isAfter(now)) {
+        final copy = prayerScheduleReminderNotificationCopy(
+          prayerName: name,
+          timeDot: timeDot,
+          city: city,
+        );
+        await _zonedSchedulePrayerReminder(
+          id: _prayerReminderIdStart + i * 2 + 1,
+          when: at,
+          title: copy.title,
+          body: copy.body,
+        );
+      }
+    }
+  }
+
+  Future<void> _zonedSchedulePrayerReminder({
+    required int id,
+    required tz.TZDateTime when,
+    required String title,
+    required String body,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'pdm_malang_channel',
+      'PDM Malang Notifications',
+      channelDescription: 'Notifikasi untuk PDM Malang',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    Future<void> doSchedule(AndroidScheduleMode mode) =>
+        _localNotifications.zonedSchedule(
+          id,
+          title,
+          body,
+          when,
+          details,
+          androidScheduleMode: mode,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.wallClockTime,
+          payload: jsonEncode({
+            'title': title,
+            'body': body,
+            'topic': 'prayer_schedule',
+            'tipe_redirect': 'prayer',
+          }),
+        );
+
+    try {
+      await doSchedule(AndroidScheduleMode.exactAllowWhileIdle);
+    } catch (e) {
+      // ignore: avoid_print
+      print('[FCM] zonedSchedule exact gagal, pakai inexact: $e');
+      await doSchedule(AndroidScheduleMode.inexactAllowWhileIdle);
+    }
   }
 
   // Handle foreground message

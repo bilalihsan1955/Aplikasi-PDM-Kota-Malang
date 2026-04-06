@@ -88,8 +88,45 @@ class NotificationModel {
     return s == 'true' || s == '1' || s == 'yes';
   }
 
+  /// Samakan variasi kunci dari FCM/backend ke `tipe_redirect` / `url_redirect`.
+  static void applyTipeUrlAliases(Map<String, dynamic> flat) {
+    String? firstNonEmpty(Iterable<String> keys) {
+      for (final key in keys) {
+        final v = flat[key]?.toString().trim();
+        if (v != null && v.isNotEmpty) return v;
+      }
+      return null;
+    }
+
+    final tipe = firstNonEmpty(const [
+      'tipe_redirect',
+      'tipeRedirect',
+      'type',
+      'tipe',
+      'redirect_type',
+      'redirectType',
+      'notification_type',
+      'notificationType',
+    ]);
+    if (tipe != null) {
+      flat['tipe_redirect'] = tipe;
+    }
+
+    final url = firstNonEmpty(const [
+      'url_redirect',
+      'urlRedirect',
+      'link',
+      'deep_link',
+      'deepLink',
+    ]);
+    if (url != null) {
+      flat['url_redirect'] = url;
+    }
+  }
+
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     final flat = flattenNotificationJson(json);
+    applyTipeUrlAliases(flat);
     final topicRaw = flat['topic']?.toString().trim().toLowerCase();
     return NotificationModel(
       id: _parseId(flat['id']),

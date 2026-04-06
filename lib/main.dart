@@ -20,11 +20,14 @@ import 'package:pdm_malang/view_models/profile_view_model.dart';
 import 'package:pdm_malang/view_models/notification_view_model.dart';
 import 'package:pdm_malang/view_models/auth_view_model.dart';
 import 'package:pdm_malang/utils/app_style.dart';
+import 'package:pdm_malang/utils/app_timezone.dart';
 import 'package:pdm_malang/firebase_background.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  await configureLocalTimeZone();
+
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   try {
@@ -51,6 +54,15 @@ void main() async {
       if (target != null) {
         routerInitial = target.location;
         routerInitialExtra = target.extra;
+      }
+    } else {
+      final localOpen = await FCMService.notificationModelFromLocalNotificationLaunch();
+      if (localOpen != null) {
+        final target = coldStartTargetForNotification(localOpen);
+        if (target != null) {
+          routerInitial = target.location;
+          routerInitialExtra = target.extra;
+        }
       }
     }
   }

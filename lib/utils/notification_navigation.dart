@@ -13,8 +13,25 @@ class NotificationColdStartTarget {
   const NotificationColdStartTarget(this.location, [this.extra]);
 }
 
+/// Jadwal sholat dari topic FCM / topic internal (bila `tipe_redirect` kosong di payload).
+bool notificationImpliesJadwalSholat(NotificationModel notification) {
+  final tipe = notification.tipeRedirect?.toLowerCase().trim() ?? '';
+  if (tipe == 'prayer' || tipe == 'jadwal' || tipe == 'sholat') {
+    return true;
+  }
+  final topic = notification.topic.toLowerCase().trim();
+  if (topic.isEmpty || topic == 'all') return false;
+  return topic.contains('prayer') ||
+      topic.contains('sholat') ||
+      topic.contains('jadwal');
+}
+
 /// Samakan aturan dengan [openNotificationTargetWithRouter]; WebView pakai `/webview` (cabang home).
 NotificationColdStartTarget? coldStartTargetForNotification(NotificationModel notification) {
+  if (notificationImpliesJadwalSholat(notification)) {
+    return const NotificationColdStartTarget('/jadwal-sholat');
+  }
+
   final redirect = notification.urlRedirect?.trim() ?? '';
   final hasUrl = redirect.isNotEmpty;
   final tipe = notification.tipeRedirect?.toLowerCase().trim() ?? '';
@@ -82,6 +99,11 @@ void openNotificationTarget(BuildContext context, NotificationModel notification
 /// - Web (+ surat/letter) + URL ada → WebView in-app; URL kosong → home `/`.
 /// - Lainnya + URL kosong → home `/`.
 void openNotificationTargetWithRouter(GoRouter router, NotificationModel notification) {
+  if (notificationImpliesJadwalSholat(notification)) {
+    router.go('/jadwal-sholat');
+    return;
+  }
+
   final redirect = notification.urlRedirect?.trim() ?? '';
   final hasUrl = redirect.isNotEmpty;
   final tipe = notification.tipeRedirect?.toLowerCase().trim() ?? '';
