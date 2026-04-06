@@ -16,7 +16,7 @@ class NotificationApiService {
   static Future<NotificationListResult> fetchNotifications({
     required String token,
     required int userId,
-    int limit = 60,
+    int limit = 30,
   }) async {
     try {
       final uri = Uri.parse('$_baseUrl/notifikasi').replace(

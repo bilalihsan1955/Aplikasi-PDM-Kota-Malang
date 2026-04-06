@@ -64,6 +64,11 @@ android {
             val releaseSigning = signingConfigs.findByName("release")
             signingConfig = releaseSigning
                 ?: signingConfigs.getByName("debug")
+            // Saat R8/minify aktif (release/obfuscate): Gson TypeToken di flutter_local_notifications.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

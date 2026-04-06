@@ -110,11 +110,16 @@ class FCMService {
 
   bool _localNotifsInitialized = false;
 
-  /// ID notifikasi lokal pengingat sholat: 5 wajib × 2 (5 menit sebelum + tepat waktu).
+  /// ID notifikasi lokal pengingat sholat: 5 wajib × 2 (teks “5 mnt” + masuk waktu).
   static const int _prayerReminderIdStart = 92010;
+
+  /// Teks “5 menit lagi”, tapi dijadwalkan **6 menit** sebelum waktu sholat (kompensasi telat sistem).
+  static const Duration _prayerAdvanceReminderScheduleLead = Duration(minutes: 6);
+
+  /// Notifikasi “masuk waktu” dijadwalkan **1 menit** sebelum jam sholat agar saat tampil mendekati tepat waktu.
+  static const Duration _prayerOnTimeScheduleAdvance = Duration(minutes: 1);
+
   static const int _prayerReminderSlotCount = 10;
-  /// ID lama tes — dibersihkan saat cancel.
-  static const int _legacyTestNotificationId = 92001;
 
   // Storage keys
   static const String _subscribedTopicsKey = 'subscribed_topics';
@@ -289,7 +294,7 @@ class FCMService {
 
   /// Izin + init plugin untuk penjadwalan notifikasi lokal (jadwal sholat).
   /// `false` = izin notifikasi ditolak user.
-  Future<bool> ensureLocalNotificationsReadyForTest() async {
+  Future<bool> ensureLocalNotificationsPermitted() async {
     await _initializeLocalNotifications();
     if (defaultTargetPlatform == TargetPlatform.android) {
       final android = _localNotifications
@@ -361,7 +366,7 @@ class FCMService {
     return (title: title, body: body);
   }
 
-  /// Judul & isi **5 menit sebelum** waktu sholat.
+  /// Judul **5 menit lagi** (salinan pengguna); penjadwalan aktual lihat [_prayerAdvanceReminderScheduleLead].
   static ({String title, String body}) prayerFiveMinuteBeforeNotificationCopy({
     required String prayerName,
     required String timeDot,
@@ -394,17 +399,27 @@ class FCMService {
     return '${p.$1.toString().padLeft(2, '0')}.${p.$2.toString().padLeft(2, '0')}';
   }
 
-  /// Batalkan semua slot pengingat jadwal (dan id tes lama).
-  Future<void> cancelAllPrayerScheduleReminders() async {
+  /// Hanya slot jadwal sholat harian (92010–).
+  Future<void> _cancelPrayerReminderSlotsOnly() async {
     if (kIsWeb) return;
     await _initializeLocalNotifications();
     for (var i = 0; i < _prayerReminderSlotCount; i++) {
-      await _localNotifications.cancel(_prayerReminderIdStart + i);
+      try {
+        await _localNotifications.cancel(_prayerReminderIdStart + i);
+      } catch (e, st) {
+        // ignore: avoid_print
+        print('[FCM] cancel prayer slot $i: $e\n$st');
+      }
     }
-    await _localNotifications.cancel(_legacyTestNotificationId);
   }
 
-  /// Sinkronkan notifikasi lokal hari ini: 5 menit sebelum + tepat waktu, per sholat fardhu.
+  /// Batalkan semua slot pengingat jadwal sholat harian.
+  Future<void> cancelAllPrayerScheduleReminders() async {
+    if (kIsWeb) return;
+    await _cancelPrayerReminderSlotsOnly();
+  }
+
+  /// Sinkronkan notifikasi lokal hari ini: salinan “5 menit” (jadwal 6 mnt) + masuk waktu (jadwal 1 mnt lebih awal).
   /// Panggil setelah jadwal harian berhasil dimuat. Ganti jadwal lama.
   Future<void> syncPrayerScheduleNotifications({
     required String city,
@@ -417,13 +432,13 @@ class FCMService {
     }
     if (prayers.length * 2 > _prayerReminderSlotCount) return;
 
-    final permitted = await ensureLocalNotificationsReadyForTest();
+    final permitted = await ensureLocalNotificationsPermitted();
     if (!permitted) {
       await cancelAllPrayerScheduleReminders();
       return;
     }
     await _initializeLocalNotifications();
-    await cancelAllPrayerScheduleReminders();
+    await _cancelPrayerReminderSlotsOnly();
 
     final now = tz.TZDateTime.now(tz.local);
     for (var i = 0; i < prayers.length; i++) {
@@ -440,7 +455,7 @@ class FCMService {
         clock.$2,
       );
       final timeDot = _clockToDot(raw);
-      final before = at.subtract(const Duration(minutes: 5));
+      final before = at.subtract(_prayerAdvanceReminderScheduleLead);
 
       if (before.isAfter(now)) {
         final pre = prayerFiveMinuteBeforeNotificationCopy(
@@ -456,7 +471,15 @@ class FCMService {
         );
       }
 
-      if (at.isAfter(now)) {
+      var onWhen = at.subtract(_prayerOnTimeScheduleAdvance);
+      if (!onWhen.isAfter(now) && at.isAfter(now)) {
+        var bump = now.add(const Duration(seconds: 12));
+        if (!bump.isBefore(at)) {
+          bump = at.subtract(const Duration(seconds: 2));
+        }
+        onWhen = bump;
+      }
+      if (at.isAfter(now) && onWhen.isAfter(now)) {
         final copy = prayerScheduleReminderNotificationCopy(
           prayerName: name,
           timeDot: timeDot,
@@ -464,7 +487,7 @@ class FCMService {
         );
         await _zonedSchedulePrayerReminder(
           id: _prayerReminderIdStart + i * 2 + 1,
-          when: at,
+          when: onWhen,
           title: copy.title,
           body: copy.body,
         );
@@ -505,7 +528,7 @@ class FCMService {
           details,
           androidScheduleMode: mode,
           uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.wallClockTime,
+              UILocalNotificationDateInterpretation.absoluteTime,
           payload: jsonEncode({
             'title': title,
             'body': body,
