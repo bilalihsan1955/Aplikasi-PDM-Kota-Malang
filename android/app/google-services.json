@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "91075581564",
+    "project_id": "pdm-malang",
+    "storage_bucket": "pdm-malang.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91075581564:android:1a6b0f56b7eafddf9d9bf9",
+        "android_client_info": {
+          "package_name": "com.example.test_notif"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBPUJfZE-4svQQSRr8E7WPUV2LVcC0Ghg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

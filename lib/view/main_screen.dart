@@ -12,6 +12,9 @@ class MainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final path = GoRouterState.of(context).uri.path;
+    final hideBottomNav = path.endsWith('/webview');
+
     return PopScope(
       canPop: navigationShell.currentIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
@@ -27,7 +30,9 @@ class MainScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         extendBody: true,
         body: navigationShell,
-        bottomNavigationBar: NavbarWidgets(
+        bottomNavigationBar: hideBottomNav
+            ? null
+            : NavbarWidgets(
           currentIndex: navigationShell.currentIndex,
           onTap: (index) {
             // Tab Home: langsung go ke '/' agar stack bersih (no flicker jadwal-sholat/menu)
@@ -45,3 +50,4 @@ class MainScreen extends StatelessWidget {
     );
   }
 }
+

@@ -3,6 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
+import 'fcm_service.dart';
+
 /// Service waktu sholat: utama dari API [waktu-sholat](https://github.com/maftuh23/waktu-sholat) (data Kemenag),
 /// lokasi & jadwal by latitude/longitude. Fallback MyQuran + Nominatim jika API utama gagal.
 /// Set WAKTU_SHOLAT_API_URL di .env ke URL deploy Anda (mis. dari Vercel).
@@ -22,13 +24,19 @@ class PrayerTimeService {
   /// Ambil posisi perangkat (dipaksa baca terbaru, kurangi pakai cache). Return null jika permission ditolak atau error.
   Future<Position?> getCurrentPosition() async {
     try {
+      await FCMService.waitUntilNotificationFlowDoneForLocation();
+      // Jeda singkat agar dialog notifikasi benar-benar selesai sebelum dialog lokasi (Android).
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) return null;
-      final permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        final requested = await Geolocator.requestPermission();
-        if (requested != LocationPermission.whileInUse &&
-            requested != LocationPermission.always) return null;
+        permission = await Geolocator.requestPermission();
+        if (permission != LocationPermission.whileInUse &&
+            permission != LocationPermission.always) {
+          return null;
+        }
       }
       if (permission == LocationPermission.deniedForever) return null;
 
@@ -385,6 +393,50 @@ class PrayerTimeResult {
       }
     }
     return (name: 'Subuh', time: _dotFormat(fajr));
+  }
+
+  /// Sisa waktu menuju sholat berikutnya (hari ini atau Subuh besok).
+  Duration get durationUntilNextPrayer {
+    final now = DateTime.now();
+    final prayers = [
+      ('Subuh', fajr),
+      ('Dzuhur', dhuhr),
+      ('Ashar', asr),
+      ('Maghrib', maghrib),
+      ('Isya', isha),
+    ];
+    for (final (_, timeStr) in prayers) {
+      final parts = timeStr.split(':');
+      if (parts.length < 2) continue;
+      final h = int.tryParse(parts[0]) ?? 0;
+      final m = int.tryParse(parts[1]) ?? 0;
+      final prayerDt = DateTime(now.year, now.month, now.day, h, m);
+      if (prayerDt.isAfter(now)) {
+        return prayerDt.difference(now);
+      }
+    }
+    final fParts = fajr.split(':');
+    if (fParts.length < 2) return Duration.zero;
+    final fh = int.tryParse(fParts[0]) ?? 0;
+    final fm = int.tryParse(fParts[1]) ?? 0;
+    final nextDay = now.add(const Duration(days: 1));
+    final nextSubuh = DateTime(nextDay.year, nextDay.month, nextDay.day, fh, fm);
+    return nextSubuh.difference(now);
+  }
+
+  static String formatCountdownId(Duration d) {
+    if (d.isNegative) return '—';
+    final totalMinutes = d.inMinutes;
+    if (totalMinutes >= 60) {
+      final h = totalMinutes ~/ 60;
+      final m = totalMinutes % 60;
+      if (m == 0) return '$h jam';
+      return '$h jam $m mnt';
+    }
+    if (totalMinutes > 0) return '$totalMinutes mnt';
+    final s = d.inSeconds;
+    if (s > 0) return '< 1 mnt';
+    return 'sekarang';
   }
 
   static String _dotFormat(String t) => t.replaceAll(':', '.');

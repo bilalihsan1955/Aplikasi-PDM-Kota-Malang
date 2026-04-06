@@ -350,12 +350,12 @@ class _NewsGridState extends State<_NewsGrid> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   if (index >= 2) return null;
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: EdgeInsets.only(bottom: index < 1 ? 16 : 0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -579,6 +579,9 @@ class _NewsGridState extends State<_NewsGrid> {
       );
     }
 
+    final gridRowCount =
+        ((filteredNews.length + (viewModel.isLoadingMore ? 1 : 0)) / 2).ceil();
+
     return RefreshIndicator(
       onRefresh: () async {
         await context.read<NewsViewModel>().loadNews();
@@ -592,7 +595,7 @@ class _NewsGridState extends State<_NewsGrid> {
         ),
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             sliver: SliverSafeArea(
               top: false,
               sliver: SliverList(
@@ -614,7 +617,7 @@ class _NewsGridState extends State<_NewsGrid> {
                           image: 'assets/images/bg.webp',
                         );
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
+                          padding: EdgeInsets.zero,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -642,7 +645,9 @@ class _NewsGridState extends State<_NewsGrid> {
                     }
 
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
+                      padding: EdgeInsets.only(
+                        bottom: index < gridRowCount - 1 ? 16 : 0,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -677,11 +682,7 @@ class _NewsGridState extends State<_NewsGrid> {
                       ),
                     );
                   },
-                  childCount:
-                      ((filteredNews.length +
-                                  (viewModel.isLoadingMore ? 1 : 0)) /
-                              2)
-                          .ceil(),
+                  childCount: gridRowCount,
                 ),
               ),
             ),

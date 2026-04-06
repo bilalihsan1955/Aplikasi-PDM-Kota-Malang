@@ -332,7 +332,7 @@ class _MenuList extends StatelessWidget {
     return [
       _MenuItemData(RemixIcons.home_heart_line, 'sholat', 'Informasi', () {
         final vm = context.read<HomeViewModel>();
-        context.push('/jadwal-sholat', extra: {'prayer': vm.prayerTime, 'qibla': vm.qiblaDirection});
+        context.push('/jadwal-sholat', extra: {'prayer': vm.prayerTime});
       }),
       _MenuItemData(RemixIcons.community_line, 'Profil Organisasi', 'Informasi', () => context.push('/about-pdm')),
       _MenuItemData(RemixIcons.article_line, 'Berita & Pengumuman', 'Informasi', () => context.go('/berita')),

@@ -5,11 +5,12 @@ import 'package:remixicon/remixicon.dart';
 import '../../../view_models/profile_view_model.dart';
 import '../../../view_models/auth_view_model.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/in_app_webview_nav.dart';
 import '../../../utils/glass_confirm_dialog.dart';
 import '../../../utils/top_snackbar.dart';
+import '../../../services/api_service.dart';
 import '../../../services/auth/auth_local_service.dart';
 import '../../widgets/user_avatar.dart';
-import '../../widgets/press_feedback.dart';
 import '../../widgets/back_button_app.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -62,9 +63,7 @@ class ProfilePage extends StatelessWidget {
                 ),
                 if (isSubmitting)
                   Positioned.fill(
-                    child: IgnorePointer(
-                      child: Container(color: overlayColor),
-                    ),
+                    child: IgnorePointer(child: Container(color: overlayColor)),
                   ),
               ],
             );
@@ -77,7 +76,9 @@ class ProfilePage extends StatelessWidget {
   // ===== SECTIONS =====
   Widget _infoSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dividerColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
+    final dividerColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.grey[200]!;
     final infoMenus = [
       (RemixIcons.community_line, 'Profil Organisasi', '/about-pdm'),
       (RemixIcons.article_line, 'Berita & Pengumuman', '/berita'),
@@ -87,88 +88,103 @@ class ProfilePage extends StatelessWidget {
 
     return Container(
       margin: AppStyle.hPadding,
-      decoration: _cardDecoration(context),
-      child: Column(
-        children: List.generate(infoMenus.length, (index) {
-          final item = infoMenus[index];
-          return Column(
-            children: [
-              _menuItem(
-                context: context, 
-                icon: item.$1, 
-                title: item.$2,
-                onTap: () {
-                  if (item.$3 == '/berita' || item.$3 == '/agenda') {
-                    context.go(item.$3);
-                  } else {
-                    context.push(item.$3);
-                  }
-                },
-              ),
-              if (index != infoMenus.length - 1)
-                Divider(height: 1, thickness: 1, color: dividerColor),
-            ],
-          );
-        }),
+      decoration: _cardShellDecoration(context),
+      child: Material(
+        color: _cardSurfaceColor(context),
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: List.generate(infoMenus.length, (index) {
+            final item = infoMenus[index];
+            return Column(
+              children: [
+                _menuItem(
+                  context: context,
+                  icon: item.$1,
+                  title: item.$2,
+                  onTap: () {
+                    if (item.$3 == '/berita' || item.$3 == '/agenda') {
+                      context.go(item.$3);
+                    } else {
+                      context.push(item.$3);
+                    }
+                  },
+                ),
+                if (index != infoMenus.length - 1)
+                  Divider(height: 1, thickness: 1, color: dividerColor),
+              ],
+            );
+          }),
+        ),
       ),
     );
   }
 
   Widget _settingsSection(BuildContext context) {
-    final isPlatformDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isPlatformDark =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dividerColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[200]!;
+    final dividerColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.grey[200]!;
 
     return Consumer<ProfileViewModel>(
       builder: (context, viewModel, child) {
-        bool currentSwitchValue = viewModel.themeMode == ThemeMode.system 
-            ? isPlatformDark 
+        bool currentSwitchValue = viewModel.themeMode == ThemeMode.system
+            ? isPlatformDark
             : viewModel.isDarkMode;
 
         return Container(
           margin: AppStyle.hPadding,
-          decoration: _cardDecoration(context),
-          child: Column(
-            children: [
-              _menuItem(
-                context: context, 
-                icon: RemixIcons.user_line, 
-                title: 'Akun Saya',
-                onTap: () => context.push('/profile/account'), // Perbaikan: Menambahkan Navigasi
-              ),
-              Divider(height: 1, thickness: 1, color: dividerColor),
-              _menuItem(
-                context: context,
-                icon: currentSwitchValue ? RemixIcons.sun_line : RemixIcons.moon_line,
-                title: currentSwitchValue ? 'Tema Terang' : 'Tema Gelap',
-                trailing: Switch(
-                  value: currentSwitchValue,
-                  activeColor: AppStyle.accent,
-                  activeTrackColor: AppStyle.accent.withOpacity(0.1),
-                  inactiveThumbColor: isDark ? Colors.white.withOpacity(0.6) : Colors.grey[400],
-                  inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200],
-                  trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
-                  onChanged: viewModel.toggleDarkMode,
+          decoration: _cardShellDecoration(context),
+          child: Material(
+            color: _cardSurfaceColor(context),
+            borderRadius: BorderRadius.circular(20),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _menuItem(
+                  context: context,
+                  icon: RemixIcons.user_line,
+                  title: 'Akun Saya',
+                  onTap: () => context.push('/profile/account'),
                 ),
-              ),
-              Divider(height: 1, thickness: 1, color: dividerColor),
-              _menuItem(
-                context: context,
-                icon: RemixIcons.notification_3_line,
-                title: 'Notifikasi',
-                trailing: Switch(
-                  value: viewModel.notificationsEnabled,
-                  activeColor: AppStyle.accent,
-                  activeTrackColor: AppStyle.accent.withOpacity(0.1),
-                  inactiveThumbColor: isDark ? Colors.white.withOpacity(0.6) : Colors.grey[400],
-                  inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200],
-                  trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
-                  onChanged: viewModel.toggleNotifications,
+                Divider(height: 1, thickness: 1, color: dividerColor),
+                _menuItem(
+                  context: context,
+                  icon: currentSwitchValue
+                      ? RemixIcons.sun_line
+                      : RemixIcons.moon_line,
+                  title: currentSwitchValue ? 'Tema Terang' : 'Tema Gelap',
+                  trailing: Switch(
+                    value: currentSwitchValue,
+                    activeColor: AppStyle.accent,
+                    activeTrackColor: AppStyle.accent.withOpacity(0.1),
+                    inactiveThumbColor: isDark
+                        ? Colors.white.withOpacity(0.6)
+                        : Colors.grey[400],
+                    inactiveTrackColor: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.grey[200],
+                    trackOutlineColor: MaterialStateProperty.all(
+                      Colors.transparent,
+                    ),
+                    onChanged: viewModel.toggleDarkMode,
+                  ),
                 ),
-              ),
-              Divider(height: 1, thickness: 1, color: dividerColor),
-              _menuItem(context: context, icon: RemixIcons.question_line, title: 'Bantuan'),
-            ],
+                Divider(height: 1, thickness: 1, color: dividerColor),
+                _menuItem(
+                  context: context,
+                  icon: RemixIcons.question_line,
+                  title: 'Bantuan',
+                  onTap: () => pushInAppWebView(
+                    context,
+                    url: '${ApiService.webBaseUrl}/kontak/webview',
+                    title: 'Bantuan',
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -213,76 +229,95 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _profileCard(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardRadius = BorderRadius.circular(20);
+    final splash = AppStyle.primary.withOpacity(0.14);
+    final highlight = AppStyle.primary.withOpacity(0.07);
+
     return Padding(
       padding: AppStyle.hPadding,
-      child: PressFeedback(
-        onTap: () => context.push('/profile/account'),
-        borderRadius: cardRadius,
-        pressedOverlayColor: isDark
-            ? Colors.white.withOpacity(0.04)
-            : Colors.black.withOpacity(0.03),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: _cardDecoration(context),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppStyle.accent.withOpacity(0.2), width: 2),
-                ),
-                child: FutureBuilder(
-                  future: AuthLocalService().getCachedUser(),
-                  builder: (context, snapshot) {
-                    return UserAvatar(
-                      user: snapshot.data,
-                      size: 64,
-                      borderRadius: BorderRadius.circular(32),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FutureBuilder(
+      child: Container(
+        decoration: _cardShellDecoration(context),
+        child: Material(
+          color: _cardSurfaceColor(context),
+          borderRadius: cardRadius,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => context.push('/profile/account'),
+            borderRadius: cardRadius,
+            splashColor: splash,
+            highlightColor: highlight,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppStyle.accent.withOpacity(0.2),
+                        width: 2,
+                      ),
+                    ),
+                    child: FutureBuilder(
                       future: AuthLocalService().getCachedUser(),
                       builder: (context, snapshot) {
-                        final name = snapshot.data?.name.trim();
-                        final displayName = (name == null || name.isEmpty) ? 'Pengguna' : name;
-                        return Text(
-                          displayName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.5,
-                            color: Theme.of(context).textTheme.titleLarge?.color,
-                          ),
+                        return UserAvatar(
+                          user: snapshot.data,
+                          size: 64,
+                          borderRadius: BorderRadius.circular(32),
                         );
                       },
                     ),
-                    const SizedBox(height: 4),
-                    FutureBuilder(
-                      future: AuthLocalService().getCachedUser(),
-                      builder: (context, snapshot) {
-                        final pos = snapshot.data?.position?.trim();
-                        final displayPos =
-                            (pos == null || pos.isEmpty) ? 'Anggota Organisasi' : pos;
-                        return Text(
-                          displayPos,
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
-                        );
-                      },
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FutureBuilder(
+                          future: AuthLocalService().getCachedUser(),
+                          builder: (context, snapshot) {
+                            final name = snapshot.data?.name.trim();
+                            final displayName = (name == null || name.isEmpty)
+                                ? 'Pengguna'
+                                : name;
+                            return Text(
+                              displayName,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.titleLarge?.color,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 4),
+                        FutureBuilder(
+                          future: AuthLocalService().getCachedUser(),
+                          builder: (context, snapshot) {
+                            final pos = snapshot.data?.position?.trim();
+                            final displayPos = (pos == null || pos.isEmpty)
+                                ? 'Anggota Organisasi'
+                                : pos;
+                            return Text(
+                              displayPos,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -315,81 +350,105 @@ class ProfilePage extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final splash = AppStyle.primary.withOpacity(0.14);
+    final highlight = AppStyle.primary.withOpacity(0.07);
+
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            height: 48,
+            width: 48,
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topLeft,
+                radius: 3,
+                colors: [
+                  const Color(0xFF26C6DA).withOpacity(0.15),
+                  const Color(0xFF4A6FDB).withOpacity(0.15),
+                  const Color(0XFF071D75).withOpacity(0.15),
+                ],
+                stops: const [0.0, 0.3, 0.8],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppStyle.primary.withOpacity(0.1),
+                width: 1.5,
+              ),
+            ),
+            child: Icon(icon, color: AppStyle.accent, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? Colors.white.withOpacity(0.9)
+                    : const Color(0xFF2D3142),
+              ),
+            ),
+          ),
+          trailing ??
+              Icon(
+                RemixIcons.arrow_right_s_line,
+                color: Colors.grey[400],
+                size: 24,
+              ),
+        ],
+      ),
+    );
+
+    if (onTap == null) {
+      return row;
+    }
 
     return InkWell(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              height: 48,
-              width: 48,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topLeft,
-                  radius: 3,
-                  colors: [
-                    const Color(0xFF26C6DA).withOpacity(0.15),
-                    const Color(0xFF4A6FDB).withOpacity(0.15),
-                    const Color(0XFF071D75).withOpacity(0.15),
-                  ],
-                  stops: const [0.0, 0.3, 0.8],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppStyle.primary.withOpacity(0.1),
-                  width: 1.5,
-                ),
-              ),
-              child: Icon(icon, color: AppStyle.accent, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF2D3142),
-                ),
-              ),
-            ),
-            trailing ?? Icon(RemixIcons.arrow_right_s_line, color: Colors.grey[400], size: 24),
-          ],
-        ),
-      ),
+      splashColor: splash,
+      highlightColor: highlight,
+      child: row,
     );
   }
 
   Widget _logout(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderRadius = BorderRadius.circular(20);
+    final splash = Colors.redAccent.withOpacity(0.12);
+    final highlight = Colors.redAccent.withOpacity(0.06);
 
     return Padding(
       padding: AppStyle.hPadding,
-      child: PressFeedback(
-        onTap: () => _showLogoutDialog(context),
-        borderRadius: borderRadius,
-        pressedOverlayColor: isDark
-            ? Colors.white.withOpacity(0.04)
-            : Colors.black.withOpacity(0.03),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: _cardDecoration(context),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(RemixIcons.logout_box_r_line, color: Colors.redAccent),
-              SizedBox(width: 8),
-              Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.redAccent,
-                  fontWeight: FontWeight.w600,
-                ),
+      child: Container(
+        decoration: _cardShellDecoration(context),
+        child: Material(
+          color: _cardSurfaceColor(context),
+          borderRadius: borderRadius,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _showLogoutDialog(context),
+            borderRadius: borderRadius,
+            splashColor: splash,
+            highlightColor: highlight,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(RemixIcons.logout_box_r_line, color: Colors.redAccent),
+                  SizedBox(width: 8),
+                  Text(
+                    'Logout',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -408,10 +467,7 @@ class ProfilePage extends StatelessWidget {
       confirmGradient: const RadialGradient(
         center: Alignment.topLeft,
         radius: 4,
-        colors: [
-          Color(0xFFFF5252),
-          Color(0xFFB71C1C),
-        ],
+        colors: [Color(0xFFFF5252), Color(0xFFB71C1C)],
         stops: [0.0, 1.0],
       ),
     );
@@ -430,22 +486,31 @@ class ProfilePage extends StatelessWidget {
     }
   }
 
-  BoxDecoration _cardDecoration(BuildContext context) {
+  /// Hanya border + bayangan; warna isi di [Material] agar ripple [InkWell] tampil di atas kartu.
+  BoxDecoration _cardShellDecoration(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxDecoration(
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F4F9),
+        color: isDark
+            ? Colors.white.withOpacity(0.05)
+            : const Color(0xFFF1F4F9),
         width: 1.5,
       ),
       boxShadow: [
         BoxShadow(
-          color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.06),
+          color: isDark
+              ? Colors.black.withOpacity(0.3)
+              : Colors.black.withOpacity(0.06),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
       ],
     );
+  }
+
+  Color _cardSurfaceColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? const Color(0xFF1E1E1E) : Colors.white;
   }
 }

@@ -10,6 +10,10 @@ class NavbarWidgets extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
+  /// Sinkron dengan `height` + `margin` kontainer di bawah.
+  static const double barHeight = 96;
+  static const double barMarginBottom = 8;
+
   const NavbarWidgets({
     super.key,
     required this.currentIndex,
@@ -24,8 +28,8 @@ class NavbarWidgets extends StatelessWidget {
 
     return SafeArea(
       child: Container(
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-        height: 96,
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, barMarginBottom),
+        height: barHeight,
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(32),

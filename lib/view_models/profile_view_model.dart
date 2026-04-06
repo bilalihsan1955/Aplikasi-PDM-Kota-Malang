@@ -5,11 +5,9 @@ class ProfileViewModel extends ChangeNotifier {
   final ThemeService _themeService = ThemeService();
   
   ThemeMode _themeMode = ThemeMode.system;
-  bool _notificationsEnabled = true;
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
-  bool get notificationsEnabled => _notificationsEnabled;
 
   ProfileViewModel() {
     _loadSettings();
@@ -35,10 +33,5 @@ class ProfileViewModel extends ChangeNotifier {
 
   void toggleDarkMode(bool value) {
     setThemeMode(value ? ThemeMode.dark : ThemeMode.light);
-  }
-
-  void toggleNotifications(bool value) {
-    _notificationsEnabled = value;
-    notifyListeners();
   }
 }

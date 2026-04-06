@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../view/main_screen.dart';
 import '../view/pages/home_page.dart';
@@ -24,14 +23,38 @@ import '../view/pages/notification_page.dart';
 import '../view/pages/menu_list_page.dart';
 import '../view/pages/empty_placeholder_page.dart';
 import '../view/pages/jadwal_sholat_page.dart';
+import '../view/pages/kiblat_page.dart';
+import '../view/pages/webview_page.dart';
 import '../services/prayer_time_service.dart';
+import 'in_app_webview_nav.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+CustomTransitionPage<void> _webviewTransitionPage(GoRouterState state) {
+  final extra = state.extra is Map ? state.extra as Map<String, dynamic> : null;
+  final url = extra?['url'] is String ? extra!['url'] as String : '';
+  final title = extra?['title'] is String ? extra!['title'] as String : null;
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: WebViewPage(url: url, title: title),
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
+    transitionsBuilder: (_, __, ___, child) => child,
+  );
+}
 
-GoRouter createAppRouter({required String initialLocation}) {
+/// Satu definisi child `webview` per cabang shell (path penuh: `/webview`, `/agenda/webview`, …).
+GoRoute _shellBranchWebViewRoute() => GoRoute(
+      path: 'webview',
+      pageBuilder: (context, state) => _webviewTransitionPage(state),
+    );
+
+GoRouter createAppRouter({
+  required String initialLocation,
+  Object? initialExtra,
+}) {
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: initialLocation,
+    initialExtra: initialExtra,
     routes: [
     // Auth Routes - Full Screen
     GoRoute(
@@ -64,7 +87,7 @@ GoRouter createAppRouter({required String initialLocation}) {
     // Detail Amal Usaha — route root agar navigasi stabil (push path penuh)
     GoRoute(
       path: '/amal-usaha/detail',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (context, state) {
         final item = state.extra is AmalUsahaItem ? state.extra as AmalUsahaItem : null;
         return NoTransitionPage(child: DetailAmalUsahaPage(item: item));
@@ -123,16 +146,30 @@ GoRouter createAppRouter({required String initialLocation}) {
                     final prayer = extra?['prayer'] is PrayerTimeResult
                         ? extra!['prayer'] as PrayerTimeResult
                         : null;
-                    final qibla = extra?['qibla'] is double ? extra!['qibla'] as double : null;
                     return CustomTransitionPage<void>(
                       key: state.pageKey,
-                      child: JadwalSholatPage(prayer: prayer, qiblaDegree: qibla),
+                      child: JadwalSholatPage(prayer: prayer),
                       transitionDuration: Duration.zero,
                       reverseTransitionDuration: Duration.zero,
                       transitionsBuilder: (_, __, ___, child) => child,
                     );
                   },
                 ),
+                GoRoute(
+                  path: 'kiblat',
+                  pageBuilder: (context, state) {
+                    final extra = state.extra is Map ? state.extra as Map<String, dynamic> : null;
+                    final qibla = extra?['qibla'] is double ? extra!['qibla'] as double : null;
+                    return CustomTransitionPage<void>(
+                      key: state.pageKey,
+                      child: KiblatPage(qiblaDegree: qibla),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                      transitionsBuilder: (_, __, ___, child) => child,
+                    );
+                  },
+                ),
+                _shellBranchWebViewRoute(),
               ],
             ),
           ],
@@ -161,6 +198,7 @@ GoRouter createAppRouter({required String initialLocation}) {
                     );
                   },
                 ),
+                _shellBranchWebViewRoute(),
               ],
             ),
           ],
@@ -189,6 +227,7 @@ GoRouter createAppRouter({required String initialLocation}) {
                     );
                   },
                 ),
+                _shellBranchWebViewRoute(),
               ],
             ),
           ],
@@ -208,6 +247,7 @@ GoRouter createAppRouter({required String initialLocation}) {
                   path: 'change-password',
                   pageBuilder: (context, state) => const NoTransitionPage(child: ChangePasswordPage()),
                 ),
+                _shellBranchWebViewRoute(),
               ],
             ),
           ],

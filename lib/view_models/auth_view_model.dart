@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
 import '../services/auth/auth_api_service.dart';
+import '../services/fcm_service.dart';
 import '../services/auth/auth_action_result.dart';
 import '../services/auth/auth_avatar_cache.dart';
 import '../services/auth/auth_local_service.dart';
@@ -80,6 +82,8 @@ class AuthViewModel extends ChangeNotifier {
         await _localService.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
+        FCMService.armLocationGateBeforeNotificationPrompt();
+        unawaited(FCMService().initializeAfterLogin());
       }
 
       return result;
@@ -123,6 +127,8 @@ class AuthViewModel extends ChangeNotifier {
         await _localService.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
+        FCMService.armLocationGateBeforeNotificationPrompt();
+        unawaited(FCMService().initializeAfterLogin());
       }
 
       return result;
@@ -158,6 +164,7 @@ class AuthViewModel extends ChangeNotifier {
       final result = await _apiService.logout(token: token);
 
       if (result.success) {
+        unawaited(FCMService().deleteTokenFromBackend(token));
         await _localService.clearAllLocalData();
         invalidateUserEndpointSync();
       }

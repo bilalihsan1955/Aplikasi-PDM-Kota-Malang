@@ -1,14 +1,83 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/notification_model.dart';
 import 'api_service.dart';
+import 'auth/auth_local_service.dart';
+import 'fcm_device_payload.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
   factory FCMService() => _instance;
   FCMService._internal();
+
+  static bool _notificationOpenListenerRegistered = false;
+
+  /// [getInitialMessage] sudah dipakai di `main()` untuk [GoRouter.initialLocation]; jangan navigasi ulang.
+  static bool _initialLaunchMessageConsumed = false;
+
+  static void markInitialLaunchMessageConsumed() {
+    _initialLaunchMessageConsumed = true;
+  }
+
+  static NotificationModel notificationModelFromRemoteMessage(RemoteMessage message) {
+    return FCMService()._convertToNotificationModel(message);
+  }
+
+  /// Tap saat app dari **background** (notifikasi sistem FCM).
+  /// [getInitialMessage] jangan dipanggil di sini — panggil [deliverInitialMessageWhenReady]
+  /// setelah frame pertama agar data intent terbaca benar di Android.
+  static void registerNotificationOpenListener() {
+    if (_notificationOpenListenerRegistered) return;
+    _notificationOpenListenerRegistered = true;
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage m) {
+      FCMService()._tapFromRemoteMessage(m);
+    });
+  }
+
+  /// Panggil setelah [MaterialApp] / router siap (satu kali per cold start — jangan panggil ulang).
+  static Future<void> deliverInitialMessageWhenReady() async {
+    if (_initialLaunchMessageConsumed) return;
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    if (initial != null) {
+      FCMService()._tapFromRemoteMessage(initial);
+    }
+  }
+
+  // --- Gate: izin lokasi diminta setelah dialog izin notifikasi selesai ---
+  static final List<Completer<void>> _locationAfterNotifWaiters = [];
+  static bool _locationGateReleased = false;
+
+  static void releaseLocationGate() {
+    if (_locationGateReleased) return;
+    _locationGateReleased = true;
+    for (final c in _locationAfterNotifWaiters) {
+      if (!c.isCompleted) c.complete();
+    }
+    _locationAfterNotifWaiters.clear();
+  }
+
+  /// Panggil sebelum [initializeAfterLogin] (mis. setelah login) atau di awal alur FCM.
+  /// Menutup kembali gate jika sebelumnya [releaseLocationGate] sudah jalan saat belum login,
+  /// agar izin lokasi benar-benar menunggu dialog notifikasi selesai.
+  static void armLocationGateBeforeNotificationPrompt() {
+    _locationGateReleased = false;
+  }
+
+  /// [PrayerTimeService] menunggu ini sebelum [Geolocator.requestPermission].
+  static Future<void> waitUntilNotificationFlowDoneForLocation() async {
+    if (_locationGateReleased) return;
+    final c = Completer<void>();
+    _locationAfterNotifWaiters.add(c);
+    return c.future.timeout(
+      const Duration(seconds: 60),
+      onTimeout: () => releaseLocationGate(),
+    );
+  }
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -27,62 +96,123 @@ class FCMService {
   Function(NotificationModel)? onNotificationReceived;
   Function(NotificationModel)? onNotificationTapped;
 
+  /// Tap sebelum [onNotificationTapped] diset (mis. cold start dari terminated).
+  NotificationModel? _pendingOpenedNotification;
+
   // Current FCM token
   String? _currentToken;
+  String? _lastSyncedFcmTokenPosted;
+  DateTime? _lastFcmTokenPostAt;
 
-  // Inisialisasi FCM
-  Future<void> initialize() async {
-    // Request permission untuk iOS
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+  bool _fcmAfterLoginSetupDone = false;
+  bool _fcmMessageStreamsAttached = false;
+  Future<void>? _initializeAfterLoginInFlight;
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
-    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-      print('User granted provisional permission');
-    } else {
-      print('User declined or has not accepted permission');
+  /// Setup FCM + izin notifikasi. Hanya dipanggil setelah user login (atau cold start dengan sesi).
+  Future<void> initializeAfterLogin() async {
+    if (_fcmAfterLoginSetupDone) {
+      await syncRegisteredTokenToBackend();
+      return;
     }
-
-    // Initialize local notifications
-    await _initializeLocalNotifications();
-
-    // Get and save FCM token
-    String? token = await _firebaseMessaging.getToken();
-    if (token != null) {
-      await _saveFcmToken(token);
-      print('FCM Token: $token');
+    if (_initializeAfterLoginInFlight != null) {
+      await _initializeAfterLoginInFlight;
+      await syncRegisteredTokenToBackend();
+      return;
     }
+    _initializeAfterLoginInFlight = _runInitializeAfterLogin();
+    try {
+      await _initializeAfterLoginInFlight;
+    } finally {
+      _initializeAfterLoginInFlight = null;
+    }
+  }
 
-    // Subscribe ke topic default hanya sekali saat pertama aplikasi dijalankan
-    await _subscribeToDefaultTopicsIfFirstLaunch();
+  Future<void> _runInitializeAfterLogin() async {
+    try {
+      armLocationGateBeforeNotificationPrompt();
 
-    // Re-subscribe to saved topics (untuk install ulang / token refresh)
-    await resubscribeToSavedTopics();
+      final NotificationSettings settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
-    // Listen for token refresh
-    _firebaseMessaging.onTokenRefresh.listen((newToken) async {
-      print('FCM Token refreshed: $newToken');
-      await _saveFcmToken(newToken);
-      // Re-subscribe to all topics with new token
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        print('User granted permission');
+      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+        print('User granted provisional permission');
+      } else {
+        print('User declined or has not accepted permission');
+      }
+
+      // Izin lokasi (jadwal sholat) menunggu sampai dialog notifikasi selesai.
+      releaseLocationGate();
+
+      await _initializeLocalNotifications();
+
+      String? token = await _firebaseMessaging.getToken();
+      if (token != null) {
+        await _saveFcmToken(token);
+        print('FCM Token: $token');
+      }
+
+      await syncRegisteredTokenToBackend();
+
+      await _subscribeToDefaultTopicsIfFirstLaunch();
+
       await resubscribeToSavedTopics();
-    });
 
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      if (!_fcmMessageStreamsAttached) {
+        _firebaseMessaging.onTokenRefresh.listen((newToken) async {
+          print('FCM Token refreshed: $newToken');
+          await _saveFcmToken(newToken);
+          await resubscribeToSavedTopics();
+          await syncRegisteredTokenToBackend();
+        });
 
-    // Handle notification when app is opened from background
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundNotificationTap);
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-    // Handle notification when app is opened from terminated state
-    RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleBackgroundNotificationTap(initialMessage);
+        _fcmMessageStreamsAttached = true;
+      }
+
+      _fcmAfterLoginSetupDone = true;
+    } catch (e, st) {
+      releaseLocationGate();
+      // ignore: avoid_print
+      print('[FCM] initializeAfterLogin error: $e\n$st');
     }
+  }
+
+  void _dispatchNotificationOpened(NotificationModel notification) {
+    if (onNotificationTapped != null) {
+      onNotificationTapped!(notification);
+    } else {
+      _pendingOpenedNotification = notification;
+    }
+  }
+
+  /// Panggil dari [MyApp] setelah [onNotificationTapped] di-set.
+  void consumePendingNotificationOpen() {
+    final p = _pendingOpenedNotification;
+    _pendingOpenedNotification = null;
+    if (p != null) {
+      onNotificationTapped?.call(p);
+    }
+  }
+
+  void _tapFromRemoteMessage(RemoteMessage message) {
+    final notification = _convertToNotificationModel(message);
+    final url = notification.urlRedirect?.trim();
+    final tipe = notification.tipeRedirect?.trim();
+    if ((url == null || url.isEmpty) && (tipe == null || tipe.isEmpty)) {
+      // ignore: avoid_print
+      print(
+        '[FCM] Tap: tidak ada url_redirect dan tipe_redirect — diarahkan ke home. '
+        'data keys: ${message.data.keys.toList()}',
+      );
+    }
+    _dispatchNotificationOpened(notification);
   }
 
   // Initialize local notifications
@@ -92,9 +222,9 @@ class FCMService {
 
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const InitializationSettings initSettings = InitializationSettings(
@@ -134,6 +264,22 @@ class FCMService {
     onNotificationReceived?.call(notification);
   }
 
+  /// Payload untuk tap notifikasi lokal: gabung `data` FCM + title/body dari blok notification.
+  Map<String, dynamic> _localNotificationPayloadMap(RemoteMessage message) {
+    final out = <String, dynamic>{};
+    for (final e in message.data.entries) {
+      out[e.key] = e.value;
+    }
+    final n = message.notification;
+    if (n?.title != null && n!.title!.trim().isNotEmpty) {
+      out.putIfAbsent('title', () => n.title!);
+    }
+    if (n?.body != null && n!.body!.trim().isNotEmpty) {
+      out.putIfAbsent('body', () => n.body!);
+    }
+    return out;
+  }
+
   // Show local notification
   Future<void> _showLocalNotification(RemoteMessage message) async {
     const AndroidNotificationDetails androidDetails =
@@ -162,44 +308,66 @@ class FCMService {
       message.notification?.title ?? 'PDM Malang',
       message.notification?.body ?? '',
       details,
-      payload: jsonEncode(message.data),
+      payload: jsonEncode(_localNotificationPayloadMap(message)),
     );
   }
 
-  // Handle notification tap from background/terminated
-  void _handleBackgroundNotificationTap(RemoteMessage message) {
-    print('Notification tapped: ${message.notification?.title}');
-    
-    final notification = _convertToNotificationModel(message);
-    onNotificationTapped?.call(notification);
-  }
-
-  // Handle local notification tap
+  // Handle local notification tap (foreground tray)
   void _handleLocalNotificationTap(NotificationResponse response) {
-    if (response.payload != null) {
-      final data = jsonDecode(response.payload!);
-      final notification = NotificationModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: data['title'] ?? '',
-        body: data['body'] ?? '',
-        type: data['type'] ?? 'general',
-        timestamp: DateTime.now(),
-        data: data,
-      );
-      onNotificationTapped?.call(notification);
+    if (response.payload == null || response.payload!.isEmpty) return;
+    try {
+      final decoded = jsonDecode(response.payload!);
+      if (decoded is! Map) return;
+      final map = Map<String, dynamic>.from(decoded);
+      final notification = NotificationModel.fromJson(map);
+      _dispatchNotificationOpened(notification);
+    } catch (e) {
+      // ignore: avoid_print
+      print('[FCM] Tap payload parse error: $e');
     }
   }
 
-  // Convert RemoteMessage to NotificationModel
+  Map<String, dynamic> _buildJsonMapFromRemoteMessage(RemoteMessage message) {
+    final raw = <String, dynamic>{};
+    for (final e in message.data.entries) {
+      raw[e.key] = e.value;
+    }
+    for (final key in ['notification', 'data', 'payload']) {
+      final v = raw[key];
+      if (v is String) {
+        final t = v.trim();
+        if (t.startsWith('{') && t.endsWith('}')) {
+          try {
+            final decoded = jsonDecode(t);
+            if (decoded is Map) {
+              raw[key] = Map<String, dynamic>.from(
+                decoded.map((k, val) => MapEntry(k.toString(), val)),
+              );
+            }
+          } catch (_) {}
+        }
+      }
+    }
+    final n = message.notification;
+    if (n != null) {
+      final existing = raw['notification'];
+      if (existing is! Map) {
+        raw['notification'] = <String, dynamic>{
+          'title': n.title,
+          'body': n.body,
+        };
+      } else {
+        final nm = Map<String, dynamic>.from(existing);
+        nm.putIfAbsent('title', () => n.title);
+        nm.putIfAbsent('body', () => n.body);
+        raw['notification'] = nm;
+      }
+    }
+    return raw;
+  }
+
   NotificationModel _convertToNotificationModel(RemoteMessage message) {
-    return NotificationModel(
-      id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      title: message.notification?.title ?? '',
-      body: message.notification?.body ?? '',
-      type: message.data['type'] ?? 'general',
-      timestamp: DateTime.now(),
-      data: message.data,
-    );
+    return NotificationModel.fromJson(_buildJsonMapFromRemoteMessage(message));
   }
 
   // ==================== TOPIC SUBSCRIPTION (Public - Tanpa Login) ====================
@@ -396,21 +564,49 @@ class FCMService {
     return token;
   }
 
-  /// Update FCM token ke backend (untuk user yang login)
+  /// POST `/fcm/token` jika user sudah login (Bearer + body `fcm_token`).
   Future<bool> updateTokenToBackend(String userToken) async {
     try {
       final fcmToken = await getToken();
       if (fcmToken == null) return false;
 
+      final device = await buildFcmDevicePayload();
+
       final response = await _apiService.updateFcmToken(
         userToken: userToken,
         fcmToken: fcmToken,
+        device: device,
       );
 
       return response.success;
     } catch (e) {
       print('Error updating FCM token to backend: $e');
       return false;
+    }
+  }
+
+  /// Kirim token ke backend hanya jika sesi login lengkap (setelah login / cold start login).
+  Future<void> syncRegisteredTokenToBackend() async {
+    try {
+      final auth = AuthLocalService();
+      if (!await auth.isLoggedIn()) return;
+      final userToken = await auth.getToken();
+      if (userToken == null || userToken.trim().isEmpty) return;
+      final fcmToken = await getToken();
+      if (fcmToken == null) return;
+      final now = DateTime.now();
+      if (_lastSyncedFcmTokenPosted == fcmToken &&
+          _lastFcmTokenPostAt != null &&
+          now.difference(_lastFcmTokenPostAt!) < const Duration(seconds: 5)) {
+        return;
+      }
+      final ok = await updateTokenToBackend(userToken.trim());
+      if (ok) {
+        _lastSyncedFcmTokenPosted = fcmToken;
+        _lastFcmTokenPostAt = now;
+      }
+    } catch (e) {
+      print('[FCM] syncRegisteredTokenToBackend: $e');
     }
   }
 
