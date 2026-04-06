@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 import '../../../utils/top_snackbar.dart';
 import '../../../view_models/auth_view_model.dart';
+import '../../../view_models/notification_view_model.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -265,6 +268,12 @@ class _LoginPageState extends State<LoginPage> {
                     await Future.delayed(const Duration(milliseconds: 450));
                     if (!mounted) return;
                     context.go('/');
+                    if (!mounted) return;
+                    unawaited(
+                      context
+                          .read<NotificationViewModel>()
+                          .loadNotifications(forceRefresh: true),
+                    );
                   }
                 },
           child: Padding(

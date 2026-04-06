@@ -113,6 +113,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     FCMService().onNotificationTapped = (notification) {
       scheduleOpenNotificationTarget(notification);
     };
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      FCMService().onNotificationReceived = (n) {
+        if (!mounted) return;
+        unawaited(context.read<NotificationViewModel>().applyIncomingFromPush(n));
+        unawaited(_refreshNotificationInboxFromFcm());
+      };
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await WidgetsBinding.instance.endOfFrame;
       await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -133,6 +141,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (!authOnlyPaths.contains(pathOnly)) {
       await _backgroundTokenRefresh();
     }
+    if (!mounted) return;
+    try {
+      if (await AuthLocalService().isLoggedIn()) {
+        await context.read<NotificationViewModel>().loadNotifications(
+              forceRefresh: false,
+            );
+      }
+    } catch (e, st) {
+      debugPrint('[MyApp] Prefetch notifications: $e\n$st');
+    }
   }
 
   @override
@@ -148,6 +166,35 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       unawaited(FCMService().syncRegisteredTokenToBackend());
       unawaited(FCMService().replayLastPrayerScheduleNotificationsIfAny());
+      if (mounted) {
+        unawaited(_refreshNotificationsOnResume());
+      }
+    }
+  }
+
+  Future<void> _refreshNotificationsOnResume() async {
+    try {
+      if (!await AuthLocalService().isLoggedIn()) return;
+      if (!mounted) return;
+      await context.read<NotificationViewModel>().refresh();
+    } catch (e, st) {
+      debugPrint('[MyApp] Resume refresh notifications: $e\n$st');
+    }
+  }
+
+  /// Setelah FCM (foreground / tap tray): muat ulang inbox agar titik merah navbar ikut server.
+  /// Dua kali dengan jeda: backend sering menulis DB sedikit setelah push terkirim.
+  Future<void> _refreshNotificationInboxFromFcm() async {
+    try {
+      if (!await AuthLocalService().isLoggedIn()) return;
+      if (!mounted) return;
+      await context.read<NotificationViewModel>().refresh();
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      if (!mounted) return;
+      if (!await AuthLocalService().isLoggedIn()) return;
+      await context.read<NotificationViewModel>().refresh();
+    } catch (e, st) {
+      debugPrint('[MyApp] FCM refresh notifications: $e\n$st');
     }
   }
 

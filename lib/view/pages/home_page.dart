@@ -5,12 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../view_models/home_view_model.dart';
 import '../../models/agenda_model.dart';
 import '../../models/news_model.dart';
 import '../../services/auth/auth_local_service.dart';
 import '../../services/prayer_time_service.dart';
+import '../../utils/in_app_webview_nav.dart';
 import '../widgets/user_avatar.dart';
 
 class HomePage extends StatefulWidget {
@@ -900,11 +900,12 @@ class _HomeMenuGrid extends StatelessWidget {
               if (item['label'] == 'Dokumentasi') context.push('/gallery');
               if (item['label'] == 'Amal Usaha') context.push('/amal-usaha');
               if (item['label'] == 'Notifikasi') context.push('/notifications');
-              if (item['label'] == 'KHG') {
-                final url = Uri.parse(
-                  'https://khgt.muhammadiyah.or.id/kalendar-hijriah',
+              if (item['label'] == 'KHGT') {
+                pushInAppWebView(
+                  context,
+                  url: 'https://khgt.muhammadiyah.or.id/kalendar-hijriah',
+                  title: 'KHGT',
                 );
-                launchUrl(url, mode: LaunchMode.externalApplication);
               }
               if (item['label'] == 'Cari') context.push('/menu');
             },

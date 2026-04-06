@@ -112,26 +112,20 @@ class NavbarWidgets extends StatelessWidget {
                     ),
                     if (viewModel.unreadCount > 0)
                       Positioned(
-                        right: -4,
-                        top: -4,
+                        right: -2,
+                        top: -2,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade600,
                             shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            viewModel.unreadCount > 9 ? '9+' : '${viewModel.unreadCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF1E1E1E)
+                                  : Colors.white,
+                              width: 1.5,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),

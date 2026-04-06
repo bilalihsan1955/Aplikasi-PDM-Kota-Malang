@@ -259,6 +259,7 @@ class FCMService {
       );
     }
     _dispatchNotificationOpened(notification);
+    onNotificationReceived?.call(notification);
   }
 
   // Initialize local notifications

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -356,21 +358,28 @@ class _NotificationListContent extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
             sliver: SliverSafeArea(
               top: false,
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return _NotificationCard(
-                      notification: notifications[index],
-                      onTap: () {
-                        viewModel.markAsRead(notifications[index].id);
-                        openNotificationTarget(context, notifications[index]);
-                      },
-                      onDelete: () {
-                        viewModel.deleteNotification(notifications[index].id);
-                      },
-                    );
-                  },
-                  childCount: notifications.length,
+              sliver: Skeletonizer.sliver(
+                enabled: viewModel.loading,
+                child: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return _NotificationCard(
+                        notification: notifications[index],
+                        onTap: () {
+                          final n = notifications[index];
+                          unawaited(() async {
+                            await viewModel.markAsRead(n.id);
+                            if (!context.mounted) return;
+                            openNotificationTarget(context, n);
+                          }());
+                        },
+                        onDelete: () {
+                          unawaited(viewModel.deleteNotification(notifications[index]));
+                        },
+                      );
+                    },
+                    childCount: notifications.length,
+                  ),
                 ),
               ),
             ),

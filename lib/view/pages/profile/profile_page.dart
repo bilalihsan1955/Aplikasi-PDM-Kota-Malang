@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../../view_models/profile_view_model.dart';
 import '../../../view_models/auth_view_model.dart';
+import '../../../view_models/notification_view_model.dart';
 import '../../../utils/app_style.dart';
 import '../../../utils/in_app_webview_nav.dart';
 import '../../../utils/glass_confirm_dialog.dart';
@@ -519,6 +520,7 @@ class ProfilePage extends StatelessWidget {
     showTopSnackBar(context, result.message, isError: !result.success);
 
     if (result.success) {
+      await context.read<NotificationViewModel>().resetForLogout();
       await Future.delayed(const Duration(milliseconds: 600));
       if (!context.mounted) return;
       context.go('/login');

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../utils/in_app_webview_nav.dart';
 import '../../view_models/home_view_model.dart';
 import 'empty_placeholder_page.dart';
 import '../../utils/app_style.dart';
@@ -340,8 +340,11 @@ class _MenuList extends StatelessWidget {
       _MenuItemData(RemixIcons.image_line, 'Dokumentasi', 'Informasi', () => context.push('/gallery')),
       _MenuItemData(RemixIcons.building_2_line, 'Amal Usaha', 'Informasi', () => context.push('/amal-usaha')),
       _MenuItemData(RemixIcons.calendar_2_line, 'KHGT', 'Informasi', () {
-        final url = Uri.parse('https://khgt.muhammadiyah.or.id/kalendar-hijriah');
-        launchUrl(url, mode: LaunchMode.externalApplication);
+        pushInAppWebView(
+          context,
+          url: 'https://khgt.muhammadiyah.or.id/kalendar-hijriah',
+          title: 'KHGT',
+        );
       }),
     ];
   }

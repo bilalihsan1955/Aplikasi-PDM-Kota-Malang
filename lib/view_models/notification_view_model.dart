@@ -3,6 +3,8 @@ import 'package:remixicon/remixicon.dart';
 import '../models/notification_model.dart';
 import '../services/auth/auth_local_service.dart';
 import '../services/notification_api_service.dart';
+import '../services/notification_read_prefs.dart';
+import '../services/notification_deleted_prefs.dart';
 
 class NotificationViewModel extends ChangeNotifier {
   final AuthLocalService _authLocal = AuthLocalService();
@@ -21,6 +23,29 @@ class NotificationViewModel extends ChangeNotifier {
   String? get error => _error;
 
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
+
+  /// Saat push FCM tiba (biasanya sebelum GET /notifikasi menyertakan baris yang sama).
+  /// Sisipkan satu item unread agar badge langsung muncul; [refresh] berikutnya mengganti dari server.
+  Future<void> applyIncomingFromPush(NotificationModel incoming) async {
+    final fp = NotificationDeletedPrefs.fingerprint(incoming.title, incoming.body);
+    final deletedFp = await NotificationDeletedPrefs.getDeletedFingerprints();
+    if (deletedFp.contains(fp)) return;
+    final deletedIds = await NotificationDeletedPrefs.getDeletedIds();
+    if (incoming.id > 0 && deletedIds.contains(incoming.id)) return;
+
+    if (incoming.id != 0 && _notifications.any((n) => n.id == incoming.id)) {
+      return;
+    }
+    final toInsert = incoming.id == 0
+        ? incoming.copyWith(
+            id: -DateTime.now().microsecondsSinceEpoch,
+            isRead: false,
+          )
+        : incoming.copyWith(isRead: false);
+    _notifications = [toInsert, ..._notifications];
+    _hasFetched = true;
+    notifyListeners();
+  }
 
   /// Urutan tipe yang dikenal (`internal` tidak punya chip — hanya muncul di Semua).
   static const List<String> _knownTipeOrder = [
@@ -149,7 +174,29 @@ class NotificationViewModel extends ChangeNotifier {
     _hasFetched = true;
 
     if (result.success && result.data != null) {
-      _notifications = result.data!;
+      final readIds = await NotificationReadPrefs.getReadIds();
+      final deletedIds = await NotificationDeletedPrefs.getDeletedIds();
+      final deletedFp = await NotificationDeletedPrefs.getDeletedFingerprints();
+
+      final incoming = result.data!.map((n) {
+        final read = readIds.contains(n.id) || n.isRead;
+        return n.copyWith(isRead: read);
+      }).where((n) {
+        if (deletedIds.contains(n.id)) return false;
+        return !deletedFp
+            .contains(NotificationDeletedPrefs.fingerprint(n.title, n.body));
+      }).toList();
+
+      // Placeholder id<0 dari [applyIncomingFromPush]: pertahankan sampai API punya baris sama (judul+isi).
+      final ghosts = _notifications.where((n) => n.id < 0).toList();
+      final keptGhosts = ghosts.where((g) {
+        if (deletedFp.contains(NotificationDeletedPrefs.fingerprint(g.title, g.body))) {
+          return false;
+        }
+        return !incoming.any((i) => i.title == g.title && i.body == g.body);
+      }).toList();
+
+      _notifications = [...keptGhosts, ...incoming];
       _error = null;
     } else {
       _error = result.message ?? 'Gagal memuat notifikasi';
@@ -172,7 +219,8 @@ class NotificationViewModel extends ChangeNotifier {
     await loadNotifications(forceRefresh: true);
   }
 
-  void markAsRead(int id) {
+  Future<void> markAsRead(int id) async {
+    await NotificationReadPrefs.addReadId(id);
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1) {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
@@ -180,13 +228,31 @@ class NotificationViewModel extends ChangeNotifier {
     }
   }
 
-  void markAllAsRead() {
+  Future<void> markAllAsRead() async {
+    final unreadIds = _notifications.where((n) => !n.isRead).map((n) => n.id);
+    await NotificationReadPrefs.addReadIds(unreadIds);
     _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
     notifyListeners();
   }
 
-  void deleteNotification(int id) {
-    _notifications.removeWhere((n) => n.id == id);
+  /// Setelah logout: hapus daftar, flag fetch, dan cache ID baca lokal.
+  Future<void> resetForLogout() async {
+    await NotificationReadPrefs.clear();
+    await NotificationDeletedPrefs.clear();
+    _notifications = [];
+    _hasFetched = false;
+    _error = null;
+    _selectedFilter = '';
+    notifyListeners();
+  }
+
+  Future<void> deleteNotification(NotificationModel n) async {
+    _notifications.removeWhere((x) => x.id == n.id);
+    await NotificationDeletedPrefs.recordDeletion(
+      id: n.id,
+      title: n.title,
+      body: n.body,
+    );
     notifyListeners();
   }
 
