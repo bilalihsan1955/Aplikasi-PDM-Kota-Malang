@@ -7,6 +7,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../view_models/home_view_model.dart';
 import '../../models/agenda_model.dart';
+import '../../models/auth_user_model.dart';
 import '../../models/news_model.dart';
 import '../../services/auth/auth_local_service.dart';
 import '../../services/prayer_time_service.dart';
@@ -26,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    unawaited(AuthLocalService().getCachedUser());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) setState(() => _canRefresh = true);
@@ -84,21 +86,21 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FutureBuilder(
-                  future: AuthLocalService().getCachedUser(),
-                  builder: (context, snapshot) {
-                    final name = snapshot.data?.name.trim();
-                    final displayName = (name == null || name.isEmpty) ? 'Pengguna' : name;
-                    return Text(
+    return ValueListenableBuilder<AuthUser?>(
+      valueListenable: AuthLocalService.cachedUserNotifier,
+      builder: (context, user, _) {
+        final name = user?.name.trim();
+        final displayName = (name == null || name.isEmpty) ? 'Pengguna' : name;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       'Hi, $displayName',
                       style: TextStyle(
                         fontSize: 24,
@@ -106,39 +108,34 @@ class _Header extends StatelessWidget {
                         letterSpacing: -1,
                         color: Theme.of(context).textTheme.titleLarge?.color,
                       ),
-                    );
-                  },
+                    ),
+                    Text(
+                      'Bagaimana kabarmu hari ini',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
                 ),
-                Text(
-                  'Bagaimana kabarmu hari ini',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: () => context.go('/profile'),
-            child: Container(
-              height: 50,
-              width: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFF152D8D),
-                borderRadius: BorderRadius.circular(24),
               ),
-              child: FutureBuilder(
-                future: AuthLocalService().getCachedUser(),
-                builder: (context, snapshot) {
-                  return UserAvatar(
-                    user: snapshot.data,
+              GestureDetector(
+                onTap: () => context.go('/profile'),
+                child: Container(
+                  height: 50,
+                  width: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF152D8D),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: UserAvatar(
+                    user: user,
                     size: 50,
                     borderRadius: BorderRadius.circular(24),
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

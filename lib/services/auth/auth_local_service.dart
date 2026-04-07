@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,8 +15,15 @@ class AuthLocalService {
 
   /// Mirror user terakhir (login / GET prefs) agar UI bisa tampil instan tanpa menunggu async.
   static AuthUser? _ramUserCache;
+  static final ValueNotifier<AuthUser?> cachedUserNotifier =
+      ValueNotifier<AuthUser?>(null);
 
   static AuthUser? peekCachedUserSync() => _ramUserCache;
+
+  static void _setRamUserCache(AuthUser? user) {
+    _ramUserCache = user;
+    cachedUserNotifier.value = user;
+  }
 
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
@@ -36,18 +44,18 @@ class AuthLocalService {
       } else {
         user = null;
       }
-      _ramUserCache = user;
+      _setRamUserCache(user);
       return user;
     } catch (e) {
       // ignore: avoid_print
       print('[AuthLocalService] Gagal baca cache user: $e');
-      _ramUserCache = null;
+      _setRamUserCache(null);
       return null;
     }
   }
 
   Future<void> saveCachedUser(AuthUser user) async {
-    _ramUserCache = user;
+    _setRamUserCache(user);
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_authUserKey, jsonEncode(user.toJson()));
@@ -83,7 +91,7 @@ class AuthLocalService {
     required AuthUser user,
     required String token,
   }) async {
-    _ramUserCache = user;
+    _setRamUserCache(user);
     final prefs = await SharedPreferences.getInstance();
 
     // Cache user data (non-token).
@@ -165,7 +173,7 @@ class AuthLocalService {
       print('[AuthLocalService] Gagal deleteAll secure storage: $e');
     }
 
-    _ramUserCache = null;
+    _setRamUserCache(null);
   }
 }
 
