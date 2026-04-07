@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/post_login_navigation.dart';
 import '../../../utils/top_snackbar.dart';
 import '../../../view_models/auth_view_model.dart';
 import '../../../view_models/notification_view_model.dart';
@@ -290,13 +291,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   if (result.success) {
                     await Future.delayed(const Duration(milliseconds: 450));
                     if (!mounted) return;
-                    context.go('/');
+                    final router = GoRouter.of(context);
+                    final inbox = context.read<NotificationViewModel>();
+                    await navigateAfterSuccessfulAuth(router);
                     if (!mounted) return;
-                    unawaited(
-                      context
-                          .read<NotificationViewModel>()
-                          .loadNotifications(forceRefresh: true),
-                    );
+                    unawaited(inbox.loadNotifications(forceRefresh: true));
                   }
                 },
           child: Padding(

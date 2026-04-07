@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../widgets/back_button_app.dart';
 
@@ -76,6 +77,7 @@ class _WebViewPageState extends State<WebViewPage> {
             onBack: () {
               if (context.mounted) context.pop();
             },
+            onRefresh: () => _controller.reload(),
           ),
         ),
         body: Stack(
@@ -100,11 +102,13 @@ class _WebViewHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     required this.isDark,
     required this.onBack,
+    required this.onRefresh,
   });
 
   final String title;
   final bool isDark;
   final VoidCallback onBack;
+  final VoidCallback onRefresh;
 
   @override
   Size get preferredSize => const Size.fromHeight(88);
@@ -144,6 +148,19 @@ class _WebViewHeader extends StatelessWidget implements PreferredSizeWidget {
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : const Color(0xFF2D3142),
                       ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onRefresh,
+                    tooltip: 'Muat ulang',
+                    icon: Icon(
+                      RemixIcons.refresh_line,
+                      size: 22,
+                      color: isDark ? Colors.white70 : const Color(0xFF2D3142),
+                    ),
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(44, 44),
+                      padding: EdgeInsets.zero,
                     ),
                   ),
                 ],

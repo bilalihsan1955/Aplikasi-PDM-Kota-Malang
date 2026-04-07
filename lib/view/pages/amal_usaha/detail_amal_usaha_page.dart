@@ -4,15 +4,19 @@ import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:pdm_malang/models/amal_usaha_model.dart';
+import 'package:pdm_malang/services/amal_usaha_api_service.dart';
+import 'package:pdm_malang/services/api_service.dart';
 import '../../../../utils/app_style.dart';
 import '../../widgets/back_button_app.dart';
 import '../../widgets/navbar_widgets.dart';
 
 class DetailAmalUsahaPage extends StatefulWidget {
   final AmalUsahaItem? item;
+  final String? slug;
 
-  const DetailAmalUsahaPage({super.key, this.item});
+  const DetailAmalUsahaPage({super.key, this.item, this.slug});
 
   @override
   State<DetailAmalUsahaPage> createState() => _DetailAmalUsahaPageState();
@@ -21,10 +25,32 @@ class DetailAmalUsahaPage extends StatefulWidget {
 class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  AmalUsahaItem? _item;
+  bool _loading = true;
+  String? _error;
+
+  String? _resolveSlug() {
+    final a = widget.slug?.trim();
+    if (a != null && a.isNotEmpty) return a;
+    final b = widget.item?.slug.trim();
+    if (b != null && b.isNotEmpty) return b;
+    return null;
+  }
 
   @override
   void initState() {
     super.initState();
+    if (widget.item != null) {
+      _item = widget.item;
+      _loading = false;
+    }
+    final s = _resolveSlug();
+    if (s != null && s.isNotEmpty) {
+      _loadFromApi(s);
+    } else if (widget.item == null) {
+      _loading = false;
+      if (_item == null) _error = 'Data tidak tersedia';
+    }
     _scrollController.addListener(() {
       if (_scrollController.offset > 20) {
         if (!_isScrolled) setState(() => _isScrolled = true);
@@ -32,6 +58,135 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
         if (_isScrolled) setState(() => _isScrolled = false);
       }
     });
+  }
+
+  /// Skeleton hanya bila tidak ada [widget.item] (mis. cold start / deep link); dari daftar tampil data list dulu.
+  Future<void> _loadFromApi(String slug) async {
+    if (_item == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+    try {
+      final loaded = await AmalUsahaApiService().getBySlug(slug);
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        if (loaded != null) {
+          _item = loaded;
+          _error = null;
+        } else if (_item == null) {
+          _error = 'Gagal memuat amal usaha';
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        if (_item == null) _error = 'Gagal memuat amal usaha';
+      });
+    }
+  }
+
+  Widget _buildDetailSkeleton(bool isDark, Color cardColor) {
+    return Skeletonizer(
+      enabled: true,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        physics: const ClampingScrollPhysics(),
+        child: Column(
+          children: [
+            Container(
+              height: 400,
+              width: double.infinity,
+              color: isDark ? Colors.white12 : Colors.grey.shade300,
+            ),
+            Container(
+              transform: Matrix4.translationValues(0, -40, 0),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Kategori', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Nama lembaga amal usaha placeholder',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
+                        color: isDark ? Colors.white : const Color(0xFF2D3142),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Berdiri tahun 2000',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white60 : Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Deskripsi placeholder untuk skeleton halaman detail amal usaha.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.8,
+                        color: isDark ? Colors.white70 : Colors.grey[700],
+                      ),
+                      maxLines: 4,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _slugForShare() {
+    final fromRoute = widget.slug?.trim();
+    if (fromRoute != null && fromRoute.isNotEmpty) return fromRoute;
+    final s = _item?.slug.trim() ?? '';
+    return s.isNotEmpty ? s : null;
+  }
+
+  bool get _canShare {
+    final slug = _slugForShare();
+    return slug != null && slug.isNotEmpty;
+  }
+
+  Future<void> _shareAmalUsaha() async {
+    final item = _item;
+    if (item == null) return;
+    final slug = _slugForShare();
+    if (slug == null || slug.isEmpty || !context.mounted) return;
+    final rawTitle = item.name.trim();
+    final shareTitle = rawTitle.isNotEmpty ? rawTitle : 'Amal Usaha';
+    final url =
+        '${ApiService.webBaseUrl.replaceAll(RegExp(r'/+$'), '')}/amal-usaha/$slug';
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: shareTitle,
+          text: '$shareTitle\n\n$url',
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka fitur bagikan')),
+      );
+    }
   }
 
   @override
@@ -45,8 +200,63 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppStyle.scaffoldDark : Colors.white;
     final appBarColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final item = widget.item;
+    if (_loading && _item == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(RemixIcons.arrow_left_line),
+            onPressed: () => context.pop(),
+          ),
+          title: const Text('Detail Amal Usaha'),
+        ),
+        body: _buildDetailSkeleton(isDark, cardColor),
+      );
+    }
 
+    if (_error != null && _item == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(RemixIcons.arrow_left_line),
+            onPressed: () => context.pop(),
+          ),
+          title: const Text('Detail Amal Usaha'),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(RemixIcons.error_warning_line, size: 48, color: Colors.grey.shade500),
+                const SizedBox(height: 16),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white70 : Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () {
+                    final s = _resolveSlug();
+                    if (s != null && s.isNotEmpty) _loadFromApi(s);
+                  },
+                  icon: const Icon(RemixIcons.refresh_line, size: 20),
+                  label: const Text('Coba lagi'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final item = _item;
     if (item == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -62,6 +272,7 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
     }
 
     final hasNetworkImage = item.image.isNotEmpty && item.image.startsWith('http');
+    final canShare = _canShare;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -237,6 +448,17 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
                                     ],
                                   ),
                                 ),
+                                if (canShare) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: _shareAmalUsaha,
+                                    icon: Icon(
+                                      RemixIcons.share_line,
+                                      color: isDark ? Colors.white : const Color(0xFF2D3142),
+                                    ),
+                                    tooltip: 'Bagikan',
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -253,6 +475,15 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
                               showWhiteBg: true,
                               isDark: isDark,
                             ),
+                            if (canShare) ...[
+                              const Spacer(),
+                              _circleNavButton(
+                                icon: RemixIcons.share_line,
+                                onTap: _shareAmalUsaha,
+                                showWhiteBg: true,
+                                isDark: isDark,
+                              ),
+                            ],
                           ],
                         ),
                       ),

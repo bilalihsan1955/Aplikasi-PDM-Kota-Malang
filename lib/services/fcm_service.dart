@@ -10,6 +10,7 @@ import 'dart:convert';
 import '../models/notification_model.dart';
 import 'api_service.dart';
 import 'prayer_alarm_reminder_prefs.dart';
+import 'prayer_schedule_local_cache.dart';
 import 'jadwal_permission_onboarding_prefs.dart';
 import 'auth/auth_local_service.dart';
 import 'fcm_device_payload.dart';
@@ -125,6 +126,8 @@ class FCMService {
   static const int _prayerReminderSlotCount = 10;
   /// ID lama penjadwalan tes (dibersihkan saat pembatalan pengingat).
   static const int _legacyPrayerDiagnosticNotificationId = 92001;
+  /// ID notifikasi uji lama (dibersihkan setelah fitur tes dihapus).
+  static const int _legacyUiTestNotificationId = 91001;
 
   /// Argumen terakhir [syncPrayerScheduleNotifications] — dipakai ulang setelah user kembali dari pengaturan izin.
   String? _lastPrayerSyncCity;
@@ -477,6 +480,30 @@ class FCMService {
     }
   }
 
+  Future<void> _cancelLegacyUiTestNotification() async {
+    if (kIsWeb) return;
+    try {
+      await _initializeLocalNotifications();
+      await _localNotifications.cancel(_legacyUiTestNotificationId);
+    } catch (_) {}
+  }
+
+  /// Membatalkan notifikasi uji lama (ID 91001) bila masih tertinggal di perangkat.
+  Future<void> cancelLegacyUiTestNotificationIfAny() async {
+    await _cancelLegacyUiTestNotification();
+  }
+
+  /// Jadwalkan ulang alarm dari cache hari ini (sebelum API jalan) agar tray tetap punya jadwal saat app terminasi.
+  Future<void> reschedulePrayerAlarmsFromLocalCacheIfValid() async {
+    if (kIsWeb) return;
+    final cached = await PrayerScheduleLocalCache.loadIfToday();
+    if (cached == null) return;
+    await syncPrayerScheduleNotifications(
+      city: cached.city,
+      prayers: cached.prayers,
+    );
+  }
+
   /// Sinkronkan notifikasi lokal hari ini: salinan “5 menit” (jadwal 6 mnt) + masuk waktu (jadwal 1 mnt lebih awal).
   /// Panggil setelah jadwal harian berhasil dimuat. Ganti jadwal lama.
   Future<void> syncPrayerScheduleNotifications({
@@ -487,6 +514,7 @@ class FCMService {
     if (!await PrayerAlarmReminderPrefs.isEnabled()) {
       _lastPrayerSyncCity = null;
       _lastPrayerSyncPrayers = null;
+      await PrayerScheduleLocalCache.clear();
       await cancelAllPrayerScheduleReminders();
       return;
     }
@@ -556,6 +584,7 @@ class FCMService {
         );
       }
     }
+    await PrayerScheduleLocalCache.save(city: city, prayers: prayers);
   }
 
   Future<void> _zonedSchedulePrayerReminder({

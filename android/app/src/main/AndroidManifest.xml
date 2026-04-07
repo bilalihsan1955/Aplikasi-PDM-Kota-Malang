@@ -32,6 +32,18 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- App Links: host = domain di assetlinks.json (makotamu.org). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="makotamu.org" android:pathPrefix="/berita" />
+                <data android:scheme="https" android:host="www.makotamu.org" android:pathPrefix="/berita" />
+                <data android:scheme="https" android:host="makotamu.org" android:pathPrefix="/kegiatan" />
+                <data android:scheme="https" android:host="www.makotamu.org" android:pathPrefix="/kegiatan" />
+                <data android:scheme="https" android:host="makotamu.org" android:pathPrefix="/amal-usaha" />
+                <data android:scheme="https" android:host="www.makotamu.org" android:pathPrefix="/amal-usaha" />
+            </intent-filter>
             <!-- Tap notifikasi FCM dengan click_action FLUTTER_NOTIFICATION_CLICK -->
             <intent-filter>
                 <action android:name="FLUTTER_NOTIFICATION_CLICK" />
@@ -93,5 +105,13 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
         </intent>
+        <!-- Agar resolveActivity / buka URL ke browser eksplisit (Android 11+ package visibility) -->
+        <package android:name="com.android.chrome" />
+        <package android:name="com.google.android.apps.chrome" />
+        <package android:name="org.mozilla.firefox" />
+        <package android:name="com.microsoft.emmx" />
+        <package android:name="com.brave.browser" />
+        <package android:name="com.opera.browser" />
+        <package android:name="com.sec.android.app.sbrowser" />
     </queries>
 </manifest>

@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+
+import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import '../models/agenda_model.dart';
 import '../models/news_model.dart';

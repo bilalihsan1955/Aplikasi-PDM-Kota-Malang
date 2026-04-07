@@ -103,7 +103,7 @@ class NewsModel {
     return result.trim();
   }
 
-  /// Untuk data dummy (mis. di Home): buat model dari field tampilan card saja.
+  /// Untuk placeholder / skeleton card (mis. di Home): buat model dari field tampilan card saja.
   factory NewsModel.fromCard({
     required String tag,
     required String time,

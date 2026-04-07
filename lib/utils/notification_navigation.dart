@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/notification_model.dart';
+import '../services/auth/auth_local_service.dart';
 import 'app_go_router.dart';
 import 'in_app_webview_nav.dart';
+import 'pending_auth_redirect.dart';
 
 /// Target rute awal saat app dibuka dari notifikasi (cold start), tanpa lewat home.
 class NotificationColdStartTarget {
@@ -90,7 +94,7 @@ NotificationColdStartTarget? coldStartTargetForNotification(NotificationModel no
 
 /// Dari [BuildContext] (mis. halaman daftar notifikasi).
 void openNotificationTarget(BuildContext context, NotificationModel notification) {
-  openNotificationTargetWithRouter(GoRouter.of(context), notification);
+  unawaited(openNotificationTargetWithRouter(GoRouter.of(context), notification));
 }
 
 /// Navigasi via [GoRouter] langsung — dipakai saat tap FCM / notifikasi sistem (tanpa context).
@@ -98,7 +102,18 @@ void openNotificationTarget(BuildContext context, NotificationModel notification
 /// - Berita / agenda + URL kosong → daftar `/berita` atau `/agenda`.
 /// - Web (+ surat/letter) + URL ada → WebView in-app; URL kosong → home `/`.
 /// - Lainnya + URL kosong → home `/`.
-void openNotificationTargetWithRouter(GoRouter router, NotificationModel notification) {
+///
+/// Jika belum login: simpan tujuan ke [PendingAuthRedirect] lalu arahkan ke onboarding/login.
+Future<void> openNotificationTargetWithRouter(GoRouter router, NotificationModel notification) async {
+  if (!await AuthLocalService().isLoggedIn()) {
+    final t = coldStartTargetForNotification(notification);
+    final location = t?.location ?? '/';
+    final extra = t?.extra;
+    await PendingAuthRedirect.save(location, extra);
+    router.go(await AuthLocalService().resolveInitialLocation());
+    return;
+  }
+
   if (notificationImpliesJadwalSholat(notification)) {
     router.go('/jadwal-sholat');
     return;
@@ -183,7 +198,7 @@ void scheduleOpenNotificationTarget(NotificationModel notification, {int maxAtte
     final router = appGoRouterOrNull;
     if (router != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        openNotificationTargetWithRouter(router, notification);
+        unawaited(openNotificationTargetWithRouter(router, notification));
       });
       return;
     }

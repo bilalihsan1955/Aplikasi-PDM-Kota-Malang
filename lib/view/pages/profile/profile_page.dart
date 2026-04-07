@@ -8,6 +8,7 @@ import '../../../view_models/notification_view_model.dart';
 import '../../../utils/app_style.dart';
 import '../../../utils/in_app_webview_nav.dart';
 import '../../../utils/glass_confirm_dialog.dart';
+import '../../../utils/pending_auth_redirect.dart';
 import '../../../utils/top_snackbar.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth/auth_local_service.dart';
@@ -521,6 +522,7 @@ class ProfilePage extends StatelessWidget {
 
     if (result.success) {
       await context.read<NotificationViewModel>().resetForLogout();
+      await PendingAuthRedirect.clear();
       await Future.delayed(const Duration(milliseconds: 600));
       if (!context.mounted) return;
       context.go('/login');

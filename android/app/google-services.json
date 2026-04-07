@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:91075581564:android:1a6b0f56b7eafddf9d9bf9",
+        "mobilesdk_app_id": "1:91075581564:android:94dca0eca33aa6269d9bf9",
         "android_client_info": {
-          "package_name": "com.example.test_notif"
+          "package_name": "id.makotamu.app"
         }
       },
       "oauth_client": [],

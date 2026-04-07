@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:pdm_malang/models/amal_usaha_model.dart';
 import 'package:pdm_malang/services/api_service.dart';
@@ -13,7 +14,8 @@ class AmalUsahaApiService {
   static List<AmalUsahaItem>? getCached({String? type}) {
     final key = type == null || type.isEmpty ? '' : type;
     final list = _cacheByType[key];
-    return list == null ? null : List<AmalUsahaItem>.from(list);
+    if (list == null) return null;
+    return List<AmalUsahaItem>.from(list);
   }
 
   String get _baseUrl {
@@ -62,7 +64,7 @@ class AmalUsahaApiService {
       }
 
       final list = map['data'];
-      final List<AmalUsahaItem> items = [];
+      var items = <AmalUsahaItem>[];
       if (list is List) {
         for (final e in list) {
           if (e is Map<String, dynamic>) {
@@ -95,6 +97,56 @@ class AmalUsahaApiService {
         meta: null,
       );
     }
+  }
+
+  /// GET /amal-usaha/{slug} bila tersedia; jika tidak, cari di daftar terpaginasi.
+  Future<AmalUsahaItem?> getBySlug(String slug) async {
+    final s = slug.trim();
+    if (s.isEmpty) return null;
+    try {
+      final encoded = Uri.encodeComponent(s);
+      final uri = Uri.parse('$_baseUrl/amal-usaha/$encoded');
+      final response = await http.get(uri, headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        Map<String, dynamic>? raw;
+        if (body is Map) {
+          final m = Map<String, dynamic>.from(body);
+          if (m['data'] is Map) {
+            raw = Map<String, dynamic>.from(m['data'] as Map);
+          } else if (m['id'] != null || m['name'] != null) {
+            raw = m;
+          }
+        }
+        if (raw != null) {
+          try {
+            return AmalUsahaItem.fromJson(raw);
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+
+    try {
+      var page = 1;
+      const perPage = 80;
+      while (page <= 200) {
+        final result = await getAmalUsaha(page: page, perPage: perPage, type: null);
+        for (final item in result.data) {
+          if (item.slug == s) return item;
+        }
+        final meta = result.meta;
+        final last = meta != null && meta['last_page'] is num
+            ? (meta['last_page'] as num).toInt()
+            : null;
+        if (last != null) {
+          if (page >= last || result.data.isEmpty) break;
+        } else if (result.data.length < perPage) {
+          break;
+        }
+        page++;
+      }
+    } catch (_) {}
+    return null;
   }
 
   String _messageFromBody(String body) {

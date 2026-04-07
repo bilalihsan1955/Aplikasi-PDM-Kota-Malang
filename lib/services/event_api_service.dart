@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:pdm_malang/models/agenda_model.dart';
 import 'package:pdm_malang/services/api_service.dart';
@@ -53,7 +54,7 @@ class EventApiService {
       }
 
       final list = map['data'];
-      final List<AgendaModel> items = [];
+      var items = <AgendaModel>[];
       if (list is List) {
         for (final e in list) {
           final item = _normalizeEventMap(e);
@@ -94,7 +95,9 @@ class EventApiService {
         headers: _headers,
       );
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        return [];
+      }
       final body = jsonDecode(response.body);
       final list = body is List ? body : (body is Map ? (body['data'] as List?) ?? [] : []);
       final List<AgendaModel> items = [];

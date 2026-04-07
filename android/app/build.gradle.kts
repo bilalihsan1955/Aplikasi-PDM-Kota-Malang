@@ -33,7 +33,7 @@ android {
     defaultConfig {
         // Harus sama dengan package_name di android/app/google-services.json (Firebase).
         // Namespace Kotlin tetap com.example.pdm_malang (folder MainActivity).
-        applicationId = "com.example.test_notif"
+        applicationId = "id.makotamu.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

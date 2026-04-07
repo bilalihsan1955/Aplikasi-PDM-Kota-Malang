@@ -5,8 +5,15 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../services/api_service.dart';
+import '../../../utils/app_deep_link.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/external_browser_launch.dart';
+import '../../../utils/in_app_webview_nav.dart';
+import '../../../utils/top_snackbar.dart';
 import '../../../models/agenda_model.dart';
 import '../../../services/event_api_service.dart';
 import '../../widgets/back_button_app.dart';
@@ -26,35 +33,65 @@ class DetailAgendaPage extends StatefulWidget {
 }
 
 class _DetailAgendaPageState extends State<DetailAgendaPage> {
-  AgendaModel? _loadedAgenda;
-  bool _loading = false;
-
-  /// Data yang ditampilkan: initial dari navigator atau hasil load by slug.
-  AgendaModel? get _agenda => widget.initialAgenda ?? _loadedAgenda;
+  AgendaModel? _agenda;
+  bool _loading = true;
+  String? _error;
+  bool _registerOpening = false;
 
   // Koordinat Default
   static const double _defaultLat = -7.949630143095969;
   static const double _defaultLng = 112.60867657182543;
 
+  String? _resolveSlug() {
+    final a = widget.slug?.trim();
+    if (a != null && a.isNotEmpty) return a;
+    final b = widget.initialAgenda?.slug.trim();
+    if (b != null && b.isNotEmpty) return b;
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
-    if (widget.initialAgenda == null && widget.slug != null && widget.slug!.isNotEmpty) {
-      _loadBySlug();
+    if (widget.initialAgenda != null) {
+      _agenda = widget.initialAgenda;
+      _loading = false;
+    }
+    final s = _resolveSlug();
+    if (s != null && s.isNotEmpty) {
+      _loadFromApi(s);
+    } else if (widget.initialAgenda == null) {
+      _loading = false;
+      if (_agenda == null) _error = 'Data tidak tersedia';
     }
   }
 
-  Future<void> _loadBySlug() async {
-    setState(() => _loading = true);
+  /// Sama seperti [DetailBeritaPage._loadDetail]: skeleton hanya jika tidak ada data awal (mis. app mati + deep link).
+  Future<void> _loadFromApi(String slug) async {
+    if (_agenda == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
-      final api = EventApiService();
-      final a = await api.getBySlug(widget.slug!);
-      if (mounted) setState(() {
-        _loadedAgenda = a;
+      final a = await EventApiService().getBySlug(slug);
+      if (!mounted) return;
+      setState(() {
         _loading = false;
+        if (a != null) {
+          _agenda = a;
+          _error = null;
+        } else if (_agenda == null) {
+          _error = 'Gagal memuat agenda';
+        }
       });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        if (_agenda == null) _error = 'Gagal memuat agenda';
+      });
     }
   }
 
@@ -67,31 +104,245 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
     }
   }
 
+  String _normalizeRegistrationUrl(String raw) {
+    var s = raw.trim();
+    if (s.isEmpty) return s;
+    if (s.startsWith('/') && !s.startsWith('//')) {
+      final base = ApiService.webBaseUrl.replaceAll(RegExp(r'/+$'), '');
+      s = '$base$s';
+    } else if (s.startsWith('//')) {
+      s = 'https:$s';
+    } else if (!RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*:').hasMatch(s)) {
+      s = 'https://$s';
+    }
+    return s;
+  }
+
+  static const String _kRegLinkError = 'Tidak dapat membuka tautan pendaftaran.';
+
+  /// Pendaftaran (Google Form, makotamu, dll.): selalu **browser luar** — lihat [openInExternalBrowser].
   Future<void> _openRegistrationLink() async {
-    final link = _agenda?.registrationLink;
-    if (link == null || link.isEmpty) return;
-    final uri = Uri.tryParse(link);
-    if (uri != null && await canLaunchUrl(uri)) {
+    final link = _agenda?.registrationLink?.trim() ?? '';
+    if (link.isEmpty || !mounted) return;
+    final normalized = _normalizeRegistrationUrl(link);
+    if (normalized.isEmpty) {
+      showTopSnackBar(context, _kRegLinkError, isError: true);
+      return;
+    }
+
+    late final Uri uri;
+    try {
+      uri = Uri.parse(normalized);
+    } catch (_) {
+      showTopSnackBar(context, _kRegLinkError, isError: true);
+      return;
+    }
+    if (!uri.hasScheme ||
+        (uri.host.isEmpty && uri.scheme != 'mailto' && uri.scheme != 'tel')) {
+      showTopSnackBar(context, _kRegLinkError, isError: true);
+      return;
+    }
+
+    setState(() => _registerOpening = true);
+    try {
+      final opened = await openInExternalBrowser(normalized);
+      if (!opened && mounted) {
+        showTopSnackBar(context, _kRegLinkError, isError: true);
+      }
+    } catch (_) {
+      if (mounted) showTopSnackBar(context, _kRegLinkError, isError: true);
+    } finally {
+      if (mounted) setState(() => _registerOpening = false);
+    }
+  }
+
+  Future<bool> _onAgendaHtmlTapUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return false;
+    final target = tryAppDeepLinkFromUri(uri);
+    if (target != null) {
+      if (!mounted) return true;
+      context.go(target.destination, extra: target.extra);
+      return true;
+    }
+    final host = uri.host.toLowerCase();
+    if (host == 'makotamu.org' || host == 'www.makotamu.org') {
+      if (!mounted) return true;
+      await pushInAppWebView(context, url: url, title: 'Makotamu');
+      return true;
+    }
+    if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+    return true;
+  }
+
+  String? _slugForShare() {
+    final fromRoute = widget.slug?.trim();
+    if (fromRoute != null && fromRoute.isNotEmpty) return fromRoute;
+    final s = _agenda?.slug.trim() ?? '';
+    return s.isNotEmpty ? s : null;
+  }
+
+  Widget _buildDetailSkeleton(bool isDark) {
+    return Skeletonizer(
+      enabled: true,
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              Container(
+                height: 220,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: const Text('Kategori', style: TextStyle(fontSize: 10)),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Judul acara placeholder dua baris maksimal',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 8),
+              const Text('Diselenggarakan oleh penyelenggara', style: TextStyle(color: Colors.grey, fontSize: 14)),
+              const SizedBox(height: 32),
+              Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white12 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                height: 88,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white12 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              const SizedBox(height: 32),
+              const Text('Location', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Container(
+                height: 280,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              const SizedBox(height: 32),
+              const Text('Tentang Acara', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              const Text(
+                'Paragraf deskripsi acara placeholder untuk skeleton loading.',
+                style: TextStyle(fontSize: 15, height: 1.6),
+                maxLines: 4,
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool get _canShareAgenda {
+    final slug = _slugForShare();
+    return slug != null && slug.isNotEmpty;
+  }
+
+  Future<void> _shareAgenda() async {
+    final slug = _slugForShare();
+    if (slug == null || slug.isEmpty || !context.mounted) return;
+    final rawTitle = (_agenda?.title ?? '').trim();
+    final shareTitle = rawTitle.isNotEmpty ? rawTitle : 'Agenda';
+    final url =
+        '${ApiService.webBaseUrl.replaceAll(RegExp(r'/+$'), '')}/kegiatan/$slug';
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: shareTitle,
+          text: '$shareTitle\n\n$url',
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      showTopSnackBar(context, 'Tidak dapat membuka fitur bagikan', isError: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final agendaTitle = _agenda?.title ?? 'Detail Agenda';
 
     if (_loading && _agenda == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SafeArea(
-          child: Center(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(100),
+          child: _DetailAgendaAppBar(
+            title: 'Detail Agenda',
+            onShare: null,
+          ),
+        ),
+        body: _buildDetailSkeleton(isDark),
+      );
+    }
+
+    if (_error != null && _agenda == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(100),
+          child: _DetailAgendaAppBar(
+            title: 'Detail Agenda',
+            onShare: null,
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(),
+                Icon(RemixIcons.error_warning_line, size: 48, color: Colors.grey.shade500),
                 const SizedBox(height: 16),
-                Text('Memuat agenda...', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white70 : Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () {
+                    final s = _resolveSlug();
+                    if (s != null && s.isNotEmpty) _loadFromApi(s);
+                  },
+                  icon: const Icon(RemixIcons.refresh_line, size: 20),
+                  label: const Text('Coba lagi'),
+                ),
               ],
             ),
           ),
@@ -99,11 +350,16 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
       );
     }
 
+    final agendaTitle = _agenda?.title ?? 'Detail Agenda';
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
-        child: _DetailAgendaAppBar(title: agendaTitle),
+        child: _DetailAgendaAppBar(
+          title: agendaTitle,
+          onShare: _canShareAgenda ? _shareAgenda : null,
+        ),
       ),
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
@@ -138,7 +394,9 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
                 const SizedBox(height: 12),
                 HtmlWidget(
                   _agenda?.description ?? '-',
+                  baseUrl: Uri.parse('https://makotamu.org'),
                   textStyle: const TextStyle(fontSize: 15, height: 1.6),
+                  onTapUrl: _onAgendaHtmlTapUrl,
                 ),
                 const SizedBox(height: 24),
                 if ((_agenda?.registrationLink ?? '').trim().isNotEmpty) _buildRegisterButton(context),
@@ -269,27 +527,57 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
   Widget _buildRegisterButton(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasLink = (_agenda?.registrationLink ?? '').trim().isNotEmpty;
-    return GestureDetector(
-      onTap: hasLink ? _openRegistrationLink : null,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFF1F4F9), width: 1.5),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              hasLink ? 'Daftar Sekarang' : 'Pendaftaran',
-              style: const TextStyle(color: AppStyle.accent, fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            const SizedBox(width: 8),
-            const Icon(RemixIcons.arrow_right_line, color: AppStyle.accent, size: 20),
-          ],
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFF1F4F9);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: hasLink && !_registerOpening ? _openRegistrationLink : null,
+        borderRadius: BorderRadius.circular(20),
+        splashColor: AppStyle.accent.withOpacity(0.12),
+        highlightColor: AppStyle.accent.withOpacity(0.08),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: 1.5),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_registerOpening) ...[
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppStyle.accent,
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Text(
+                hasLink ? 'Daftar Sekarang' : 'Pendaftaran',
+                style: TextStyle(
+                  color: hasLink ? AppStyle.accent : Colors.grey,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              if (!_registerOpening) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  RemixIcons.arrow_right_line,
+                  color: hasLink ? AppStyle.accent : Colors.grey,
+                  size: 20,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -507,8 +795,9 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
 
 /// App bar sama persis dengan halaman Gallery (BackButtonApp + judul + subtitle + ikon).
 class _DetailAgendaAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _DetailAgendaAppBar({required this.title});
+  const _DetailAgendaAppBar({required this.title, this.onShare});
   final String title;
+  final VoidCallback? onShare;
 
   @override
   Size get preferredSize => const Size.fromHeight(100);
@@ -567,6 +856,17 @@ class _DetailAgendaAppBar extends StatelessWidget implements PreferredSizeWidget
                       ],
                     ),
                   ),
+                  if (onShare != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: onShare,
+                      icon: Icon(
+                        RemixIcons.share_line,
+                        color: isDark ? Colors.white : const Color(0xFF2D3142),
+                      ),
+                      tooltip: 'Bagikan',
+                    ),
+                  ],
                 ],
               ),
             ),

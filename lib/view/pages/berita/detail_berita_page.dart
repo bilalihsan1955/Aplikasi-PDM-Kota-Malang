@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/in_app_webview_nav.dart';
+import '../../../utils/app_deep_link.dart';
 import '../../../models/news_model.dart';
+import '../../../services/api_service.dart';
 import '../../../services/news_api_service.dart';
 import '../../widgets/back_button_app.dart';
 
@@ -73,6 +78,64 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  String? _slugForShare() {
+    final fromRoute = widget.slug?.trim();
+    if (fromRoute != null && fromRoute.isNotEmpty) return fromRoute;
+    final n = _news ?? widget.initialNews;
+    final s = n?.slug.trim() ?? '';
+    return s.isNotEmpty ? s : null;
+  }
+
+  bool get _canShareArticle {
+    final slug = _slugForShare();
+    return slug != null && slug.isNotEmpty;
+  }
+
+  Future<void> _shareArticle() async {
+    final slug = _slugForShare();
+    if (slug == null || slug.isEmpty || !context.mounted) return;
+    final article = _news ?? widget.initialNews;
+    final rawTitle = article?.title.trim() ?? '';
+    final shareTitle = rawTitle.isNotEmpty ? rawTitle : 'Berita';
+    final url =
+        '${ApiService.webBaseUrl.replaceAll(RegExp(r'/+$'), '')}/berita/$slug';
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: shareTitle,
+          text: '$shareTitle\n\n$url',
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka fitur bagikan')),
+      );
+    }
+  }
+
+  /// Default HtmlWidget membuka link di browser eksternal; untuk makotamu.org tetap di app.
+  Future<bool> _onArticleHtmlTapUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return false;
+    final target = tryAppDeepLinkFromUri(uri);
+    if (target != null) {
+      if (!mounted) return true;
+      context.go(target.destination, extra: target.extra);
+      return true;
+    }
+    final host = uri.host.toLowerCase();
+    if (host == 'makotamu.org' || host == 'www.makotamu.org') {
+      if (!mounted) return true;
+      await pushInAppWebView(context, url: url, title: 'Makotamu');
+      return true;
+    }
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+    return true;
   }
 
   @override
@@ -148,6 +211,17 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                                     ],
                                   ),
                                 ),
+                                if (_canShareArticle) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: _shareArticle,
+                                    icon: Icon(
+                                      RemixIcons.share_line,
+                                      color: isDark ? Colors.white : const Color(0xFF2D3142),
+                                    ),
+                                    tooltip: 'Bagikan',
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -164,6 +238,15 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                               showWhiteBg: true,
                               isDark: isDark,
                             ),
+                            if (_canShareArticle) ...[
+                              const Spacer(),
+                              _circleNavButton(
+                                icon: RemixIcons.share_line,
+                                onTap: _shareArticle,
+                                showWhiteBg: true,
+                                isDark: isDark,
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -352,11 +435,13 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
                     const SizedBox(height: 24),
                     HtmlWidget(
                       news.content.trim().isNotEmpty ? news.content : news.excerpt,
+                      baseUrl: Uri.parse('https://makotamu.org'),
                       textStyle: TextStyle(
                         fontSize: 16,
                         height: 1.8,
                         color: isDark ? Colors.white.withOpacity(0.8) : const Color(0xFF4A4A4A),
                       ),
+                      onTapUrl: _onArticleHtmlTapUrl,
                     ),
                   ],
                 ),

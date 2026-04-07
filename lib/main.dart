@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,9 @@ import 'package:pdm_malang/services/auth/auth_local_service.dart';
 import 'package:pdm_malang/services/auth/auth_startup.dart';
 import 'package:pdm_malang/services/fcm_service.dart';
 import 'package:pdm_malang/utils/app_go_router.dart';
+import 'package:pdm_malang/utils/app_deep_link.dart';
 import 'package:pdm_malang/utils/notification_navigation.dart';
+import 'package:pdm_malang/utils/pending_auth_redirect.dart';
 import 'package:pdm_malang/utils/routes.dart';
 import 'package:pdm_malang/view_models/home_view_model.dart';
 import 'package:pdm_malang/view_models/agenda_view_model.dart';
@@ -38,32 +41,46 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   FCMService.registerNotificationOpenListener();
 
-  final authLocation = await AuthLocalService().resolveInitialLocation();
+  final authLocal = AuthLocalService();
+  final loggedIn = await authLocal.isLoggedIn();
+  final authLocation = await authLocal.resolveInitialLocation();
 
   String routerInitial = authLocation;
   Object? routerInitialExtra;
 
-  // Cold start dari tap notifikasi: langsung buka rute tujuan (tanpa flash home).
-  if (authLocation == '/') {
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+  // Cold start: App Link dulu (bukan FCM). Jika belum login, simpan tujuan → tetap onboarding/login.
+  await Future<void>.delayed(const Duration(milliseconds: 200));
+  final appUri = await AppLinks().getInitialLink();
+  final deepFromLink = tryAppDeepLinkFromUri(appUri);
+
+  NotificationColdStartTarget? notifTarget;
+  if (deepFromLink == null) {
     final openMsg = await FirebaseMessaging.instance.getInitialMessage();
     if (openMsg != null) {
       FCMService.markInitialLaunchMessageConsumed();
       final model = FCMService.notificationModelFromRemoteMessage(openMsg);
-      final target = coldStartTargetForNotification(model);
-      if (target != null) {
-        routerInitial = target.location;
-        routerInitialExtra = target.extra;
-      }
+      notifTarget = coldStartTargetForNotification(model);
     } else {
       final localOpen = await FCMService.notificationModelFromLocalNotificationLaunch();
       if (localOpen != null) {
-        final target = coldStartTargetForNotification(localOpen);
-        if (target != null) {
-          routerInitial = target.location;
-          routerInitialExtra = target.extra;
-        }
+        notifTarget = coldStartTargetForNotification(localOpen);
       }
+    }
+  }
+
+  if (deepFromLink != null) {
+    if (!loggedIn) {
+      await PendingAuthRedirect.save(deepFromLink.destination, deepFromLink.extra);
+    } else {
+      routerInitial = deepFromLink.destination;
+      routerInitialExtra = deepFromLink.extra;
+    }
+  } else if (notifTarget != null) {
+    if (!loggedIn) {
+      await PendingAuthRedirect.save(notifTarget.location, notifTarget.extra);
+    } else {
+      routerInitial = notifTarget.location;
+      routerInitialExtra = notifTarget.extra;
     }
   }
 
@@ -104,12 +121,50 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     initialLocation: widget.initialLocation,
     initialExtra: widget.initialExtra,
   );
+  StreamSubscription<Uri>? _appLinksSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     bindAppGoRouter(_router);
+    // StatefulShellRoute kadang tidak menerapkan initialExtra; paksa go sekali.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final loc = widget.initialLocation.trim();
+      final ex = widget.initialExtra;
+      final beritaDetail = loc == '/berita/detail' || loc.endsWith('/berita/detail');
+      final agendaDetail = loc == '/agenda/detail' || loc.endsWith('/agenda/detail');
+      final amalDetail =
+          loc == '/amal-usaha/detail' || loc.endsWith('/amal-usaha/detail');
+      if (!beritaDetail && !agendaDetail && !amalDetail) return;
+      if (ex is Map) {
+        final slug = ex['slug'];
+        if (slug is String && slug.isNotEmpty) {
+          final path = beritaDetail
+              ? '/berita/detail'
+              : agendaDetail
+                  ? '/agenda/detail'
+                  : '/amal-usaha/detail';
+          _router.go(path, extra: {'slug': slug});
+        }
+      }
+    });
+    _appLinksSubscription = AppLinks().uriLinkStream.listen((uri) async {
+      if (!mounted) return;
+      final target = tryAppDeepLinkFromUri(uri);
+      if (target == null) return;
+      final ok = await AuthLocalService().isLoggedIn();
+      if (!mounted) return;
+      if (!ok) {
+        await PendingAuthRedirect.save(target.destination, target.extra);
+        final loc = await AuthLocalService().resolveInitialLocation();
+        if (!mounted) return;
+        _router.go(loc);
+        return;
+      }
+      _router.go(target.destination, extra: target.extra);
+    });
     FCMService().onNotificationTapped = (notification) {
       scheduleOpenNotificationTarget(notification);
     };
@@ -136,14 +191,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Future<void> _bootstrapAfterFirstFrame() async {
     await _initFirebaseAndFcm();
     if (!mounted) return;
+    await FCMService().cancelLegacyUiTestNotificationIfAny();
+    if (!mounted) return;
     final pathOnly = Uri.tryParse(widget.initialLocation)?.path ?? widget.initialLocation;
     const authOnlyPaths = {'/onboarding', '/login', '/register', '/forgot-password'};
     if (!authOnlyPaths.contains(pathOnly)) {
       await _backgroundTokenRefresh();
+      if (mounted) {
+        await FCMService().reschedulePrayerAlarmsFromLocalCacheIfValid();
+        if (mounted) {
+          unawaited(context.read<HomeViewModel>().loadPrayerData());
+        }
+      }
     }
     if (!mounted) return;
     try {
-      if (await AuthLocalService().isLoggedIn()) {
+      final inboxLoggedIn = await AuthLocalService().isLoggedIn();
+      if (!mounted) return;
+      if (inboxLoggedIn) {
         await context.read<NotificationViewModel>().loadNotifications(
               forceRefresh: false,
             );
@@ -155,6 +220,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _appLinksSubscription?.cancel();
+    _appLinksSubscription = null;
     FCMService().onNotificationTapped = null;
     unbindAppGoRouter();
     WidgetsBinding.instance.removeObserver(this);

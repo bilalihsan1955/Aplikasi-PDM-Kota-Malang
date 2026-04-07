@@ -55,6 +55,23 @@ GoRouter createAppRouter({
     navigatorKey: rootNavigatorKey,
     initialLocation: initialLocation,
     initialExtra: initialExtra,
+    redirect: (context, state) {
+      final segs = state.uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (segs.length == 2) {
+        final a = segs[0].toLowerCase();
+        final b = segs[1].toLowerCase();
+        if (a == 'berita' && b != 'detail') {
+          return '/berita/detail?slug=${Uri.encodeQueryComponent(segs[1])}';
+        }
+        if ((a == 'agenda' || a == 'kegiatan') && b != 'detail') {
+          return '/agenda/detail?slug=${Uri.encodeQueryComponent(segs[1])}';
+        }
+        if (a == 'amal-usaha' && b != 'detail') {
+          return '/amal-usaha/detail?slug=${Uri.encodeQueryComponent(segs[1])}';
+        }
+      }
+      return null;
+    },
     routes: [
     // Auth Routes - Full Screen
     GoRoute(
@@ -89,8 +106,18 @@ GoRouter createAppRouter({
       path: '/amal-usaha/detail',
       parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (context, state) {
-        final item = state.extra is AmalUsahaItem ? state.extra as AmalUsahaItem : null;
-        return NoTransitionPage(child: DetailAmalUsahaPage(item: item));
+        String? slug = state.uri.queryParameters['slug'];
+        AmalUsahaItem? item;
+        final ex = state.extra;
+        if (ex is AmalUsahaItem) {
+          item = ex;
+        } else if (ex is Map) {
+          slug ??= ex['slug'] is String ? ex['slug'] as String : null;
+          item = ex['item'] is AmalUsahaItem ? ex['item'] as AmalUsahaItem : null;
+        }
+        return NoTransitionPage(
+          child: DetailAmalUsahaPage(item: item, slug: slug),
+        );
       },
     ),
     // App Shell Routes - With Navbar
@@ -121,8 +148,18 @@ GoRouter createAppRouter({
                     GoRoute(
                       path: 'detail',
                       pageBuilder: (context, state) {
-                        final item = state.extra is AmalUsahaItem ? state.extra as AmalUsahaItem : null;
-                        return NoTransitionPage(child: DetailAmalUsahaPage(item: item));
+                        String? slug = state.uri.queryParameters['slug'];
+                        AmalUsahaItem? item;
+                        final ex = state.extra;
+                        if (ex is AmalUsahaItem) {
+                          item = ex;
+                        } else if (ex is Map) {
+                          slug ??= ex['slug'] is String ? ex['slug'] as String : null;
+                          item = ex['item'] is AmalUsahaItem ? ex['item'] as AmalUsahaItem : null;
+                        }
+                        return NoTransitionPage(
+                          child: DetailAmalUsahaPage(item: item, slug: slug),
+                        );
                       },
                     ),
                   ],
@@ -184,14 +221,14 @@ GoRouter createAppRouter({
                 GoRoute(
                   path: 'detail',
                   pageBuilder: (context, state) {
-                    String? slug;
+                    String? slug = state.uri.queryParameters['slug'];
                     AgendaModel? initialAgenda;
                     final ex = state.extra;
                     if (ex is Map) {
-                      slug = ex['slug'] is String ? ex['slug'] as String : null;
+                      slug ??= ex['slug'] is String ? ex['slug'] as String : null;
                       initialAgenda = ex['agenda'] is AgendaModel ? ex['agenda'] as AgendaModel : null;
                     } else if (ex is String) {
-                      slug = ex;
+                      slug ??= ex;
                     }
                     return NoTransitionPage(
                       child: DetailAgendaPage(slug: slug, initialAgenda: initialAgenda),
@@ -213,14 +250,14 @@ GoRouter createAppRouter({
                 GoRoute(
                   path: 'detail',
                   pageBuilder: (context, state) {
-                    String? slug;
+                    String? slug = state.uri.queryParameters['slug'];
                     NewsModel? initialNews;
                     final ex = state.extra;
                     if (ex is Map) {
-                      slug = ex['slug'] is String ? ex['slug'] as String : null;
+                      slug ??= ex['slug'] is String ? ex['slug'] as String : null;
                       initialNews = ex['news'] is NewsModel ? ex['news'] as NewsModel : null;
                     } else if (ex is String) {
-                      slug = ex;
+                      slug ??= ex;
                     }
                     return NoTransitionPage(
                       child: DetailBeritaPage(slug: slug, initialNews: initialNews),
