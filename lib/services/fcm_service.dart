@@ -122,7 +122,7 @@ class FCMService {
 
   /// Notifikasi “masuk waktu” dijadwalkan 2 menit sebelum jam sholat
   /// agar tetap terasa tepat waktu saat ada delay sistem/OEM.
-  static const Duration _prayerOnTimeScheduleAdvance = Duration(minutes: 2);
+  static const Duration _prayerOnTimeScheduleAdvance = Duration(minutes: 0);
 
   static const int _prayerReminderSlotCount = 10;
   /// ID lama penjadwalan tes (dibersihkan saat pembatalan pengingat).
