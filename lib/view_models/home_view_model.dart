@@ -16,6 +16,8 @@ class HomeViewModel extends ChangeNotifier {
   int _slideIndex = 0;
   int get slideIndex => _slideIndex;
   Timer? _slideTimer;
+  Timer? _midnightPrayerRefreshTimer;
+  String? _lastPrayerSyncDayKey;
 
   final NewsApiService _newsApi = NewsApiService();
   final EventApiService _eventApi = EventApiService();
@@ -52,7 +54,38 @@ class HomeViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _slideTimer?.cancel();
+    _midnightPrayerRefreshTimer?.cancel();
     super.dispose();
+  }
+
+  String _todayKey() {
+    final n = DateTime.now();
+    final y = n.year.toString().padLeft(4, '0');
+    final m = n.month.toString().padLeft(2, '0');
+    final d = n.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  void _scheduleMidnightPrayerRefresh() {
+    _midnightPrayerRefreshTimer?.cancel();
+    final now = DateTime.now();
+    final next = DateTime(now.year, now.month, now.day + 1, 0, 1);
+    final wait = next.difference(now);
+    _midnightPrayerRefreshTimer = Timer(wait, () {
+      unawaited(loadPrayerData());
+    });
+  }
+
+  Future<void> refreshPrayerDataIfStaleOnResume() async {
+    final today = _todayKey();
+    if (_lastPrayerSyncDayKey != today) {
+      await loadPrayerData();
+      return;
+    }
+    if (_midnightPrayerRefreshTimer == null ||
+        !_midnightPrayerRefreshTimer!.isActive) {
+      _scheduleMidnightPrayerRefresh();
+    }
   }
 
   /// Muat berita terbaru dari API untuk section Berita Terkini di Home.
@@ -148,6 +181,8 @@ class HomeViewModel extends ChangeNotifier {
       _prayerTime = prayer;
       _qiblaDirection = results[1] as double?;
       if (prayer != null) {
+        _lastPrayerSyncDayKey = _todayKey();
+        _scheduleMidnightPrayerRefresh();
         unawaited(
           FCMService().syncPrayerScheduleNotifications(
             city: prayer.city,
@@ -160,8 +195,6 @@ class HomeViewModel extends ChangeNotifier {
             ],
           ),
         );
-      } else {
-        unawaited(FCMService().cancelAllPrayerScheduleReminders());
       }
     } catch (_) {}
     _prayerLoading = false;

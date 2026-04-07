@@ -117,8 +117,8 @@ class FCMService {
   /// ID notifikasi lokal pengingat sholat: 5 wajib × 2 (teks “5 mnt” + masuk waktu).
   static const int _prayerReminderIdStart = 92010;
 
-  /// Teks “5 menit lagi”, tapi dijadwalkan **6 menit** sebelum waktu sholat (kompensasi telat sistem).
-  static const Duration _prayerAdvanceReminderScheduleLead = Duration(minutes: 6);
+  /// Teks “5 menit lagi”, dijadwalkan tepat 5 menit sebelum waktu sholat.
+  static const Duration _prayerAdvanceReminderScheduleLead = Duration(minutes: 5);
 
   /// Notifikasi “masuk waktu” dijadwalkan 2 menit sebelum jam sholat
   /// agar tetap terasa tepat waktu saat ada delay sistem/OEM.
@@ -271,7 +271,7 @@ class FCMService {
     if (_localNotifsInitialized) return;
 
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_stat_notification');
 
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
@@ -505,7 +505,7 @@ class FCMService {
     );
   }
 
-  /// Sinkronkan notifikasi lokal hari ini: salinan “5 menit” (jadwal 6 mnt) + masuk waktu (jadwal 2 mnt lebih awal).
+  /// Sinkronkan notifikasi lokal hari ini: salinan “5 menit” (jadwal 5 mnt) + masuk waktu (jadwal 2 mnt lebih awal).
   /// Panggil setelah jadwal harian berhasil dimuat. Ganti jadwal lama.
   Future<void> syncPrayerScheduleNotifications({
     required String city,
@@ -533,12 +533,13 @@ class FCMService {
     await _cancelPrayerReminderSlotsOnly();
 
     final now = tz.TZDateTime.now(tz.local);
+    const oneDay = Duration(days: 1);
     for (var i = 0; i < prayers.length; i++) {
       final name = prayers[i].$1;
       final raw = prayers[i].$2;
       final clock = _parsePrayerClock(raw);
       if (clock == null) continue;
-      final at = tz.TZDateTime(
+      final atToday = tz.TZDateTime(
         tz.local,
         now.year,
         now.month,
@@ -546,6 +547,7 @@ class FCMService {
         clock.$1,
         clock.$2,
       );
+      final at = atToday.isAfter(now) ? atToday : atToday.add(oneDay);
       final timeDot = _clockToDot(raw);
       final before = at.subtract(_prayerAdvanceReminderScheduleLead);
 
@@ -604,7 +606,7 @@ class FCMService {
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
       audioAttributesUsage: AudioAttributesUsage.alarm,
-      icon: '@mipmap/ic_launcher',
+      icon: 'ic_stat_notification',
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -634,19 +636,27 @@ class FCMService {
           }),
         );
 
-    // Urutan: alarmClock (setAlarmClock) paling diutamakan Doze/OEM saat app di-swipe/terminated;
-    // lalu exactAllowWhileIdle; terakhir inexact.
+    // Urutan untuk stabilitas notifikasi saat process mati:
+    // 1) alarmClock (sering paling kuat saat app di-swipe/terminated),
+    // 2) exactAllowWhileIdle,
+    // 3) inexactAllowWhileIdle (terakhir).
     try {
       await doSchedule(AndroidScheduleMode.alarmClock);
+      // ignore: avoid_print
+      print('[FCM] zonedSchedule mode=alarmClock id=$id when=$when');
     } catch (e) {
       try {
         // ignore: avoid_print
         print('[FCM] zonedSchedule alarmClock gagal, coba exactAllowWhileIdle: $e');
         await doSchedule(AndroidScheduleMode.exactAllowWhileIdle);
+        // ignore: avoid_print
+        print('[FCM] zonedSchedule mode=exactAllowWhileIdle id=$id when=$when');
       } catch (e2) {
         // ignore: avoid_print
         print('[FCM] zonedSchedule exact gagal, pakai inexactAllowWhileIdle: $e2');
         await doSchedule(AndroidScheduleMode.inexactAllowWhileIdle);
+        // ignore: avoid_print
+        print('[FCM] zonedSchedule mode=inexactAllowWhileIdle id=$id when=$when');
       }
     }
   }
@@ -706,7 +716,7 @@ class FCMService {
       channelDescription: 'Notifikasi Makotamu',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: 'ic_stat_notification',
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(

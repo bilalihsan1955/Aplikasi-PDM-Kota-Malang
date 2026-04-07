@@ -234,6 +234,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       unawaited(FCMService().syncRegisteredTokenToBackend());
       unawaited(FCMService().replayLastPrayerScheduleNotificationsIfAny());
       if (mounted) {
+        unawaited(context.read<HomeViewModel>().refreshPrayerDataIfStaleOnResume());
+      }
+      if (mounted) {
         unawaited(_refreshNotificationsOnResume());
       }
     }

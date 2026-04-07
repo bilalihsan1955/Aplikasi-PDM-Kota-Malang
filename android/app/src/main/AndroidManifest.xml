@@ -57,6 +57,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notification" />
         <!-- Wajib untuk notifikasi terjadwal (flutter_local_notifications v16+) -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <!-- exported=true: sistem harus bisa mengirim BOOT_COMPLETED / MY_PACKAGE_REPLACED untuk menjadwalkan ulang alarm setelah reboot. -->
