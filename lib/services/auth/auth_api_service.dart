@@ -207,12 +207,26 @@ class AuthApiService {
         final data = map['data'];
         final newTok = data is Map ? data['token']?.toString() : null;
         if (newTok != null && newTok.isNotEmpty) {
+          final suffix = newTok.length >= 6
+              ? newTok.substring(newTok.length - 6)
+              : newTok;
+          // ignore: avoid_print
+          print(
+            '[AuthApiService][auth/refresh] OK status=${response.statusCode} '
+            'message="${message.isNotEmpty ? message : 'Token refreshed'}" '
+            'tokenSuffix=***$suffix',
+          );
           return AuthRefreshResult.ok(
             message: message.isNotEmpty ? message : 'Token refreshed',
             newToken: newTok,
           );
         }
-        _logAuthApiError('auth/refresh', response, map);
+        // ignore: avoid_print
+        print(
+          '[AuthApiService][auth/refresh] FAIL status=${response.statusCode} '
+          'invalidateSession=false '
+          'message="${message.isNotEmpty ? message : 'Respons refresh tidak berisi token.'}"',
+        );
         return AuthRefreshResult.fail(
           message: message.isNotEmpty
               ? message
@@ -223,7 +237,12 @@ class AuthApiService {
       final shouldInvalidate =
           response.statusCode == 401 || response.statusCode == 403;
 
-      _logAuthApiError('auth/refresh', response, map);
+      // ignore: avoid_print
+      print(
+        '[AuthApiService][auth/refresh] FAIL status=${response.statusCode} '
+        'invalidateSession=$shouldInvalidate '
+        'message="${message.isNotEmpty ? message : 'no-message'}"',
+      );
       return AuthRefreshResult.fail(
         message: message.isNotEmpty
             ? message
