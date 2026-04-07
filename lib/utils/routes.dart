@@ -60,7 +60,7 @@ GoRouter createAppRouter({
       if (segs.length == 2) {
         final a = segs[0].toLowerCase();
         final b = segs[1].toLowerCase();
-        if (a == 'berita' && b != 'detail') {
+        if ((a == 'berita' || a == 'artikel') && b != 'detail') {
           return '/berita/detail?slug=${Uri.encodeQueryComponent(segs[1])}';
         }
         if ((a == 'agenda' || a == 'kegiatan') && b != 'detail') {

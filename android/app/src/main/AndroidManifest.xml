@@ -39,6 +39,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="makotamu.org" android:pathPrefix="/berita" />
                 <data android:scheme="https" android:host="www.makotamu.org" android:pathPrefix="/berita" />
+                <data android:scheme="https" android:host="makotamu.org" android:pathPrefix="/artikel" />
+                <data android:scheme="https" android:host="www.makotamu.org" android:pathPrefix="/artikel" />
                 <data android:scheme="https" android:host="makotamu.org" android:pathPrefix="/kegiatan" />
                 <data android:scheme="https" android:host="www.makotamu.org" android:pathPrefix="/kegiatan" />
                 <data android:scheme="https" android:host="makotamu.org" android:pathPrefix="/amal-usaha" />

@@ -120,8 +120,9 @@ class FCMService {
   /// Teks “5 menit lagi”, tapi dijadwalkan **6 menit** sebelum waktu sholat (kompensasi telat sistem).
   static const Duration _prayerAdvanceReminderScheduleLead = Duration(minutes: 6);
 
-  /// Notifikasi “masuk waktu” dijadwalkan **1 menit** sebelum jam sholat agar saat tampil mendekati tepat waktu.
-  static const Duration _prayerOnTimeScheduleAdvance = Duration(minutes: 1);
+  /// Notifikasi “masuk waktu” dijadwalkan 2 menit sebelum jam sholat
+  /// agar tetap terasa tepat waktu saat ada delay sistem/OEM.
+  static const Duration _prayerOnTimeScheduleAdvance = Duration(minutes: 2);
 
   static const int _prayerReminderSlotCount = 10;
   /// ID lama penjadwalan tes (dibersihkan saat pembatalan pengingat).
@@ -504,7 +505,7 @@ class FCMService {
     );
   }
 
-  /// Sinkronkan notifikasi lokal hari ini: salinan “5 menit” (jadwal 6 mnt) + masuk waktu (jadwal 1 mnt lebih awal).
+  /// Sinkronkan notifikasi lokal hari ini: salinan “5 menit” (jadwal 6 mnt) + masuk waktu (jadwal 2 mnt lebih awal).
   /// Panggil setelah jadwal harian berhasil dimuat. Ganti jadwal lama.
   Future<void> syncPrayerScheduleNotifications({
     required String city,

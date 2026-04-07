@@ -21,7 +21,7 @@ bool _hostMatchesConfiguredWeb(Uri uri) {
   return false;
 }
 
-/// Mengenali path situs: berita, agenda/kegiatan, amal-usaha → rute detail app.
+/// Mengenali path situs: berita/artikel, agenda/kegiatan, amal-usaha → rute detail app.
 AppDeepLinkTarget? tryAppDeepLinkFromUri(Uri? uri) {
   if (uri == null) return null;
 
@@ -41,7 +41,7 @@ AppDeepLinkTarget? tryAppDeepLinkFromUri(Uri? uri) {
   if (slug.toLowerCase() == 'detail') return null;
 
   final String? destination;
-  if (section == 'berita') {
+  if (section == 'berita' || section == 'artikel') {
     destination = '/berita/detail';
   } else if (section == 'agenda' || section == 'kegiatan') {
     destination = '/agenda/detail';
