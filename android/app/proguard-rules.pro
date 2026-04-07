@@ -14,3 +14,7 @@
 
 # ThreadPool / ScheduledExecutor callback (plugin)
 -dontwarn com.dexterous.flutterlocalnotifications.**
+
+# path_provider_android (dipakai flutter_cache_manager/cached_network_image):
+# pada release, class Flutter util ini harus tetap ada agar cache path bisa dibaca.
+-keep class io.flutter.util.PathUtils { *; }
