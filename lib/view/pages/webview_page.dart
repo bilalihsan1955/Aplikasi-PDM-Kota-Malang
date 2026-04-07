@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
@@ -53,6 +55,33 @@ class _WebViewPageState extends State<WebViewPage> {
     return true;
   }
 
+  /// Muat ulang halaman yang sedang terbuka (setelah navigasi di dalam WebView),
+  /// bukan hanya URL awal yang dibuka dari route.
+  Future<void> _refreshCurrentPage() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
+    try {
+      final href = await _controller.currentUrl();
+      final uri = (href != null && href.isNotEmpty) ? Uri.tryParse(href) : null;
+      if (uri != null) {
+        try {
+          await _controller.runJavaScript('window.location.reload();');
+        } catch (_) {
+          await _controller.loadRequest(uri);
+        }
+      } else {
+        final initial = Uri.tryParse(widget.url);
+        if (initial != null) {
+          await _controller.loadRequest(initial);
+        } else if (mounted) {
+          setState(() => _loading = false);
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -77,7 +106,7 @@ class _WebViewPageState extends State<WebViewPage> {
             onBack: () {
               if (context.mounted) context.pop();
             },
-            onRefresh: () => _controller.reload(),
+            onRefresh: () => unawaited(_refreshCurrentPage()),
           ),
         ),
         body: Stack(
