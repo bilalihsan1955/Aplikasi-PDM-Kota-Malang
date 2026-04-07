@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Firebase Android — berisi API key; unduh dari Firebase Console (Project settings → Your apps).
+app/google-services.json
