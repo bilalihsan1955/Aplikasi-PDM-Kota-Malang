@@ -88,6 +88,34 @@ class NotificationModel {
     return s == 'true' || s == '1' || s == 'yes';
   }
 
+  /// Tanggal untuk UI (`formatNotificationMeta` / `formatCreatedAt`) dari API: **`created_at`**.
+  /// Hanya `createdAt` dipakai sebagai alias nama field yang sama.
+  static DateTime _parseCreatedAtFromFlat(Map<String, dynamic> flat) {
+    final raw = flat['created_at'] ?? flat['createdAt'];
+
+    if (raw == null) return DateTime.now();
+
+    if (raw is int) {
+      // Backend bisa kirim epoch seconds atau milliseconds.
+      final ms = raw < 1000000000000 ? raw * 1000 : raw;
+      return DateTime.fromMillisecondsSinceEpoch(ms);
+    }
+    if (raw is num) {
+      final n = raw.toInt();
+      final ms = n < 1000000000000 ? n * 1000 : n;
+      return DateTime.fromMillisecondsSinceEpoch(ms);
+    }
+
+    final s = raw.toString().trim();
+    if (s.isEmpty) return DateTime.now();
+    final asInt = int.tryParse(s);
+    if (asInt != null) {
+      final ms = asInt < 1000000000000 ? asInt * 1000 : asInt;
+      return DateTime.fromMillisecondsSinceEpoch(ms);
+    }
+    return DateTime.tryParse(s) ?? DateTime.now();
+  }
+
   /// Samakan variasi kunci dari FCM/backend ke `tipe_redirect` / `url_redirect`.
   static void applyTipeUrlAliases(Map<String, dynamic> flat) {
     String? firstNonEmpty(Iterable<String> keys) {
@@ -140,9 +168,7 @@ class NotificationModel {
         if (t == null || t.isEmpty) return null;
         return t.toLowerCase();
       }(),
-      createdAt: flat['created_at'] != null
-          ? DateTime.tryParse(flat['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt: _parseCreatedAtFromFlat(flat),
       isRead: _parseBool(flat['is_read']) || _parseBool(flat['read']),
     );
   }

@@ -411,8 +411,7 @@ class _NotificationCard extends StatelessWidget {
     final tipeLabel = viewModel.tipeDisplayLabel(notification.tipeRedirect);
     final metaLine = [
       if (tipeLabel.isNotEmpty) tipeLabel,
-      viewModel.formatCreatedAt(notification.createdAt),
-      viewModel.getTimeAgo(notification.createdAt),
+      viewModel.formatNotificationMeta(notification.createdAt),
     ].join(' · ');
 
     final iconBg = skeletonStyle

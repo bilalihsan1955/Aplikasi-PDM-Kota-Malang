@@ -261,7 +261,7 @@ class NotificationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Tanggal/jam singkat untuk kartu (tanpa paket intl).
+  /// Tanggal untuk kartu: hari + nama bulan singkat + tahun (tanpa jam, tanpa `d/m/y`).
   String formatCreatedAt(DateTime d) {
     const m = <int, String>{
       1: 'Jan',
@@ -278,9 +278,19 @@ class NotificationViewModel extends ChangeNotifier {
       12: 'Des',
     };
     final mm = m[d.month] ?? '${d.month}';
-    final h = d.hour.toString().padLeft(2, '0');
-    final min = d.minute.toString().padLeft(2, '0');
-    return '${d.day} $mm ${d.year}, $h.$min';
+    return '${d.day} $mm ${d.year}';
+  }
+
+  /// Satu baris meta: relatif untuk notifikasi baru, lalu [formatCreatedAt] (bukan `d/m/y`).
+  String formatNotificationMeta(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inSeconds < 60) return 'Baru saja';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} menit lalu';
+    if (difference.inHours < 24) return '${difference.inHours} jam lalu';
+    if (difference.inDays < 7) return '${difference.inDays} hari lalu';
+    return formatCreatedAt(timestamp);
   }
 
   String getTimeAgo(DateTime timestamp) {
@@ -291,6 +301,6 @@ class NotificationViewModel extends ChangeNotifier {
     if (difference.inMinutes < 60) return '${difference.inMinutes} menit lalu';
     if (difference.inHours < 24) return '${difference.inHours} jam lalu';
     if (difference.inDays < 7) return '${difference.inDays} hari lalu';
-    return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    return formatCreatedAt(timestamp);
   }
 }

@@ -310,8 +310,7 @@ class FCMService {
       AndroidNotificationChannel(
         _prayerReminderChannelId,
         'Pengingat waktu sholat',
-        description:
-            'Alarm dan reminder jadwal sholat saat aplikasi tidak dibuka',
+        description: 'Alarm dan pengingat jadwal sholat (prioritas tinggi).',
         importance: Importance.max,
         playSound: true,
         enableVibration: true,
@@ -408,6 +407,16 @@ class FCMService {
   }
 
   /// Judul & isi saat **masuk waktu** sholat.
+  static String _cityTitleCase(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) return t;
+    return t
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .map((w) => '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+        .join(' ');
+  }
+
   static ({String title, String body}) prayerScheduleReminderNotificationCopy({
     required String prayerName,
     required String timeDot,
@@ -415,10 +424,10 @@ class FCMService {
   }) {
     final name = prayerName.trim().isEmpty ? 'Sholat' : prayerName.trim();
     final when = timeDot.trim().isEmpty ? '—.–' : timeDot.trim();
-    final place = city.trim().isEmpty ? 'Lokasi Anda' : city.trim();
+    final place = city.trim().isEmpty ? 'Lokasi Anda' : _cityTitleCase(city);
     final title = 'Waktu $name';
     final body = '$when · $place\n'
-        'Tetap sholat di awal waktu. Buka app untuk jadwal lengkap & arah kiblat.';
+        'Tetap sholat di awal waktu.';
     return (title: title, body: body);
   }
 
@@ -430,7 +439,7 @@ class FCMService {
   }) {
     final name = prayerName.trim().isEmpty ? 'Sholat' : prayerName.trim();
     final when = timeDot.trim().isEmpty ? '—.–' : timeDot.trim();
-    final place = city.trim().isEmpty ? 'Lokasi Anda' : city.trim();
+    final place = city.trim().isEmpty ? 'Lokasi Anda' : _cityTitleCase(city);
     final title = '5 menit lagi · $name';
     final body = 'Waktu $name pukul $when · $place\n'
         'Siapkan diri untuk sholat tepat waktu.';
