@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
 import 'fcm_service.dart';
+import 'auth/auth_local_service.dart';
 
 /// Service waktu sholat: utama dari API [waktu-sholat](https://github.com/maftuh23/waktu-sholat) (data Kemenag),
 /// lokasi & jadwal by latitude/longitude. Fallback MyQuran + Nominatim jika API utama gagal.
@@ -56,6 +57,7 @@ class PrayerTimeService {
       if (!enabled) return null;
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        if (!await AuthLocalService().isLoggedIn()) return null;
         permission = await Geolocator.requestPermission();
         if (permission != LocationPermission.whileInUse &&
             permission != LocationPermission.always) {

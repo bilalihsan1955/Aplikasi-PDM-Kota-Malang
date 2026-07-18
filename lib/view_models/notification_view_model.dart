@@ -178,11 +178,17 @@ class NotificationViewModel extends ChangeNotifier {
       final deletedIds = await NotificationDeletedPrefs.getDeletedIds();
       final deletedFp = await NotificationDeletedPrefs.getDeletedFingerprints();
 
+      final limitDate = DateTime.now().subtract(const Duration(days: 14));
+
       final incoming = result.data!.map((n) {
         final read = readIds.contains(n.id) || n.isRead;
         return n.copyWith(isRead: read);
       }).where((n) {
         if (deletedIds.contains(n.id)) return false;
+
+        // Batasi notifikasi maksimal 2 minggu terakhir agar tidak menumpuk saat re-install
+        if (n.createdAt.isBefore(limitDate)) return false;
+
         return !deletedFp
             .contains(NotificationDeletedPrefs.fingerprint(n.title, n.body));
       }).toList();

@@ -279,7 +279,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         FCMService.releaseLocationGate();
         return;
       }
-      await FCMService().initializeAfterLogin();
+      // Perizinan sekarang ditangani oleh HomePage._requestPermissionsIfNeeded()
+      FCMService.releaseLocationGate();
     } catch (e) {
       debugPrint('[MyApp] Firebase/FCM init: $e');
     }

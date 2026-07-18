@@ -10,6 +10,7 @@ import '../../models/agenda_model.dart';
 import '../../models/auth_user_model.dart';
 import '../../models/news_model.dart';
 import '../../services/auth/auth_local_service.dart';
+import '../../services/fcm_service.dart';
 import '../../services/prayer_time_service.dart';
 import '../../utils/in_app_webview_nav.dart';
 import '../widgets/user_avatar.dart';
@@ -32,7 +33,17 @@ class _HomePageState extends State<HomePage> {
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) setState(() => _canRefresh = true);
       });
+      // Perizinan (notifikasi, lokasi, alarm) hanya diminta di halaman Home
+      _requestPermissionsIfNeeded();
     });
+  }
+
+  Future<void> _requestPermissionsIfNeeded() async {
+    try {
+      if (!await AuthLocalService().isLoggedIn()) return;
+      FCMService.armLocationGateBeforeNotificationPrompt();
+      await FCMService().initializeAfterLogin();
+    } catch (_) {}
   }
 
   Future<void> _onRefresh() async {

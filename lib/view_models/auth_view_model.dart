@@ -82,8 +82,6 @@ class AuthViewModel extends ChangeNotifier {
         await _localService.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
-        FCMService.armLocationGateBeforeNotificationPrompt();
-        unawaited(FCMService().initializeAfterLogin());
       }
 
       return result;
@@ -127,8 +125,6 @@ class AuthViewModel extends ChangeNotifier {
         await _localService.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
-        FCMService.armLocationGateBeforeNotificationPrompt();
-        unawaited(FCMService().initializeAfterLogin());
       }
 
       return result;

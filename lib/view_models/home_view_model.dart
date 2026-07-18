@@ -7,6 +7,7 @@ import '../models/news_model.dart';
 import '../services/news_api_service.dart';
 import '../services/event_api_service.dart';
 import '../services/fcm_service.dart';
+import '../services/auth/auth_local_service.dart';
 import '../services/prayer_time_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -77,6 +78,9 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> refreshPrayerDataIfStaleOnResume() async {
+    final auth = AuthLocalService();
+    if (!await auth.isLoggedIn()) return;
+    
     final today = _todayKey();
     if (_lastPrayerSyncDayKey != today) {
       await loadPrayerData();
