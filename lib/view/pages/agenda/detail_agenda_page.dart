@@ -8,14 +8,14 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../services/api_service.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
 import '../../../utils/app_deep_link.dart';
 import '../../../utils/app_style.dart';
 import '../../../utils/external_browser_launch.dart';
 import '../../../utils/in_app_webview_nav.dart';
 import '../../../utils/top_snackbar.dart';
 import '../../../models/agenda_model.dart';
-import '../../../services/event_api_service.dart';
+import 'package:pdm_malang/services/api/event_api_service.dart';
 import '../../widgets/back_button_app.dart';
 
 class DetailAgendaPage extends StatefulWidget {

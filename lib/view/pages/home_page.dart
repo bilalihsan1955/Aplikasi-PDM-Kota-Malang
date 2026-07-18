@@ -10,8 +10,8 @@ import '../../models/agenda_model.dart';
 import '../../models/auth_user_model.dart';
 import '../../models/news_model.dart';
 import '../../services/auth/auth_local_service.dart';
-import '../../services/fcm_service.dart';
-import '../../services/prayer_time_service.dart';
+import '../../services/fcm/fcm_service.dart';
+import '../../services/prayer/prayer_time_service.dart';
 import '../../utils/in_app_webview_nav.dart';
 import '../widgets/user_avatar.dart';
 

@@ -1,4 +1,4 @@
-import '../services/api_service.dart';
+import '../services/api/api_service.dart';
 
 /// Hasil parsing URL web → [destination] GoRouter + [extra] (mis. `slug`).
 class AppDeepLinkTarget {

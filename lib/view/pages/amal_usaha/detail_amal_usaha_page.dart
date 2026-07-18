@@ -5,9 +5,10 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
 import 'package:pdm_malang/models/amal_usaha_model.dart';
-import 'package:pdm_malang/services/amal_usaha_api_service.dart';
-import 'package:pdm_malang/services/api_service.dart';
+import 'package:pdm_malang/view_models/amal_usaha_view_model.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
 import '../../../../utils/app_style.dart';
 import '../../widgets/back_button_app.dart';
 import '../../widgets/navbar_widgets.dart';
@@ -69,7 +70,7 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
       });
     }
     try {
-      final loaded = await AmalUsahaApiService().getBySlug(slug);
+      final loaded = await context.read<AmalUsahaViewModel>().getBySlug(slug);
       if (!mounted) return;
       setState(() {
         _loading = false;

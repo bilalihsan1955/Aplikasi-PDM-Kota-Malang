@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pdm_malang/models/news_model.dart';
-import 'package:pdm_malang/services/api_service.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
 
 /// Layanan API berita (public, tanpa auth).
 /// Menggunakan [ApiService.baseUrl] dari .env.

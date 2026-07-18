@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pdm_malang/models/news_model.dart';
-import 'package:pdm_malang/services/news_api_service.dart';
+import 'package:pdm_malang/repositories/news_repository.dart';
 
 class NewsViewModel extends ChangeNotifier {
-  final NewsApiService _api = NewsApiService();
+  final NewsRepository _repository;
+
+  NewsViewModel({required NewsRepository repository})
+      : _repository = repository;
 
   String _selectedTag = 'Semua';
   String _searchQuery = '';
@@ -66,7 +69,7 @@ class NewsViewModel extends ChangeNotifier {
     _allNews = [];
     notifyListeners();
 
-    final result = await _api.getNews(
+    final result = await _repository.getNews(
       page: 1,
       perPage: _perPage,
       categoryId: categoryId,
@@ -79,36 +82,12 @@ class NewsViewModel extends ChangeNotifier {
       _currentPage = 1;
       _hasMore = result.data.length >= _perPage;
     } else {
-      _errorMessage = _friendlyError(result.message);
+      _errorMessage = _repository.getFriendlyError(result.message);
       _allNews = [];
     }
     notifyListeners();
   }
 
-  static String _friendlyError(String raw) {
-    final lower = raw.toLowerCase();
-    if (lower.contains('socketexception') ||
-        lower.contains('connection') ||
-        lower.contains('network') ||
-        lower.contains('unreachable') ||
-        lower.contains('timeout') ||
-        lower.contains('timed out') ||
-        lower.contains('no internet') ||
-        lower.contains('failed host lookup')) {
-      return 'Koneksi internet tidak stabil.\nPeriksa jaringan Anda dan coba lagi.';
-    }
-    if (lower.contains('404') || lower.contains('not found')) {
-      return 'Data tidak ditemukan.\nSilakan coba lagi nanti.';
-    }
-    if (lower.contains('500') || lower.contains('internal server')) {
-      return 'Server sedang bermasalah.\nSilakan coba beberapa saat lagi.';
-    }
-    if (lower.contains('403') || lower.contains('forbidden') || lower.contains('unauthorized')) {
-      return 'Akses ditolak.\nSilakan login ulang atau hubungi admin.';
-    }
-    if (raw.isEmpty) return 'Gagal memuat berita.\nSilakan coba lagi.';
-    return 'Terjadi kesalahan.\nSilakan coba lagi nanti.';
-  }
 
   /// Muat halaman berikutnya (pagination).
   Future<void> loadMore() async {
@@ -116,7 +95,7 @@ class NewsViewModel extends ChangeNotifier {
     _isLoadingMore = true;
     notifyListeners();
 
-    final result = await _api.getNews(
+    final result = await _repository.getNews(
       page: _currentPage + 1,
       perPage: _perPage,
     );

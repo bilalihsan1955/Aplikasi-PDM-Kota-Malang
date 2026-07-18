@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import '../../services/fcm_service.dart';
-import '../../services/prayer_time_service.dart';
+import '../../services/fcm/fcm_service.dart';
+import '../../services/prayer/prayer_time_service.dart';
 import '../../view_models/home_view_model.dart';
 import '../widgets/back_button_app.dart';
 

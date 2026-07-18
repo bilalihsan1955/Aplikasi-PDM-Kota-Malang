@@ -3,18 +3,16 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import '../services/auth/auth_api_service.dart';
-import '../services/fcm_service.dart';
+import '../repositories/auth_repository.dart';
+import '../services/fcm/fcm_service.dart';
 import '../services/auth/auth_action_result.dart';
 import '../services/auth/auth_avatar_cache.dart';
-import '../services/auth/auth_local_service.dart';
 import '../services/auth/auth_profile_update_result.dart';
 import '../services/auth/auth_register_result.dart';
 import '../services/auth/password_reset_result.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  final AuthApiService _apiService;
-  final AuthLocalService _localService;
+  final AuthRepository _repository;
 
   /// GET `/user` ke jaringan **hanya sekali** per hidup proses app; setelah sukses, pakai cache saja.
   static bool _userEndpointFetchedThisProcess = false;
@@ -26,10 +24,8 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   AuthViewModel({
-    AuthApiService? apiService,
-    AuthLocalService? localService,
-  })  : _apiService = apiService ?? AuthApiService(),
-        _localService = localService ?? AuthLocalService();
+    required AuthRepository repository,
+  })  : _repository = repository;
 
   bool _isSubmitting = false;
   bool get isSubmitting => _isSubmitting;
@@ -70,7 +66,7 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _apiService.register(
+      final result = await _repository.register(
         name: normalizedName,
         email: normalizedEmail,
         phone: normalizedPhone,
@@ -79,7 +75,7 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (result.success && result.user != null && result.token != null) {
-        await _localService.saveSession(user: result.user!, token: result.token!);
+        await _repository.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
       }
@@ -116,13 +112,13 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _apiService.login(
+      final result = await _repository.login(
         email: normalizedEmail,
         password: normalizedPassword,
       );
 
       if (result.success && result.user != null && result.token != null) {
-        await _localService.saveSession(user: result.user!, token: result.token!);
+        await _repository.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
       }
@@ -149,19 +145,19 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await _localService.getToken();
+      final token = await _repository.getToken();
       if (token == null || token.isEmpty) {
         // Jika token tidak ada, tetap bersihkan data lokal.
-        await _localService.clearAllLocalData();
+        await _repository.clearAllLocalData();
         invalidateUserEndpointSync();
         return AuthActionResult.success('Logout successful');
       }
 
-      final result = await _apiService.logout(token: token);
+      final result = await _repository.logout(token: token);
 
       if (result.success) {
         unawaited(FCMService().deleteTokenFromBackend(token));
-        await _localService.clearAllLocalData();
+        await _repository.clearAllLocalData();
         invalidateUserEndpointSync();
       }
 
@@ -178,7 +174,7 @@ class AuthViewModel extends ChangeNotifier {
 
   /// GET `/user` — **HTTP hanya sekali** per proses app; selanjutnya baca cache (halaman Akun).
   Future<AuthProfileUpdateResult> fetchCurrentUser() async {
-    final token = await _localService.getToken();
+    final token = await _repository.getToken();
     if (token == null || token.isEmpty) {
       return AuthProfileUpdateResult.failure(
         message: 'Sesi tidak valid. Silakan login lagi.',
@@ -186,8 +182,7 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     if (_userEndpointFetchedThisProcess) {
-      final u =
-          AuthLocalService.peekCachedUserSync() ?? await _localService.getCachedUser();
+      final u = AuthRepository.peekCachedUserSync() ?? await _repository.getCachedUser();
       return AuthProfileUpdateResult.success(
         message: 'OK',
         user: u,
@@ -195,13 +190,13 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     try {
-      final result = await _apiService.fetchCurrentUser(token: token);
+      final result = await _repository.fetchCurrentUser(token: token);
       if (result.success && result.user != null) {
-        final cached = await _localService.getCachedUser();
+        final cached = await _repository.getCachedUser();
         final merged = cached != null
             ? result.user!.mergedWithServer(cached)
             : result.user!;
-        await _localService.saveCachedUser(merged);
+        await _repository.saveCachedUser(merged);
         prefetchAuthAvatarUrl(merged.avatar);
         _userEndpointFetchedThisProcess = true;
         return AuthProfileUpdateResult.success(
@@ -232,7 +227,7 @@ class AuthViewModel extends ChangeNotifier {
       return AuthProfileUpdateResult.failure(message: 'Sedang memproses...');
     }
 
-    final token = await _localService.getToken();
+    final token = await _repository.getToken();
     if (token == null || token.isEmpty) {
       return AuthProfileUpdateResult.failure(
         message: 'Sesi tidak valid. Silakan login lagi.',
@@ -243,7 +238,7 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _apiService.updateProfile(
+      final result = await _repository.updateProfile(
         token: token,
         name: name.trim(),
         email: email.trim(),
@@ -255,11 +250,11 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (result.success && result.user != null) {
-        final prev = await _localService.getCachedUser();
+        final prev = await _repository.getCachedUser();
         final merged = prev != null
             ? result.user!.mergedWithServer(prev)
             : result.user!;
-        await _localService.saveCachedUser(merged);
+        await _repository.saveCachedUser(merged);
         prefetchAuthAvatarUrl(merged.avatar);
         _userEndpointFetchedThisProcess = true;
         return AuthProfileUpdateResult.success(
@@ -292,7 +287,7 @@ class AuthViewModel extends ChangeNotifier {
     _passwordResetBusy = true;
     notifyListeners();
     try {
-      return await _apiService.sendPasswordResetOtp(email: trimmed);
+      return await _repository.sendPasswordResetOtp(email: trimmed);
     } finally {
       _passwordResetBusy = false;
       notifyListeners();
@@ -312,7 +307,7 @@ class AuthViewModel extends ChangeNotifier {
     _passwordResetBusy = true;
     notifyListeners();
     try {
-      return await _apiService.verifyPasswordResetOtp(
+      return await _repository.verifyPasswordResetOtp(
         email: email.trim(),
         otp: otp.trim(),
       );
@@ -348,7 +343,7 @@ class AuthViewModel extends ChangeNotifier {
     _passwordResetBusy = true;
     notifyListeners();
     try {
-      return await _apiService.resetPasswordWithToken(
+      return await _repository.resetPasswordWithToken(
         verificationToken: verificationToken,
         password: password,
         passwordConfirmation: passwordConfirmation,

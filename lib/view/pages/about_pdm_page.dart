@@ -7,8 +7,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pdm_malang/models/organization_model.dart';
-import 'package:pdm_malang/services/api_service.dart';
-import 'package:pdm_malang/services/organization_api_service.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
+import 'package:pdm_malang/services/api/organization_api_service.dart';
 import '../../../utils/app_style.dart';
 import '../widgets/back_button_app.dart';
 

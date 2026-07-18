@@ -9,8 +9,8 @@ import '../../../utils/app_style.dart';
 import '../../../utils/in_app_webview_nav.dart';
 import '../../../utils/app_deep_link.dart';
 import '../../../models/news_model.dart';
-import '../../../services/api_service.dart';
-import '../../../services/news_api_service.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
+import 'package:pdm_malang/services/api/news_api_service.dart';
 import '../../widgets/back_button_app.dart';
 
 class DetailBeritaPage extends StatefulWidget {

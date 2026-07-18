@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:pdm_malang/models/amal_usaha_model.dart';
-import 'package:pdm_malang/services/api_service.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
 
 /// Layanan API amal usaha (public).
 /// GET /amal-usaha?page=1&per_page=10&type=pendidikan|kesehatan|sosial|ekonomi

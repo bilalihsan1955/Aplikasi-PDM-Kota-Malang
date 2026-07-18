@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:pdm_malang/models/agenda_model.dart';
-import 'package:pdm_malang/services/api_service.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
 
 /// Layanan API event/agenda (public, tanpa auth).
 class EventApiService {

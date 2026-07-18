@@ -10,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:pdm_malang/services/auth/auth_local_service.dart';
 import 'package:pdm_malang/services/auth/auth_startup.dart';
-import 'package:pdm_malang/services/fcm_service.dart';
+import 'package:pdm_malang/services/fcm/fcm_service.dart';
 import 'package:pdm_malang/utils/app_go_router.dart';
 import 'package:pdm_malang/utils/app_deep_link.dart';
 import 'package:pdm_malang/utils/notification_navigation.dart';
@@ -22,6 +22,24 @@ import 'package:pdm_malang/view_models/news_view_model.dart';
 import 'package:pdm_malang/view_models/profile_view_model.dart';
 import 'package:pdm_malang/view_models/notification_view_model.dart';
 import 'package:pdm_malang/view_models/auth_view_model.dart';
+import 'package:pdm_malang/view_models/amal_usaha_view_model.dart';
+
+// Services
+import 'package:pdm_malang/services/api/event_api_service.dart';
+import 'package:pdm_malang/services/api/news_api_service.dart';
+import 'package:pdm_malang/services/prayer/prayer_time_service.dart';
+
+import 'package:pdm_malang/services/auth/auth_api_service.dart';
+import 'package:pdm_malang/services/api/amal_usaha_api_service.dart';
+
+// Repositories
+import 'package:pdm_malang/repositories/agenda_repository.dart';
+import 'package:pdm_malang/repositories/news_repository.dart';
+import 'package:pdm_malang/repositories/prayer_repository.dart';
+import 'package:pdm_malang/repositories/notification_repository.dart';
+import 'package:pdm_malang/repositories/auth_repository.dart';
+import 'package:pdm_malang/repositories/amal_usaha_repository.dart';
+
 import 'package:pdm_malang/utils/app_style.dart';
 import 'package:pdm_malang/utils/app_timezone.dart';
 import 'package:pdm_malang/firebase_background.dart';
@@ -87,12 +105,70 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => HomeViewModel()),
-        ChangeNotifierProvider(create: (_) => AgendaViewModel()),
-        ChangeNotifierProvider(create: (_) => NewsViewModel()),
+        // Base Services
+        Provider<EventApiService>(create: (_) => EventApiService()),
+        Provider<NewsApiService>(create: (_) => NewsApiService()),
+        Provider<PrayerTimeService>(create: (_) => PrayerTimeService()),
+        Provider<AuthApiService>(create: (_) => AuthApiService()),
+        Provider<AmalUsahaApiService>(create: (_) => AmalUsahaApiService()),
+        
+        // Repositories (Wraps Services)
+        ProxyProvider<EventApiService, AgendaRepository>(
+          update: (_, api, __) => AgendaRepository(apiService: api),
+        ),
+        ProxyProvider<NewsApiService, NewsRepository>(
+          update: (_, api, __) => NewsRepository(apiService: api),
+        ),
+        ProxyProvider<PrayerTimeService, PrayerRepository>(
+          update: (_, api, __) => PrayerRepository(apiService: api),
+        ),
+        Provider<NotificationRepository>(
+          create: (_) => NotificationRepository(),
+        ),
+        ProxyProvider<AuthApiService, AuthRepository>(
+          update: (_, api, __) => AuthRepository(
+            apiService: api,
+            localService: AuthLocalService(),
+          ),
+        ),
+        ProxyProvider<AmalUsahaApiService, AmalUsahaRepository>(
+          update: (_, api, __) => AmalUsahaRepository(apiService: api),
+        ),
+
+        // ViewModels
+        ChangeNotifierProvider(
+          create: (context) => HomeViewModel(
+            newsRepository: context.read<NewsRepository>(),
+            agendaRepository: context.read<AgendaRepository>(),
+            prayerRepository: context.read<PrayerRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AgendaViewModel(
+            repository: context.read<AgendaRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => NewsViewModel(
+            repository: context.read<NewsRepository>(),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => ProfileViewModel()),
-        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
-        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(
+          create: (context) => NotificationViewModel(
+            repository: context.read<NotificationRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AuthViewModel(
+            repository: context.read<AuthRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AmalUsahaViewModel(
+            repository: context.read<AmalUsahaRepository>(),
+          ),
+        ),
       ],
       child: MyApp(
         initialLocation: routerInitial,

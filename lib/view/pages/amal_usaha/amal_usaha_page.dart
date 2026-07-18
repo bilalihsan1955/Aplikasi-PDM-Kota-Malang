@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:provider/provider.dart';
 import 'package:pdm_malang/models/amal_usaha_model.dart';
-import 'package:pdm_malang/services/amal_usaha_api_service.dart';
+import 'package:pdm_malang/view_models/amal_usaha_view_model.dart';
 import '../empty_placeholder_page.dart';
 import '../../widgets/back_button_app.dart';
 
@@ -16,71 +17,11 @@ class AmalUsahaPage extends StatefulWidget {
 }
 
 class _AmalUsahaPageState extends State<AmalUsahaPage> {
-  bool _isSearching = false;
-  String _searchQuery = '';
-  String _selectedType = '';
-  List<({String value, String label})> _availableTypes = [
-    (value: '', label: 'Semua'),
-  ];
-  List<AmalUsahaItem> _items = [];
-  bool _loading = true;
-  String? _error;
-
-  void _setSearchQuery(String value) => setState(() => _searchQuery = value);
-
   @override
   void initState() {
     super.initState();
-    final cached = AmalUsahaApiService.getCached(type: _selectedType.isEmpty ? null : _selectedType);
-    if (cached != null) {
-      setState(() {
-        _items = cached;
-        _loading = false;
-        _error = null;
-        
-        // Extract categories immediately from cached data
-        if (_selectedType.isEmpty) {
-          _updateAvailableTypes(cached);
-        }
-      });
-    } else {
-      _loadData();
-    }
-  }
-
-  void _updateAvailableTypes(List<AmalUsahaItem> data) {
-    final Map<String, String> uniqueTypes = {};
-    for (final item in data) {
-      if (item.type.isNotEmpty && item.typeLabel.isNotEmpty) {
-        uniqueTypes[item.type] = item.typeLabel;
-      }
-    }
-    _availableTypes = [
-      (value: '', label: 'Semua'),
-      ...uniqueTypes.entries.map((e) => (value: e.key, label: e.value)).toList()
-    ];
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final result = await AmalUsahaApiService().getAmalUsaha(
-      page: 1,
-      perPage: 20,
-      type: _selectedType.isEmpty ? null : _selectedType,
-    );
-    if (!mounted) return;
-    setState(() {
-      _loading = false;
-      _items = result.data;
-      _error = result.success ? null : (result.message.isNotEmpty ? result.message : 'Gagal memuat amal usaha');
-      
-      // Update available types dynamically from data if on "Semua" tab
-      if (result.success && _selectedType.isEmpty) {
-        _updateAvailableTypes(result.data);
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AmalUsahaViewModel>().initData();
     });
   }
 
@@ -92,47 +33,32 @@ class _AmalUsahaPageState extends State<AmalUsahaPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(160),
-          child: _CombinedHeader(
-            isSearching: _isSearching,
-            selectedType: _selectedType,
-            types: _availableTypes,
-            loading: _loading,
-            onSearchChanged: _setSearchQuery,
-            onToggleSearch: (value) {
-              setState(() {
-                _isSearching = value;
-                if (!value) _searchQuery = '';
-              });
-            },
-            onTypeSelected: (value) {
-              final cached = AmalUsahaApiService.getCached(type: value.isEmpty ? null : value);
-              if (cached != null) {
-                setState(() {
-                  _selectedType = value;
-                  _items = cached;
-                  _loading = false;
-                  _error = null;
-                });
-              } else {
-                setState(() => _selectedType = value);
-                _loadData();
-              }
+          child: Consumer<AmalUsahaViewModel>(
+            builder: (context, viewModel, child) {
+              return _CombinedHeader(
+                isSearching: viewModel.isSearching,
+                selectedType: viewModel.selectedType,
+                types: viewModel.availableTypes,
+                loading: viewModel.loading,
+                onSearchChanged: viewModel.setSearchQuery,
+                onToggleSearch: viewModel.setSearching,
+                onTypeSelected: viewModel.setType,
+              );
             },
           ),
         ),
-        body: _AmalUsahaList(
-          items: _items,
-          searchQuery: _searchQuery,
-          selectedType: _selectedType,
-          loading: _loading,
-          error: _error,
-          onRetry: _loadData,
-          onResetFilter: () {
-            setState(() {
-              _searchQuery = '';
-              _selectedType = '';
-            });
-            _loadData();
+        body: Consumer<AmalUsahaViewModel>(
+          builder: (context, viewModel, child) {
+            return _AmalUsahaList(
+              items: viewModel.items,
+              searchQuery: viewModel.searchQuery,
+              selectedType: viewModel.selectedType,
+              loading: viewModel.loading,
+              error: viewModel.error,
+              onRetry: viewModel.loadData,
+              onResetFilter: viewModel.resetFilter,
+              filteredItems: viewModel.filteredItems,
+            );
           },
         ),
       ),
@@ -426,12 +352,14 @@ class _AmalUsahaList extends StatelessWidget {
   final String? error;
   final Future<void> Function()? onRetry;
   final VoidCallback? onResetFilter;
+  final List<AmalUsahaItem> filteredItems;
 
   const _AmalUsahaList({
     required this.items,
     required this.searchQuery,
     required this.selectedType,
     required this.loading,
+    required this.filteredItems,
     this.error,
     this.onRetry,
     this.onResetFilter,
@@ -522,15 +450,6 @@ class _AmalUsahaList extends StatelessWidget {
         ),
       );
     }
-
-    final query = searchQuery.trim().toLowerCase();
-    final filteredItems = query.isEmpty
-        ? items
-        : items.where((item) {
-            return item.name.toLowerCase().contains(query) ||
-                item.description.toLowerCase().contains(query) ||
-                item.typeLabel.toLowerCase().contains(query);
-          }).toList();
 
     if (filteredItems.isEmpty) {
       final hasFilter = searchQuery.isNotEmpty || selectedType.isNotEmpty;

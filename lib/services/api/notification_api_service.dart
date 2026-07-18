@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_service.dart';
-import '../models/notification_model.dart';
+import 'package:pdm_malang/models/notification_model.dart';
 
 class NotificationApiService {
   static String get _baseUrl => ApiService.baseUrl;

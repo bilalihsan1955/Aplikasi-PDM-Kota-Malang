@@ -4,11 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import '../models/agenda_model.dart';
 import '../models/news_model.dart';
-import '../services/news_api_service.dart';
-import '../services/event_api_service.dart';
-import '../services/fcm_service.dart';
+import '../repositories/news_repository.dart';
+import '../repositories/agenda_repository.dart';
+import '../services/fcm/fcm_service.dart';
 import '../services/auth/auth_local_service.dart';
-import '../services/prayer_time_service.dart';
+import '../repositories/prayer_repository.dart';
 
 class HomeViewModel extends ChangeNotifier {
   int _currentEventPage = 0;
@@ -20,8 +20,8 @@ class HomeViewModel extends ChangeNotifier {
   Timer? _midnightPrayerRefreshTimer;
   String? _lastPrayerSyncDayKey;
 
-  final NewsApiService _newsApi = NewsApiService();
-  final EventApiService _eventApi = EventApiService();
+  final NewsRepository _newsRepo;
+  final AgendaRepository _agendaRepo;
   List<NewsModel> _news = [];
   bool _newsLoading = true;
   List<NewsModel> _featuredNews = [];
@@ -29,7 +29,7 @@ class HomeViewModel extends ChangeNotifier {
   List<AgendaModel> _events = [];
   bool _eventsLoading = true;
 
-  final PrayerTimeService _prayerApi = PrayerTimeService();
+  final PrayerRepository _prayerRepo;
   PrayerTimeResult? _prayerTime;
   double? _qiblaDirection;
   bool _prayerLoading = true;
@@ -44,7 +44,13 @@ class HomeViewModel extends ChangeNotifier {
   double? get qiblaDirection => _qiblaDirection;
   bool get prayerLoading => _prayerLoading;
 
-  HomeViewModel() {
+  HomeViewModel({
+    required NewsRepository newsRepository,
+    required AgendaRepository agendaRepository,
+    required PrayerRepository prayerRepository,
+  })  : _newsRepo = newsRepository,
+        _agendaRepo = agendaRepository,
+        _prayerRepo = prayerRepository {
     _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       final count = _featuredNews.isEmpty ? 1 : _featuredNews.length;
       _slideIndex = (_slideIndex + 1) % count;
@@ -97,7 +103,7 @@ class HomeViewModel extends ChangeNotifier {
     _newsLoading = true;
     notifyListeners();
     try {
-      final list = await _newsApi.getLatest();
+      final list = await _newsRepo.getLatestNews();
       _news = list.length > 4 ? list.sublist(0, 4) : list;
     } catch (_) {
       _news = [];
@@ -111,7 +117,7 @@ class HomeViewModel extends ChangeNotifier {
     _featuredLoading = true;
     notifyListeners();
     try {
-      final result = await _newsApi.getNews(page: 1, perPage: 10);
+      final result = await _newsRepo.getNews(page: 1, perPage: 10);
       if (result.success) {
         _featuredNews = result.data.where((n) => n.isFeatured).toList();
       } else {
@@ -130,9 +136,9 @@ class HomeViewModel extends ChangeNotifier {
     _eventsLoading = true;
     notifyListeners();
     try {
-      List<AgendaModel> list = await _eventApi.getUpcoming();
+      List<AgendaModel> list = await _agendaRepo.getUpcomingEvents();
       if (list.isEmpty) {
-        final result = await _eventApi.getEvents(page: 1, perPage: 10);
+        final result = await _agendaRepo.getEvents(page: 1, perPage: 10);
         if (result.success && result.data.isNotEmpty) {
           list = result.data;
         }
@@ -173,13 +179,13 @@ class HomeViewModel extends ChangeNotifier {
     _prayerLoading = true;
     notifyListeners();
     try {
-      final position = await _prayerApi.getCurrentPosition();
+      final position = await _prayerRepo.getCurrentPosition();
       final lat = position?.latitude;
       final lng = position?.longitude;
 
       final results = await Future.wait([
-        _prayerApi.getTodayPrayerTimes(lat: lat, lng: lng, useDeviceLocation: false),
-        _prayerApi.getQiblaDirection(lat: lat, lng: lng),
+        _prayerRepo.getTodayPrayerTimes(lat: lat, lng: lng, useDeviceLocation: false),
+        _prayerRepo.getQiblaDirection(lat: lat, lng: lng),
       ]);
       final prayer = results[0] as PrayerTimeResult?;
       _prayerTime = prayer;

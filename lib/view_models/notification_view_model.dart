@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 import '../models/notification_model.dart';
 import '../services/auth/auth_local_service.dart';
-import '../services/notification_api_service.dart';
-import '../services/notification_read_prefs.dart';
-import '../services/notification_deleted_prefs.dart';
+import '../repositories/notification_repository.dart';
+import '../services/local/notification_read_prefs.dart';
+import '../services/local/notification_deleted_prefs.dart';
 
 class NotificationViewModel extends ChangeNotifier {
+  final NotificationRepository _repository;
   final AuthLocalService _authLocal = AuthLocalService();
+
+  NotificationViewModel({required NotificationRepository repository})
+      : _repository = repository;
 
   List<NotificationModel> _notifications = [];
   String _selectedFilter = '';
@@ -165,7 +169,7 @@ class NotificationViewModel extends ChangeNotifier {
       return;
     }
 
-    final result = await NotificationApiService.fetchNotifications(
+    final result = await _repository.fetchNotifications(
       token: token,
       userId: user.id,
     );

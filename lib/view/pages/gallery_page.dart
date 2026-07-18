@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:pdm_malang/models/gallery_model.dart';
-import 'package:pdm_malang/services/gallery_api_service.dart';
+import 'package:pdm_malang/services/api/gallery_api_service.dart';
 import 'empty_placeholder_page.dart';
 import '../widgets/back_button_app.dart';
 

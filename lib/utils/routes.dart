@@ -25,7 +25,7 @@ import '../view/pages/empty_placeholder_page.dart';
 import '../view/pages/jadwal_sholat_page.dart';
 import '../view/pages/kiblat_page.dart';
 import '../view/pages/webview_page.dart';
-import '../services/prayer_time_service.dart';
+import '../services/prayer/prayer_time_service.dart';
 import 'in_app_webview_nav.dart';
 
 CustomTransitionPage<void> _webviewTransitionPage(GoRouterState state) {

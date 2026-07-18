@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/fcm_service.dart';
-import '../services/prayer_alarm_reminder_prefs.dart';
-import '../services/theme_service.dart';
+import '../services/fcm/fcm_service.dart';
+import '../services/local/prayer_alarm_reminder_prefs.dart';
+import '../services/local/theme_service.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final ThemeService _themeService = ThemeService();

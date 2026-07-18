@@ -3,8 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
-import 'fcm_service.dart';
-import 'auth/auth_local_service.dart';
+import 'package:pdm_malang/services/fcm/fcm_service.dart';
+import 'package:pdm_malang/services/auth/auth_local_service.dart';
 
 /// Service waktu sholat: utama dari API [waktu-sholat](https://github.com/maftuh23/waktu-sholat) (data Kemenag),
 /// lokasi & jadwal by latitude/longitude. Fallback MyQuran + Nominatim jika API utama gagal.

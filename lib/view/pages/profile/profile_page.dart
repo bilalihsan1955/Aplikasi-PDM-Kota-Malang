@@ -10,8 +10,8 @@ import '../../../utils/in_app_webview_nav.dart';
 import '../../../utils/glass_confirm_dialog.dart';
 import '../../../utils/pending_auth_redirect.dart';
 import '../../../utils/top_snackbar.dart';
-import '../../../services/api_service.dart';
-import '../../../services/auth/auth_local_service.dart';
+import 'package:pdm_malang/services/api/api_service.dart';
+import 'package:pdm_malang/services/auth/auth_local_service.dart';
 import '../../widgets/user_avatar.dart';
 import '../../widgets/back_button_app.dart';
 
