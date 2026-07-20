@@ -350,7 +350,7 @@ class _NewsGridState extends State<_NewsGrid> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   if (index >= 2) return null;
@@ -595,7 +595,7 @@ class _NewsGridState extends State<_NewsGrid> {
         ),
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
             sliver: SliverSafeArea(
               top: false,
               sliver: SliverList(

@@ -286,7 +286,7 @@ class FCMService {
     );
 
     await _localNotifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _handleLocalNotificationTap,
     );
 
@@ -470,7 +470,7 @@ class FCMService {
     await _initializeLocalNotifications();
     for (var i = 0; i < _prayerReminderSlotCount; i++) {
       try {
-        await _localNotifications.cancel(_prayerReminderIdStart + i);
+        await _localNotifications.cancel(id: _prayerReminderIdStart + i);
       } catch (e, st) {
         // ignore: avoid_print
         print('[FCM] cancel prayer slot $i: $e\n$st');
@@ -483,7 +483,7 @@ class FCMService {
     if (kIsWeb) return;
     await _cancelPrayerReminderSlotsOnly();
     try {
-      await _localNotifications.cancel(_legacyPrayerDiagnosticNotificationId);
+      await _localNotifications.cancel(id: _legacyPrayerDiagnosticNotificationId);
     } catch (e, st) {
       // ignore: avoid_print
       print('[FCM] cancel legacy test id: $e\n$st');
@@ -494,7 +494,7 @@ class FCMService {
     if (kIsWeb) return;
     try {
       await _initializeLocalNotifications();
-      await _localNotifications.cancel(_legacyUiTestNotificationId);
+      await _localNotifications.cancel(id: _legacyUiTestNotificationId);
     } catch (_) {}
   }
 
@@ -568,7 +568,7 @@ class FCMService {
         );
         await _zonedSchedulePrayerReminder(
           id: _prayerReminderIdStart + i * 2,
-          when: before,
+          scheduledDate: before,
           title: pre.title,
           body: pre.body,
         );
@@ -590,7 +590,7 @@ class FCMService {
         );
         await _zonedSchedulePrayerReminder(
           id: _prayerReminderIdStart + i * 2 + 1,
-          when: onWhen,
+          scheduledDate: onWhen,
           title: copy.title,
           body: copy.body,
         );
@@ -601,42 +601,29 @@ class FCMService {
 
   Future<void> _zonedSchedulePrayerReminder({
     required int id,
-    required tz.TZDateTime when,
+    required tz.TZDateTime scheduledDate,
     required String title,
     required String body,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
-      _prayerReminderChannelId,
-      'Pengingat waktu sholat',
-      channelDescription:
-          'Alarm dan reminder jadwal sholat; memakai saluran prioritas tinggi',
-      importance: Importance.max,
-      priority: Priority.max,
-      category: AndroidNotificationCategory.alarm,
-      visibility: NotificationVisibility.public,
-      audioAttributesUsage: AudioAttributesUsage.alarm,
-      icon: 'ic_stat_notification',
-    );
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
     Future<void> doSchedule(AndroidScheduleMode mode) =>
         _localNotifications.zonedSchedule(
-          id,
-          title,
-          body,
-          when,
-          details,
+          id: id,
+          title: title,
+          body: body,
+          scheduledDate: scheduledDate,
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'pdm_malang_prayer_reminders_channel',
+              'Pengingat Sholat',
+              channelDescription: 'Alarm Pengingat Waktu Sholat',
+              importance: Importance.max,
+              priority: Priority.high,
+              playSound: true,
+              enableVibration: true,
+              fullScreenIntent: true,
+            ),
+          ),
           androidScheduleMode: mode,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
           payload: jsonEncode({
             'title': title,
             'body': body,
@@ -645,27 +632,13 @@ class FCMService {
           }),
         );
 
-    // Urutan untuk stabilitas notifikasi saat process mati:
-    // 1) alarmClock (sering paling kuat saat app di-swipe/terminated),
-    // 2) exactAllowWhileIdle,
-    // 3) inexactAllowWhileIdle (terakhir).
     try {
       await doSchedule(AndroidScheduleMode.alarmClock);
-      // ignore: avoid_print
-      print('[FCM] zonedSchedule mode=alarmClock id=$id when=$when');
     } catch (e) {
       try {
-        // ignore: avoid_print
-        print('[FCM] zonedSchedule alarmClock gagal, coba exactAllowWhileIdle: $e');
         await doSchedule(AndroidScheduleMode.exactAllowWhileIdle);
-        // ignore: avoid_print
-        print('[FCM] zonedSchedule mode=exactAllowWhileIdle id=$id when=$when');
       } catch (e2) {
-        // ignore: avoid_print
-        print('[FCM] zonedSchedule exact gagal, pakai inexactAllowWhileIdle: $e2');
         await doSchedule(AndroidScheduleMode.inexactAllowWhileIdle);
-        // ignore: avoid_print
-        print('[FCM] zonedSchedule mode=inexactAllowWhileIdle id=$id when=$when');
       }
     }
   }
@@ -740,10 +713,10 @@ class FCMService {
     );
 
     await _localNotifications.show(
-      message.hashCode,
-      message.notification?.title ?? 'Makotamu',
-      message.notification?.body ?? '',
-      details,
+      id: message.hashCode,
+      title: message.notification?.title ?? 'Makotamu',
+      body: message.notification?.body ?? '',
+      notificationDetails: details,
       payload: jsonEncode(_localNotificationPayloadMap(message)),
     );
   }
