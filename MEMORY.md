@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.1.4+7` (Version Name: `1.1.4`, Version Code: `7`)
+* **Versi Saat Ini**: `1.1.4+7` (Version Name: `1.1.4`, Version Code: `7`) — *Baseline rilis resmi yang disetujui*
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 34), iOS
 
