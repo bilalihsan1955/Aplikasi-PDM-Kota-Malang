@@ -12,6 +12,7 @@ Future<bool?> showGlassConfirmDialog({
   required Color iconColor,
   Gradient? confirmGradient,
   bool barrierDismissible = true,
+  bool useRootNavigator = true,
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final baseBg = isDark ? const Color(0xFF141414) : Colors.white;
@@ -20,6 +21,7 @@ Future<bool?> showGlassConfirmDialog({
 
   return showGeneralDialog<bool>(
     context: context,
+    useRootNavigator: useRootNavigator,
     barrierDismissible: barrierDismissible,
     barrierLabel: title,
     barrierColor: Colors.black.withOpacity(isDark ? 0.35 : 0.22),

@@ -10,6 +10,7 @@ import 'app_style.dart';
 /// Mengembalikan [ImageSource] yang dipilih, atau `null` jika dibatalkan.
 Future<ImageSource?> showGlassImageSourceDialog({
   required BuildContext context,
+  bool useRootNavigator = true,
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final baseBg = isDark ? const Color(0xFF141414) : Colors.white;
@@ -18,6 +19,7 @@ Future<ImageSource?> showGlassImageSourceDialog({
 
   return showGeneralDialog<ImageSource>(
     context: context,
+    useRootNavigator: useRootNavigator,
     barrierDismissible: true,
     barrierLabel: 'Pilih sumber foto',
     barrierColor: Colors.black.withOpacity(isDark ? 0.35 : 0.22),

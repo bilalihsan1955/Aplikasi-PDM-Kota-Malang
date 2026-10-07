@@ -52,29 +52,41 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 AbsorbPointer(
                   absorbing: isSubmitting,
-                  child: SingleChildScrollView(
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 8),
-                            const SizedBox(height: 40),
-                            _buildHeader(isDark),
-                            const SizedBox(height: 48),
-                            _buildForm(isDark, enabled: enabled),
-                            const SizedBox(height: 8),
-                            _buildLoginButton(context, isSubmitting: isSubmitting),
-                            const SizedBox(height: 24),
-                            _buildRegisterLink(context, isDark),
-                            const SizedBox(height: 32),
-                            _buildLegalFooter(context, isDark),
-                            const SizedBox(height: 24),
-                          ],
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 24),
+                                    _buildHeader(isDark),
+                                    const SizedBox(height: 40),
+                                    _buildForm(isDark, enabled: enabled),
+                                    const SizedBox(height: 8),
+                                    _buildLoginButton(context, isSubmitting: isSubmitting),
+                                    const SizedBox(height: 20),
+                                    _buildRegisterLink(context, isDark),
+                                    const Spacer(),
+                                    const SizedBox(height: 24),
+                                    _buildLegalFooter(context, isDark),
+                                    const SizedBox(height: 16),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
                 if (isSubmitting)

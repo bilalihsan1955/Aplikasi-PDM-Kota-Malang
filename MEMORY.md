@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.1.0+3` (Version Name: `1.1.0`, Version Code: `3`)
+* **Versi Saat Ini**: `1.1.4+7` (Version Name: `1.1.4`, Version Code: `7`)
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 34), iOS
 
@@ -83,3 +83,30 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   3. **Penguatan Automated Testing**: Menambahkan 16 unit test baru untuk `NetworkErrorMapper`, `NewsViewModel`, `AgendaViewModel`, dan `HomeViewModel`. Total test suite melonjak dari 8 menjadi 24 tests dengan kelulusan 100%.
   4. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.0.1+2` menjadi `1.1.0+3` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
 * **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-07] - Versi 1.1.1+4 (Login Legal Footer Layout & Global Dialog Root Navigator Overlay)
+* **Fitur & Perbaikan**:
+  1. **Login Legal Footer Layout**: Menata ulang layout [lib/view/pages/auth/login_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/auth/login_page.dart) menggunakan `LayoutBuilder`, `ConstrainedBox`, `IntrinsicHeight`, dan `Spacer()`. Link **Kebijakan Privasi • Syarat & Ketentuan** kini diletakkan di **paling bawah layar tepat di atas bilah navigasi sistem (`SafeArea` bottom)** tanpa merusak kemampuan scroll saat keyboard terbuka.
+  2. **Global Dialog Overlay Menutupi Navbar**: Mengaktifkan `useRootNavigator: true` pada [lib/utils/glass_confirm_dialog.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/glass_confirm_dialog.dart), [lib/utils/glass_image_source_dialog.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/glass_image_source_dialog.dart), dan [lib/view/pages/gallery_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/gallery_page.dart). Seluruh dialog konfirmasi (logout, ubah password, discard perubahan akun, preview gambar, dan pemilih foto) kini di-*push* ke root navigator utama sehingga overlay gelap dan efek blur **menutupi 100% layar termasuk bilah bottom navigation bar (Navbar)**.
+  3. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.1.0+3` menjadi `1.1.1+4` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-07] - Versi 1.1.2+5 (Shell-Level Loading Overlay Across MainScreen, Profile, Account, & Password)
+* **Fitur & Perbaikan**:
+  1. **MainScreen Root Loading Overlay**: Membungkus antarmuka [lib/view/main_screen.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/main_screen.dart) dengan `Consumer<AuthViewModel>` dan `Stack` tingkat teratas. Setiap kali `isSubmitting` aktif (proses logout di Profil, simpan/update profil di [account_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/account_page.dart), maupun ubah sandi di [change_password_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/change_password_page.dart)), overlay gelap dengan indikator loading (`CircularProgressIndicator`) otomatis membentang di **seluruh layar penuh, menutupi konten dan seluruh bilah Bottom Navbar** serta memblokir sentuhan (`AbsorbPointer`).
+  2. **Eliminasi Redundansi Overlay Tab**: Membersihkan overlay parsial lokal di [profile_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/profile_page.dart), [account_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/account_page.dart), dan [change_password_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/change_password_page.dart) sehingga rendering lebih ramping dan bebas konflik z-index.
+  3. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.1.1+4` menjadi `1.1.2+5` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-07] - Versi 1.1.3+6 (Minimalist Screen & Navbar Dimming Barrier without Loader)
+* **Fitur & Perbaikan**:
+  1. **Penghapusan Loader pada Overlay Shell**: Menghapus widget `CircularProgressIndicator` dari lapisan overlay [lib/view/main_screen.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/main_screen.dart). Ketika proses submitting berlangsung (logout, update profil, ganti password), aplikasi menampilkan lapisan redup bersih (*clean dimming barrier*) yang menutupi seluruh layar dan bilah Bottom Navbar sembari tetap memblokir interaksi sentuh pengguna (`AbsorbPointer(absorbing: true)`) tanpa memunculkan spinner loader di tengah layar.
+  2. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.1.2+5` menjadi `1.1.3+6` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-07] - Versi 1.1.4+7 (Logout Button Dynamic Loading Indicator)
+* **Fitur & Perbaikan**:
+  1. **Indikator Loading pada Tombol Logout**: Mengintegrasikan state `isSubmitting` ke komponen `_logout` di [lib/view/pages/profile/profile_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/profile_page.dart). Saat proses logout sedang diproses di backend, teks `'Logout'` dan ikonnya otomatis berganti menjadi animasi *loader* (`CircularProgressIndicator` beraksen merah `Colors.redAccent`) dan event tap dinonaktifkan (`onTap: null`).
+  2. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.1.3+6` menjadi `1.1.4+7` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+

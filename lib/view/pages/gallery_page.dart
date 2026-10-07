@@ -468,6 +468,7 @@ class _GalleryCard extends StatelessWidget {
   void _showImagePreview(BuildContext context) {
     showDialog(
       context: context,
+      useRootNavigator: true,
       useSafeArea: false,
       builder: (context) => _ImagePreviewDialog(
         imageUrl: item.image,

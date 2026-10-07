@@ -104,9 +104,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSubmitting = context.watch<AuthViewModel>().isSubmitting;
-    final overlayColor = isDark
-        ? Colors.black.withOpacity(0.25)
-        : Colors.black.withOpacity(0.12);
 
     final blockPopOnDraft = _hasPasswordDraft();
 
@@ -124,13 +121,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       },
       child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(
-        fit: StackFit.expand,
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: AbsorbPointer(
-              absorbing: isSubmitting,
+      body: AbsorbPointer(
+        absorbing: isSubmitting,
               child: GestureDetector(
                 onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
                 behavior: HitTestBehavior.translucent,
@@ -193,18 +185,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
             ),
           ),
-          if (isSubmitting)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(color: overlayColor),
-              ),
-            ),
-        ],
-      ),
-    ),
-    ),
-    );
-  }
+        ),
+      );
+    }
 
   Widget _buildProfileStyleHeader(
     BuildContext context, {

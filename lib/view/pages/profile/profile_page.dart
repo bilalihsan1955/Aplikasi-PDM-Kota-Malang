@@ -32,46 +32,32 @@ class ProfilePage extends StatelessWidget {
         body: Consumer<AuthViewModel>(
           builder: (context, authVm, _) {
             final isSubmitting = authVm.isSubmitting;
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            final overlayColor = isDark
-                ? Colors.black.withOpacity(0.25)
-                : Colors.black.withOpacity(0.12);
-
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                AbsorbPointer(
-                  absorbing: isSubmitting,
-                  child: SingleChildScrollView(
-                    child: SafeArea(
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 8),
-                          _header(context),
-                          const SizedBox(height: 24),
-                          _profileCard(context),
-                          const SizedBox(height: 24),
-                          _section('Informasi'),
-                          _infoSection(context),
-                          const SizedBox(height: 24),
-                          _section('Pengaturan'),
-                          _settingsSection(context),
-                          const SizedBox(height: 24),
-                          _section('Ketentuan & Privasi'),
-                          _legalSection(context),
-                          const SizedBox(height: 24),
-                          _logout(context),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ),
+            return AbsorbPointer(
+              absorbing: isSubmitting,
+              child: SingleChildScrollView(
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      _header(context),
+                      const SizedBox(height: 24),
+                      _profileCard(context),
+                      const SizedBox(height: 24),
+                      _section('Informasi'),
+                      _infoSection(context),
+                      const SizedBox(height: 24),
+                      _section('Pengaturan'),
+                      _settingsSection(context),
+                      const SizedBox(height: 24),
+                      _section('Ketentuan & Privasi'),
+                      _legalSection(context),
+                      const SizedBox(height: 24),
+                      _logout(context, isSubmitting: isSubmitting),
+                      const SizedBox(height: 24),
+                    ],
                   ),
                 ),
-                if (isSubmitting)
-                  Positioned.fill(
-                    child: IgnorePointer(child: Container(color: overlayColor)),
-                  ),
-              ],
+              ),
             );
           },
         ),
@@ -493,7 +479,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _logout(BuildContext context) {
+  Widget _logout(BuildContext context, {required bool isSubmitting}) {
     final borderRadius = BorderRadius.circular(20);
     final splash = Colors.redAccent.withOpacity(0.12);
     final highlight = Colors.redAccent.withOpacity(0.06);
@@ -507,26 +493,40 @@ class ProfilePage extends StatelessWidget {
           borderRadius: borderRadius,
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => _showLogoutDialog(context),
+            onTap: isSubmitting ? null : () => _showLogoutDialog(context),
             borderRadius: borderRadius,
             splashColor: splash,
             highlightColor: highlight,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(RemixIcons.logout_box_r_line, color: Colors.redAccent),
-                  SizedBox(width: 8),
-                  Text(
-                    'Logout',
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.w600,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: isSubmitting
+                  ? const SizedBox(
+                      height: 24,
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.redAccent,
+                          ),
+                        ),
+                      ),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(RemixIcons.logout_box_r_line, color: Colors.redAccent),
+                        SizedBox(width: 8),
+                        Text(
+                          'Logout',
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),

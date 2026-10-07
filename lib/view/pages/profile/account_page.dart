@@ -181,9 +181,6 @@ class _AccountPageState extends State<AccountPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSubmitting = context.watch<AuthViewModel>().isSubmitting;
-    final overlayColor = isDark
-        ? Colors.black.withOpacity(0.25)
-        : Colors.black.withOpacity(0.12);
 
     final blockPopOnDirtyEdit = _isEditing && _hasUnsavedEditChanges();
 
@@ -201,77 +198,65 @@ class _AccountPageState extends State<AccountPage> {
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: Stack(
-            fit: StackFit.expand,
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                child: AbsorbPointer(
-                  absorbing: isSubmitting,
-                  child: GestureDetector(
-                    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                    behavior: HitTestBehavior.translucent,
-                    child: SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: SafeArea(
+          body: AbsorbPointer(
+            absorbing: isSubmitting,
+            child: GestureDetector(
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              behavior: HitTestBehavior.translucent,
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: SafeArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 8),
+                      _buildProfileStyleHeader(
+                        context,
+                        title: 'Akun Saya',
+                        subtitle: 'Kelola data profil Anda',
+                      ),
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: AppStyle.hPadding,
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const SizedBox(height: 8),
-                            _buildProfileStyleHeader(
-                              context,
-                              title: 'Akun Saya',
-                              subtitle: 'Kelola data profil Anda',
-                            ),
-                            const SizedBox(height: 24),
-                            Padding(
-                              padding: AppStyle.hPadding,
+                            Skeletonizer(
+                              enabled: _showSkeleton,
                               child: Column(
                                 children: [
-                                  Skeletonizer(
-                                    enabled: _showSkeleton,
-                                    child: Column(
-                                      children: [
-                                        _buildProfilePicture(),
-                                        const SizedBox(height: 32),
-                                        _buildAccountForm(isDark),
-                                      ],
-                                    ),
-                                  ),
+                                  _buildProfilePicture(),
                                   const SizedBox(height: 32),
-                                  _buildEditButton(
-                                    context,
-                                    isDark,
-                                    isSubmitting,
-                                  ),
-                                  if (_isEditing) ...[
-                                    const SizedBox(height: 14),
-                                    _buildSaveButton(context, isSubmitting),
-                                  ],
-                                  if (!_isEditing && !_showSkeleton) ...[
-                                    const SizedBox(height: 14),
-                                    _buildChangePasswordButton(
-                                      context,
-                                      isDark,
-                                      isSubmitting,
-                                    ),
-                                  ],
-                                  const SizedBox(height: 40),
+                                  _buildAccountForm(isDark),
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 32),
+                            _buildEditButton(
+                              context,
+                              isDark,
+                              isSubmitting,
+                            ),
+                            if (_isEditing) ...[
+                              const SizedBox(height: 14),
+                              _buildSaveButton(context, isSubmitting),
+                            ],
+                            if (!_isEditing && !_showSkeleton) ...[
+                              const SizedBox(height: 14),
+                              _buildChangePasswordButton(
+                                context,
+                                isDark,
+                                isSubmitting,
+                              ),
+                            ],
+                            const SizedBox(height: 40),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
-              if (isSubmitting)
-                Positioned.fill(
-                  child: IgnorePointer(child: Container(color: overlayColor)),
-                ),
-            ],
+            ),
           ),
         ),
       ),
