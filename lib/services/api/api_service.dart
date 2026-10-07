@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
@@ -15,6 +16,7 @@ String _prettyJsonOrRaw(String body) {
 }
 
 void _logFcmTokenRegisterResponse(Uri uri, http.Response response) {
+  if (!kDebugMode) return;
   final pretty = _prettyJsonOrRaw(response.body);
   final line =
       '────────────────────────────────────────────────────────────';

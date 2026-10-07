@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../widgets/back_button_app.dart';
 
@@ -30,6 +31,31 @@ class _WebViewPageState extends State<WebViewPage> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            final uri = Uri.tryParse(request.url);
+            if (uri == null) {
+              return NavigationDecision.prevent;
+            }
+
+            final scheme = uri.scheme.toLowerCase();
+
+            // Buka tautan kontak / WhatsApp / tel / mailto ke aplikasi eksternal
+            if (const {'tel', 'mailto', 'sms', 'geo'}.contains(scheme) ||
+                request.url.startsWith('https://wa.me/') ||
+                request.url.startsWith('https://api.whatsapp.com/')) {
+              unawaited(launchUrl(uri, mode: LaunchMode.externalApplication));
+              return NavigationDecision.prevent;
+            }
+
+            // Izinkan seluruh navigasi web standar (HTTP / HTTPS) agar halaman termuat lancar
+            if (scheme == 'https' || scheme == 'http') {
+              return NavigationDecision.navigate;
+            }
+
+            // Skema kustom lainnya dialihkan ke aplikasi eksternal
+            unawaited(launchUrl(uri, mode: LaunchMode.externalApplication));
+            return NavigationDecision.prevent;
+          },
           onPageStarted: (_) {
             if (mounted) {
               setState(() {

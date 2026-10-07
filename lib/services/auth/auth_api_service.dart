@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../models/auth_user_model.dart';
 import '../../services/api/api_service.dart';
@@ -22,6 +23,7 @@ class AuthApiService {
       };
 
   void _logAuthApiError(String tag, http.Response response, Map<String, dynamic> map) {
+    if (!kDebugMode) return;
     // ignore: avoid_print
     print('[AuthApiService][$tag] ERROR status=${response.statusCode} body=${response.body}');
     final err = map['errors'];

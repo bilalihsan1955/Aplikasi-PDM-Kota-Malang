@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.0.0+1` (Version Name: `1.0.0`, Version Code: `1`)
+* **Versi Saat Ini**: `1.0.1+2` (Version Name: `1.0.1`, Version Code: `2`)
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 34), iOS
 
@@ -61,3 +61,11 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   4. Pembuatan berkas release bundle `app-release.aab` siap rilis ke Google Play Store dengan konfigurasi signing rilis.
   5. Pembuatan berkas aturan dan dokumentasi inti: `AGENTS.md`, `MEMORY.md`, dan `PRD.md`.
 * **Status Pengujian**: `flutter test` $\rightarrow$ 8/8 passed, `flutter analyze` $\rightarrow$ 0 error.
+
+### [2026-10-07] - Versi 1.0.1+2 (Security Hardening & WebView Protection)
+* **Fitur & Perbaikan**:
+  1. **WebView Navigation Guard**: Menambahkan `onNavigationRequest` pada [webview_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/webview_page.dart) untuk menjamin navigasi web HTTP/HTTPS tetap termuat mulus, serta mengarahkan skema kontak eksternal (`tel:`, `mailto:`, `whatsapp:`, `sms:`) langsung ke aplikasi asli perangkat.
+  2. **Android Backup Protection**: Mengubah `android:allowBackup="false"` pada [AndroidManifest.xml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/src/main/AndroidManifest.xml) guna mencegah ekstraksi data lokal pengguna via ADB / USB Debugging.
+  3. **HTTP Log Sanitization**: Membungkus pencatatan body respon HTTP `_logFcmTokenRegisterResponse` dan `_logAuthApiError` dengan guard `kDebugMode` agar payload sensitif tidak tercatat di Logcat rilis.
+  4. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.0.0+1` menjadi `1.0.1+2` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
+* **Status Pengujian**: `flutter test` $\rightarrow$ 8/8 passed (100%), `flutter analyze` $\rightarrow$ 0 error.
