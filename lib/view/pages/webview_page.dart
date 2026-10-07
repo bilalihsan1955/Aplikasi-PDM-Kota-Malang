@@ -19,6 +19,7 @@ class WebViewPage extends StatefulWidget {
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
   bool _loading = true;
+  bool _hasError = false;
   String _currentTitle = '';
 
   @override
@@ -30,7 +31,12 @@ class _WebViewPageState extends State<WebViewPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
-            if (mounted) setState(() => _loading = true);
+            if (mounted) {
+              setState(() {
+                _loading = true;
+                _hasError = false;
+              });
+            }
           },
           onPageFinished: (_) async {
             if (!mounted) return;
@@ -41,6 +47,17 @@ class _WebViewPageState extends State<WebViewPage> {
               }
             }
             if (mounted) setState(() => _loading = false);
+          },
+          onWebResourceError: (error) {
+            // Error utama pada dokumen halaman
+            if (error.isForMainFrame ?? true) {
+              if (mounted) {
+                setState(() {
+                  _hasError = true;
+                  _loading = false;
+                });
+              }
+            }
           },
         ),
       )
@@ -59,7 +76,10 @@ class _WebViewPageState extends State<WebViewPage> {
   /// bukan hanya URL awal yang dibuka dari route.
   Future<void> _refreshCurrentPage() async {
     if (!mounted) return;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _hasError = false;
+    });
     try {
       final href = await _controller.currentUrl();
       final uri = (href != null && href.isNotEmpty) ? Uri.tryParse(href) : null;
@@ -119,6 +139,66 @@ class _WebViewPageState extends State<WebViewPage> {
                 backgroundColor: Colors.transparent,
                 minHeight: 3,
               ),
+            if (_hasError) _buildErrorView(context, isDark),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, bool isDark) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : const Color(0xFFEBF1FF),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                RemixIcons.wifi_off_line,
+                size: 38,
+                color: Color(0xFF152D8D),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Gagal Memuat Halaman',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF2D3142),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Pastikan perangkat Anda terhubung ke internet dan coba kembali.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => unawaited(_refreshCurrentPage()),
+              icon: const Icon(RemixIcons.refresh_line, size: 18),
+              label: const Text('Coba Lagi'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF152D8D),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
           ],
         ),
       ),

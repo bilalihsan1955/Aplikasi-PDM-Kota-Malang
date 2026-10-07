@@ -8,6 +8,7 @@ import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 import '../../../utils/post_login_navigation.dart';
 import '../../../utils/top_snackbar.dart';
+import '../../../utils/legal_navigation.dart';
 import '../../../view_models/auth_view_model.dart';
 import '../../../view_models/notification_view_model.dart';
 
@@ -67,7 +68,9 @@ class _LoginPageState extends State<LoginPage> {
                             _buildLoginButton(context, isSubmitting: isSubmitting),
                             const SizedBox(height: 24),
                             _buildRegisterLink(context, isDark),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 32),
+                            _buildLegalFooter(context, isDark),
+                            const SizedBox(height: 24),
                           ],
                         ),
                       ),
@@ -327,6 +330,36 @@ class _LoginPageState extends State<LoginPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegalFooter(BuildContext context, bool isDark) {
+    final style = TextStyle(
+      fontSize: 12,
+      color: isDark ? Colors.white54 : Colors.grey[500],
+    );
+    final linkStyle = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: isDark ? Colors.white70 : Colors.grey[700],
+    );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        GestureDetector(
+          onTap: () => LegalNavigation.openPrivacyPolicy(context),
+          child: Text('Kebijakan Privasi', style: linkStyle),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text('•', style: style),
+        ),
+        GestureDetector(
+          onTap: () => LegalNavigation.openTerms(context),
+          child: Text('Syarat & Ketentuan', style: linkStyle),
         ),
       ],
     );

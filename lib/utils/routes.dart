@@ -120,6 +120,12 @@ GoRouter createAppRouter({
         );
       },
     ),
+    // Route WebView Root (Legalitas, Terms & Privacy Policy dari layar Auth)
+    GoRoute(
+      path: '/legal-webview',
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) => _webviewTransitionPage(state),
+    ),
     // App Shell Routes - With Navbar
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {

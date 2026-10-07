@@ -12,14 +12,20 @@ String webviewShellLocationForPath(String path) {
   return '/webview';
 }
 
-/// Membuka WebView di **cabang shell** yang sedang aktif agar bottom bar tetap tampil.
+/// Membuka WebView di **cabang shell** yang sedang aktif (jika di dalam shell),
+/// atau di root navigator `/legal-webview` jika dipanggil dari layar auth (login/register).
 Future<void> pushInAppWebView(
   BuildContext context, {
   required String url,
   String? title,
 }) {
   final shellPath = GoRouterState.of(context).uri.path;
-  final location = webviewShellLocationForPath(shellPath);
+  final isOutsideShell = shellPath.startsWith('/login') ||
+      shellPath.startsWith('/register') ||
+      shellPath.startsWith('/onboarding') ||
+      shellPath.startsWith('/forgot-password');
+
+  final location = isOutsideShell ? '/legal-webview' : webviewShellLocationForPath(shellPath);
   return context.push<Object?>(
     location,
     extra: {'url': url, 'title': title},

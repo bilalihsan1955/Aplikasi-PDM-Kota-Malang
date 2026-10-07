@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -47,6 +48,7 @@ class FCMService {
   /// Panggil setelah [MaterialApp] / router siap (satu kali per cold start — jangan panggil ulang).
   static Future<void> deliverInitialMessageWhenReady() async {
     if (_initialLaunchMessageConsumed) return;
+    if (Firebase.apps.isEmpty) return;
     await Future<void>.delayed(const Duration(milliseconds: 300));
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) {
@@ -104,7 +106,7 @@ class FCMService {
     );
   }
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final ApiService _apiService = ApiService();

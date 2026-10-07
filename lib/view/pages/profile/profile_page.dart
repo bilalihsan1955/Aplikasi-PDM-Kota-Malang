@@ -10,6 +10,7 @@ import '../../../utils/in_app_webview_nav.dart';
 import '../../../utils/glass_confirm_dialog.dart';
 import '../../../utils/pending_auth_redirect.dart';
 import '../../../utils/top_snackbar.dart';
+import '../../../utils/legal_navigation.dart';
 import 'package:pdm_malang/services/api/api_service.dart';
 import 'package:pdm_malang/services/auth/auth_local_service.dart';
 import '../../widgets/user_avatar.dart';
@@ -55,6 +56,9 @@ class ProfilePage extends StatelessWidget {
                           const SizedBox(height: 24),
                           _section('Pengaturan'),
                           _settingsSection(context),
+                          const SizedBox(height: 24),
+                          _section('Ketentuan & Privasi'),
+                          _legalSection(context),
                           const SizedBox(height: 24),
                           _logout(context),
                           const SizedBox(height: 24),
@@ -211,6 +215,40 @@ class ProfilePage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _legalSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dividerColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.grey[200]!;
+
+    return Container(
+      margin: AppStyle.hPadding,
+      decoration: _cardShellDecoration(context),
+      child: Material(
+        color: _cardSurfaceColor(context),
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            _menuItem(
+              context: context,
+              icon: RemixIcons.file_list_3_line,
+              title: 'Syarat & Ketentuan',
+              onTap: () => LegalNavigation.openTerms(context),
+            ),
+            Divider(height: 1, thickness: 1, color: dividerColor),
+            _menuItem(
+              context: context,
+              icon: RemixIcons.shield_check_line,
+              title: 'Kebijakan Privasi',
+              onTap: () => LegalNavigation.openPrivacyPolicy(context),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

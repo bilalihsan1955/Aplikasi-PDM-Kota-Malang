@@ -50,6 +50,18 @@ void main() async {
   await configureLocalTimeZone();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemStatusBarContrastEnforced: false,
+      systemNavigationBarContrastEnforced: false,
+    ),
+  );
 
   try {
     await dotenv.load(fileName: '.env');
@@ -436,6 +448,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+            statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
             systemNavigationBarColor: Colors.transparent,
             systemNavigationBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
             systemNavigationBarDividerColor: Colors.transparent,

@@ -51,3 +51,9 @@ app.*.map.json
 .claude/
 .vscode/
 skills-lock.json
+
+# Build & Tooling Cache
+android/.kotlin/
+android/build/
+test_output.txt
+/*.png

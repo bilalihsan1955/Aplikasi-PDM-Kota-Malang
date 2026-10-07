@@ -103,6 +103,9 @@ void main() {
         child: const MyApp(initialLocation: '/login'),
       ),
     );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 600));
     await tester.pumpAndSettle();
     expect(find.byType(MaterialApp), findsOneWidget);
   });

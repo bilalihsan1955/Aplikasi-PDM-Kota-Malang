@@ -10,6 +10,7 @@ import 'package:pdm_malang/models/organization_model.dart';
 import 'package:pdm_malang/services/api/api_service.dart';
 import 'package:pdm_malang/services/api/organization_api_service.dart';
 import '../../../utils/app_style.dart';
+import '../../../utils/legal_navigation.dart';
 import '../widgets/back_button_app.dart';
 
 class AboutPdmPage extends StatefulWidget {
@@ -363,6 +364,9 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                                     address: profile?.address,
                                     title: shortName,
                                   ),
+                                  const SizedBox(height: 32),
+                                  _buildLegalSection(isDark),
+                                  const SizedBox(height: 40),
                                 ],
                               ),
                             ),
@@ -1279,6 +1283,111 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             ),
           )
           .toList(),
+    );
+  }
+
+  Widget _buildLegalSection(bool isDark) {
+    final cardBg = isDark ? AppStyle.cardDark : const Color(0xFFF8FAFC);
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : const Color(0xFFE2E8F0);
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final subColor = isDark ? Colors.white60 : const Color(0xFF64748B);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Ketentuan & Legalitas',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppStyle.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    RemixIcons.file_list_3_line,
+                    color: AppStyle.primary,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  'Syarat & Ketentuan',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+                subtitle: Text(
+                  'Ketentuan penggunaan aplikasi dan layanan',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: subColor,
+                  ),
+                ),
+                trailing: const Icon(RemixIcons.arrow_right_s_line,
+                    size: 20, color: Colors.grey),
+                onTap: () => LegalNavigation.openTerms(context),
+              ),
+              Divider(height: 1, color: borderColor),
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppStyle.accent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    RemixIcons.shield_check_line,
+                    color: AppStyle.accent,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  'Kebijakan Privasi',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+                subtitle: Text(
+                  'Perlindungan data dan privasi pengguna',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: subColor,
+                  ),
+                ),
+                trailing: const Icon(RemixIcons.arrow_right_s_line,
+                    size: 20, color: Colors.grey),
+                onTap: () => LegalNavigation.openPrivacyPolicy(context),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

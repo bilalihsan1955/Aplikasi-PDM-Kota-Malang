@@ -8,6 +8,7 @@ import 'package:remixicon/remixicon.dart';
 import '../../../utils/app_style.dart';
 import '../../../utils/post_login_navigation.dart';
 import '../../../utils/top_snackbar.dart';
+import '../../../utils/legal_navigation.dart';
 import '../../../view_models/auth_view_model.dart';
 import '../../../view_models/notification_view_model.dart';
 
@@ -71,7 +72,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             _buildHeader(isDark),
                             const SizedBox(height: 48),
                             _buildForm(isDark, enabled: enabled),
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 24),
+                            _buildTermsNotice(context, isDark),
+                            const SizedBox(height: 24),
                             _buildRegisterButton(context, isSubmitting),
                             const SizedBox(height: 24),
                             _buildLoginLink(context, isDark),
@@ -351,6 +354,71 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTermsNotice(BuildContext context, bool isDark) {
+    final textColor = isDark ? Colors.white70 : Colors.grey[600];
+    const linkColor = AppStyle.accent;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'Dengan mendaftar, Anda menyetujui ',
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor,
+              height: 1.4,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => LegalNavigation.openTerms(context),
+            child: const Text(
+              'Syarat & Ketentuan',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: linkColor,
+                decoration: TextDecoration.underline,
+                height: 1.4,
+              ),
+            ),
+          ),
+          Text(
+            ' serta ',
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor,
+              height: 1.4,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => LegalNavigation.openPrivacyPolicy(context),
+            child: const Text(
+              'Kebijakan Privasi',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: linkColor,
+                decoration: TextDecoration.underline,
+                height: 1.4,
+              ),
+            ),
+          ),
+          Text(
+            ' kami.',
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
