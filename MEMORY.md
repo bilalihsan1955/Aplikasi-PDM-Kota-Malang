@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.0.1+2` (Version Name: `1.0.1`, Version Code: `2`)
+* **Versi Saat Ini**: `1.1.0+3` (Version Name: `1.1.0`, Version Code: `3`)
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 34), iOS
 
@@ -40,14 +40,20 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   * Menggunakan `GoRouter` di [lib/routes/app_router.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/routes/app_router.dart) yang mendukung navigasi App Links dari domain `https://makotamu.org` untuk Berita, Agenda, dan Amal Usaha.
 * **Autentikasi & Sesi**:
   * `AuthLocalService` menggunakan `flutter_secure_storage` untuk menyimpan Access Token dan Refresh Token, serta otomatis melakukan background token refresh saat sesi mendekati kedaluwarsa.
+* **Error Handling Terpusat**:
+  * Pemetaan error jaringan/server menggunakan [lib/utils/network_error_mapper.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/network_error_mapper.dart) untuk menjaga kepatuhan prinsip DRY (*Don't Repeat Yourself*).
 
 ---
 
 ## 4. Status Pengujian Otomatis (Automated Testing Status)
-* **Total Automated Tests**: **8 Tests Passed / 0 Failed (100% Lulus)**
+* **Total Automated Tests**: **24 Tests Passed / 0 Failed (100% Lulus)**
   * `test/widget_test.dart`: 1 passed (Pengujian struktur `MyApp`, dependency injection Provider, dan routing awal).
   * `test/app_deep_link_test.dart`: 7 passed (Pengujian verifikasi parsing URL makotamu.org untuk berita, kegiatan/agenda, dan amal-usaha).
-* **Static Analysis (`flutter analyze`)**: **0 Errors**. Kode bersih dari fatal error atau broken type check.
+  * `test/utils/network_error_mapper_test.dart`: 5 passed (Pengujian mapping SocketException, 404, 500, 403, dan generic fallback).
+  * `test/view_models/agenda_view_model_test.dart`: 4 passed (Pengujian inisialisasi state, loadEvents, filter kategori/pencarian, dan error handling).
+  * `test/view_models/news_view_model_test.dart`: 4 passed (Pengujian inisialisasi state, loadNews, filter tag/query, dan error mapping).
+  * `test/view_models/home_view_model_test.dart`: 3 passed (Pengujian struktur menu navigasi, loadLatestNews max 4, dan filter loadFeaturedNews).
+* **Static Analysis (`flutter analyze`)**: **0 Compilation Errors**.
 
 ---
 
@@ -69,3 +75,11 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   3. **HTTP Log Sanitization**: Membungkus pencatatan body respon HTTP `_logFcmTokenRegisterResponse` dan `_logAuthApiError` dengan guard `kDebugMode` agar payload sensitif tidak tercatat di Logcat rilis.
   4. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.0.0+1` menjadi `1.0.1+2` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
 * **Status Pengujian**: `flutter test` $\rightarrow$ 8/8 passed (100%), `flutter analyze` $\rightarrow$ 0 error.
+
+### [2026-10-07] - Versi 1.1.0+3 (Architecture Refactoring, Code Modularization, & ViewModel Test Coverage)
+* **Fitur & Perbaikan**:
+  1. **DRY Centralized Error Handling**: Membuat [lib/utils/network_error_mapper.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/network_error_mapper.dart) dan menghubungkannya ke [news_repository.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/repositories/news_repository.dart) dan [agenda_repository.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/repositories/agenda_repository.dart) untuk mengeliminasi duplikasi kode `getFriendlyError`.
+  2. **Dekomposisi Monolitik `home_page.dart`**: Memecah berkas raksasa [home_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/home_page.dart) (1.625 baris) menjadi 8 komponen widget modular di folder `lib/view/pages/home/widgets/` (`home_header.dart`, `home_search_section.dart`, `home_news_slide.dart`, `home_prayer_qibla_section.dart`, `home_event_section.dart`, `home_menu_section.dart`, `home_news_section.dart`, dan `home_section_header.dart`). Ukuran `home_page.dart` menyusut drastis menjadi < 90 baris tanpa mengubah alur bisnis atau tampilan aplikasi sedikitpun.
+  3. **Penguatan Automated Testing**: Menambahkan 16 unit test baru untuk `NetworkErrorMapper`, `NewsViewModel`, `AgendaViewModel`, dan `HomeViewModel`. Total test suite melonjak dari 8 menjadi 24 tests dengan kelulusan 100%.
+  4. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.0.1+2` menjadi `1.1.0+3` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
