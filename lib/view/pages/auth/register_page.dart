@@ -9,6 +9,7 @@ import '../../../utils/app_style.dart';
 import '../../../utils/post_login_navigation.dart';
 import '../../../utils/top_snackbar.dart';
 import '../../../utils/legal_navigation.dart';
+import '../../../services/fcm/fcm_service.dart';
 import '../../../view_models/auth_view_model.dart';
 import '../../../view_models/notification_view_model.dart';
 
@@ -292,6 +293,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   showTopSnackBar(context, result.message, isError: !result.success);
 
                   if (result.success) {
+                    unawaited(FCMService().initializeAfterLogin());
                     await Future.delayed(const Duration(milliseconds: 450));
                     if (!mounted) return;
                     final router = GoRouter.of(context);

@@ -276,7 +276,7 @@ class HomeEventDate extends StatelessWidget {
               ? const Color(0xFF152D8D).withOpacity(0.8)
               : const Color(0xFFFCFCFC));
     final textColor = skeletonStyle
-        ? (isDark ? Colors.white70 : const Color(0xFF2D3142))
+        ? (isDark ? Colors.white70 : const Color(0xFFA0A5B1))
         : (isDark ? Colors.white : const Color(0xFF2D3142));
     final child = Column(
       mainAxisAlignment: MainAxisAlignment.center,

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:pdm_malang/services/auth/auth_local_service.dart';
 import 'package:pdm_malang/services/auth/auth_startup.dart';
 import 'package:pdm_malang/services/fcm/fcm_service.dart';
@@ -443,19 +444,30 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
       builder: (context, child) {
         final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-        
-        return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
-            statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
-            systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
-            systemNavigationBarDividerColor: Colors.transparent,
-            systemNavigationBarContrastEnforced: false, // Tambahkan ini di builder juga
-            systemStatusBarContrastEnforced: false,
+
+        return SkeletonizerConfig(
+          data: SkeletonizerConfigData(
+            brightness: isDarkMode ? Brightness.dark : Brightness.light,
+            effectResolver: (brightness) => brightness == Brightness.light
+                ? const ShimmerEffect(
+                    baseColor: Color(0xFFE9ECEF),
+                    highlightColor: Color(0xFFF8F9FA),
+                  )
+                : const ShimmerEffect.dark(),
           ),
-          child: child!,
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+              statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
+              systemNavigationBarColor: Colors.transparent,
+              systemNavigationBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+              systemNavigationBarDividerColor: Colors.transparent,
+              systemNavigationBarContrastEnforced: false, // Tambahkan ini di builder juga
+              systemStatusBarContrastEnforced: false,
+            ),
+            child: child!,
+          ),
         );
       },
       routerConfig: _router,

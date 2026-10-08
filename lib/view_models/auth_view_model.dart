@@ -78,6 +78,7 @@ class AuthViewModel extends ChangeNotifier {
         await _repository.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
+        unawaited(FCMService().initializeAfterLogin());
       }
 
       return result;
@@ -121,6 +122,7 @@ class AuthViewModel extends ChangeNotifier {
         await _repository.saveSession(user: result.user!, token: result.token!);
         prefetchAuthAvatarUrl(result.user!.avatar);
         invalidateUserEndpointSync();
+        unawaited(FCMService().initializeAfterLogin());
       }
 
       return result;
@@ -148,6 +150,7 @@ class AuthViewModel extends ChangeNotifier {
       final token = await _repository.getToken();
       if (token == null || token.isEmpty) {
         // Jika token tidak ada, tetap bersihkan data lokal.
+        FCMService().resetAfterLogout();
         await _repository.clearAllLocalData();
         invalidateUserEndpointSync();
         return AuthActionResult.success('Logout successful');
@@ -157,6 +160,7 @@ class AuthViewModel extends ChangeNotifier {
 
       if (result.success) {
         unawaited(FCMService().deleteTokenFromBackend(token));
+        FCMService().resetAfterLogout();
         await _repository.clearAllLocalData();
         invalidateUserEndpointSync();
       }

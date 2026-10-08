@@ -154,3 +154,35 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   4. **Auto Version Bump ke 1.1.8+11**: Menaikkan versi aplikasi menjadi `version: 1.1.8+11` (`versionCode: 11`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
   5. **Kompilasi Ulang Rilis AAB**: Berhasil mengompilasi berkas `build/app/outputs/bundle/release/app-release.aab` (~77.7 MB) dengan `versionCode="11"` dan `compileSdk/targetSdk = 36`.
 * **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-08] - Versi 1.1.9+12 (Perbaikan Pengiriman Token FCM Login/Register & Kompilasi AAB)
+* **Fitur & Perbaikan**:
+  1. **Pengiriman Token FCM Langsung Saat Login & Register**: Menambahkan pemanggilan langsung `unawaited(FCMService().initializeAfterLogin())` di [lib/view_models/auth_view_model.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view_models/auth_view_model.dart), [lib/view/pages/auth/login_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/auth/login_page.dart), dan [lib/view/pages/auth/register_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/auth/register_page.dart). Mengatasi celah di mana token tidak terkirim ke server karena `HomePage` tidak memanggil `initState` ulang saat navigasi dari tab profil.
+  2. **Pembersihan State FCM Saat Logout (`resetAfterLogout`)**: Menambahkan method `resetAfterLogout()` di [lib/services/fcm/fcm_service.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/services/fcm/fcm_service.dart) yang mereset `_fcmAfterLoginSetupDone`, `_lastSyncedFcmTokenPosted`, dan `_lastFcmTokenPostAt` saat logout, sehingga saat login kembali token pasti segera ditembakkan ke endpoint `POST /api/v1/fcm/token`.
+  3. **Auto Version Bump ke 1.1.9+12**: Menaikkan versi aplikasi menjadi `version: 1.1.9+12` (`versionCode: 12`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+  4. **Kompilasi Ulang Rilis AAB**: Berhasil mengompilasi berkas `build/app/outputs/bundle/release/app-release.aab` (~77.7 MB) dengan `versionCode="12"` dan `compileSdk/targetSdk = 36`.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-08] - Versi 1.1.10+13 (Penyesuaian Warna Skeleton Loader Tema Terang & Kompilasi AAB)
+* **Fitur & Perbaikan**:
+  1. **Konfigurasi Global `SkeletonizerConfig` di `main.dart`**: Menambahkan pembungkus `SkeletonizerConfig` di `builder` [lib/main.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/main.dart) dengan palet tema terang: `baseColor: Color(0xFFE9ECEF)` dan `highlightColor: Color(0xFFF8F9FA)`. Menghilangkan tampilan abu-abu gelap kusam pada tema terang dan menggantikannya dengan abu-abu terang lembut dan bersih tanpa mengubah kecepatan atau animasi shimmer.
+  2. **Harmonisasi Warna Komponen Kartu Placeholder**:
+     - [lib/view/pages/home/widgets/home_news_section.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/home/widgets/home_news_section.dart): Memperbarui badge tag skeleton dari `Colors.grey[400]` menjadi `Color(0xFFE9ECEF)` dan teks tag menjadi `Color(0xFFA0A5B1)`.
+     - [lib/view/pages/berita/berita_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/berita/berita_page.dart): Memperbarui badge tag skeleton dari `Colors.grey[400]` menjadi `Color(0xFFE9ECEF)` dan teks tag menjadi `Color(0xFFA0A5B1)`.
+     - [lib/view/pages/agenda/agenda_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/agenda/agenda_page.dart): Memperbarui wadah tanggal skeleton dari `Colors.grey[300]` menjadi `Color(0xFFE9ECEF)` dan teks skeleton menjadi abu-abu lembut.
+     - [lib/view/pages/notification_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/notification_page.dart): Memperbarui wadah ikon skeleton menjadi `Color(0xFFE9ECEF)` dan `Color(0xFFA0A5B1)`.
+     - [lib/view/pages/home/widgets/home_event_section.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/home/widgets/home_event_section.dart): Memperbarui teks skeleton dari `Color(0xFF2D3142)` menjadi `Color(0xFFA0A5B1)`.
+  3. **Auto Version Bump ke 1.1.10+13**: Menaikkan versi aplikasi menjadi `version: 1.1.10+13` (`versionCode: 13`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+  4. **Kompilasi Ulang Rilis AAB**: Berhasil mengompilasi berkas `build/app/outputs/bundle/release/app-release.aab` (~77.6 MB) dengan `versionCode="13"` dan `compileSdk/targetSdk = 36`.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-08] - Versi 1.1.11+14 (Perbaikan Brightness Skeletonizer Anti-Override Mode Gelap Sistem & Safeguard FCM Token)
+* **Fitur & Perbaikan**:
+  1. **Pengikatan Tegas `brightness` pada `SkeletonizerConfigData`**: Menambahkan parameter `brightness: isDarkMode ? Brightness.dark : Brightness.light` ke dalam [lib/main.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/main.dart). Mengatasi akar masalah di mana paket Skeletonizer secara bawaan mengambil `MediaQuery.platformBrightnessOf(context)` (setelan tema gelap bawaan sistem HP Android pengguna). Dengan pengikatan eksplisit ini, saat pengguna memilih tema terang di aplikasi, efek skeleton 100% dipaksa menggunakan `baseColor: Color(0xFFE9ECEF)` abu-abu terang dan tidak akan lagi ter-override menjadi abu-abu gelap akibat setelan Dark Mode sistem ponsel.
+  2. **Isolasi Error Handling `getToken()` FCM**: Membungkus pemanggilan `_firebaseMessaging.getToken()` di [lib/services/fcm/fcm_service.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/services/fcm/fcm_service.dart) dengan try-catch terisolasi. Mencegah error jaringan atau `FIS_AUTH_ERROR` menghentikan eksekusi sinkronisasi topik dan token pendaftaran di backend.
+  3. **Auto Version Bump ke 1.1.11+14**: Menaikkan versi aplikasi menjadi `version: 1.1.11+14` (`versionCode: 14`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+  4. **Kompilasi Ulang Rilis AAB**: Berhasil mengompilasi berkas `build/app/outputs/bundle/release/app-release.aab` (~77.7 MB) dengan `versionCode="14"` dan `compileSdk/targetSdk = 36`.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+
+

@@ -415,10 +415,10 @@ class _NotificationCard extends StatelessWidget {
     ].join(' · ');
 
     final iconBg = skeletonStyle
-        ? (isDark ? Colors.white24 : Colors.grey[300])
+        ? (isDark ? Colors.white24 : const Color(0xFFE9ECEF))
         : viewModel.getColorForTipe(notification.tipeRedirect).withOpacity(0.1);
     final iconFg = skeletonStyle
-        ? (isDark ? Colors.white54 : Colors.grey[600])
+        ? (isDark ? Colors.white54 : const Color(0xFFA0A5B1))
         : viewModel.getColorForTipe(notification.tipeRedirect);
 
     final card = GestureDetector(

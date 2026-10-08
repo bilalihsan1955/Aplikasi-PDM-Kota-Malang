@@ -203,10 +203,15 @@ class FCMService {
 
       await _initializeLocalNotifications();
 
-      String? token = await _firebaseMessaging.getToken();
-      if (token != null) {
-        await _saveFcmToken(token);
-        print('FCM Token: $token');
+      String? token;
+      try {
+        token = await _firebaseMessaging.getToken();
+        if (token != null) {
+          await _saveFcmToken(token);
+          print('FCM Token: $token');
+        }
+      } catch (e, st) {
+        print('[FCM] Error getting token: $e\n$st');
       }
 
       await syncRegisteredTokenToBackend();
@@ -969,11 +974,16 @@ class FCMService {
       return savedToken;
     }
 
-    final token = await _firebaseMessaging.getToken();
-    if (token != null) {
-      await _saveFcmToken(token);
+    try {
+      final token = await _firebaseMessaging.getToken();
+      if (token != null) {
+        await _saveFcmToken(token);
+      }
+      return token;
+    } catch (e) {
+      print('[FCM] getToken() failed: $e');
+      return null;
     }
-    return token;
   }
 
   /// POST `/fcm/token` jika user sudah login (Bearer + body `fcm_token`).
@@ -1022,8 +1032,16 @@ class FCMService {
     }
   }
 
+  /// Reset state internal FCM saat logout agar login berikutnya langsung menembak token ke server.
+  void resetAfterLogout() {
+    _fcmAfterLoginSetupDone = false;
+    _lastSyncedFcmTokenPosted = null;
+    _lastFcmTokenPostAt = null;
+  }
+
   /// Hapus FCM token dari backend (saat logout)
   Future<bool> deleteTokenFromBackend(String userToken) async {
+    resetAfterLogout();
     try {
       final response = await _apiService.deleteFcmToken(
         userToken: userToken,

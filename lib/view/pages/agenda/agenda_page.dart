@@ -464,13 +464,13 @@ class _AgendaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateBgColor = skeletonStyle
-        ? (isDark ? Colors.white24 : Colors.grey[300])
+        ? (isDark ? Colors.white24 : const Color(0xFFE9ECEF))
         : (isDark ? const Color(0xFF152D8D) : const Color(0xFFE0E6F8));
     final dateTextColor = skeletonStyle
-        ? (isDark ? Colors.white54 : Colors.grey[600])
+        ? (isDark ? Colors.white54 : const Color(0xFFA0A5B1))
         : (isDark ? Colors.white : const Color(0xFF071D75));
     final timeColor = skeletonStyle
-        ? (isDark ? Colors.white38 : Colors.grey[500])
+        ? (isDark ? Colors.white38 : const Color(0xFFB0B4BE))
         : const Color(0xFF39A658);
 
     return Container(

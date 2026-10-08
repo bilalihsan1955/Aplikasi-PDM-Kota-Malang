@@ -236,7 +236,7 @@ class HomeNewsCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: skeletonStyle
-                            ? (isDark ? Colors.white38 : Colors.grey[400])
+                            ? (isDark ? Colors.white38 : const Color(0xFFE9ECEF))
                             : (isDark
                                   ? const Color(0XFF071D75)
                                   : const Color(0xFFD6DCEF)),
@@ -251,7 +251,7 @@ class HomeNewsCard extends StatelessWidget {
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: skeletonStyle
-                              ? (isDark ? Colors.white54 : Colors.grey[600])
+                              ? (isDark ? Colors.white54 : const Color(0xFFA0A5B1))
                               : (isDark
                                     ? const Color(0xFFD6DCEF)
                                     : const Color(0XFF071D75)),
