@@ -212,6 +212,7 @@ class FCMService {
       await syncRegisteredTokenToBackend();
 
       await _subscribeToDefaultTopicsIfFirstLaunch();
+      await _ensureDefaultTopicsSubscribed();
 
       await resubscribeToSavedTopics();
 
@@ -1058,9 +1059,25 @@ class FCMService {
     }
   }
 
+  /// Pastikan semua default topic ter-subscribe (termasuk topic 'agenda' untuk pengguna lama).
+  Future<void> _ensureDefaultTopicsSubscribed() async {
+    try {
+      final subscribed = await getSubscribedTopics();
+      for (final topic in _defaultTopics) {
+        if (!subscribed.contains(topic)) {
+          await subscribeToTopicPublic(topic);
+          print('[FCM] Subscribed to missing default topic: $topic');
+        }
+      }
+    } catch (e) {
+      print('Error ensuring default topics: $e');
+    }
+  }
+
   /// Re-subscribe to all saved topics (useful after app restart)
   Future<void> resubscribeToSavedTopics() async {
     try {
+      await _ensureDefaultTopicsSubscribed();
       final topics = await getSubscribedTopics();
       for (final topic in topics) {
         await _firebaseMessaging.subscribeToTopic(topic);

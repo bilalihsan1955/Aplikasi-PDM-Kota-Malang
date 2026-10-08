@@ -10,21 +10,21 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.1.4+7` (Version Name: `1.1.4`, Version Code: `7`) — *Baseline rilis resmi yang disetujui*
+* **Versi Saat Ini**: `1.1.6+9` (Version Name: `1.1.6`, Version Code: `9`) — *Baseline rilis resmi Google Play Store (Target SDK 36)*
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
-* **Platform Target**: Android (Min SDK: 21, Target SDK: 34), iOS
+* **Platform Target**: Android (Min SDK: 21, Target SDK: 36, Compile SDK: 36), iOS
 
 ---
 
 ## 2. Status Kesiapan Rilis Google Play Store
 * **Format Berkas Rilis**: Android App Bundle (AAB)
-* **Lokasi Berkas Terakhir**: `build\app\outputs\bundle\release\app-release.aab` (Ukuran: ~77.2 MB)
+* **Lokasi Berkas Terakhir**: `build\app\outputs\bundle\release\app-release.aab` (Ukuran: ~77.6 MB)
 * **Play App Signing**:
   * File konfigurasi: `android/key.properties`
   * File keystore: `android/app/keystore.jks` (Alias: `key0`)
   * Konfigurasi Gradle: [android/app/build.gradle.kts](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/build.gradle.kts)
 * **Kepatuhan Kebijakan**:
-  * Target SDK 34 (Android 14) $\rightarrow$ **Memenuhi syarat**.
+  * Target SDK 36 (Android 16) $\rightarrow$ **Memenuhi syarat mutlak Google Play (API level >= 36)**.
   * Arsitektur 64-bit $\rightarrow$ **Tersedia**.
   * Privacy Policy & Terms $\rightarrow$ Aktif di `https://makotamu.org/privacy-policy` dan in-app WebView.
   * Izin Sensitif (`SCHEDULE_EXACT_ALARM` & `ACCESS_FINE_LOCATION`) $\rightarrow$ Alasan penggunaan: Pengingat ibadah/sholat harian terjadwal presisi dan penentuan arah kiblat.
@@ -42,6 +42,14 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   * `AuthLocalService` menggunakan `flutter_secure_storage` untuk menyimpan Access Token dan Refresh Token, serta otomatis melakukan background token refresh saat sesi mendekati kedaluwarsa.
 * **Error Handling Terpusat**:
   * Pemetaan error jaringan/server menggunakan [lib/utils/network_error_mapper.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/network_error_mapper.dart) untuk menjaga kepatuhan prinsip DRY (*Don't Repeat Yourself*).
+* **Status Notifikasi Agenda di Web Laravel (`D:\laravel`)**:
+  * Di backend Laravel (`D:\laravel`), `NewsController`, `ArtikelController`, dan kini `EventController.php` telah terhubung penuh dengan `FCMService` untuk mengirimkan push notification ke ponsel setiap kali berita, artikel, maupun agenda dibuat/diperbarui.
+  * Logika push notification agenda mengirim pesan ke topik FCM `'agenda'`, membersihkan tag HTML pada ringkasan, mencatat riwayat ke tabel `push_notifications` dengan tipe redirect `'event'`, dan otomatis membersihkan notifikasi saat kegiatan dihapus.
+  * Aplikasi mobile Flutter (`pdm_malang`) sudah 100% siap menangani notifikasi `event`/`agenda` di [notification_navigation.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/notification_navigation.dart).
+* **Aturan Signing Key Google Play Console vs Keystore Lokal**:
+  * Keystore lokal [android/app/keystore.jks](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/keystore.jks) dan [android/key.properties](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/key.properties) berfungsi sebagai **Upload Key**.
+  * **Dilarang mengganti upload key lokal dengan key Google Play**. Google Play App Signing menandatangani ulang AAB menggunakan App Signing Key mereka di server.
+  * Sidik jari SHA-1 dari Google Play Console hanya perlu **disalin dan ditambahkan ke Firebase Console** (Project Settings) agar fitur Firebase/Google Auth/FCM tetap bekerja pada versi rilis Play Store.
 
 ---
 
@@ -110,3 +118,39 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   2. **Auto Version Bump**: Versi aplikasi dinaikkan dari `1.1.3+6` menjadi `1.1.4+7` di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
 * **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
 
+### [2026-10-07] - Versi 1.1.5+8 (Google Play Version Code Conflict Resolution & Release Bundle Rebuild)
+* **Fitur & Perbaikan**:
+  1. **Resolusi Konflik Version Code Google Play**: Mengatasi penolakan upload bundle di Google Play Console (*Version code 7 has already been used*) dengan menaikkan `versionCode` dari 7 menjadi 8 (`1.1.5+8`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml).
+  2. **Rebuild Release App Bundle (.aab)**: Berhasil melakukan kompilasi ulang berkas rilis `build/app/outputs/bundle/release/app-release.aab` (~77.6 MB) yang siap diunggah ke Google Play Console.
+  3. **Penyiapan Release Name & Release Notes**: Menyediakan panduan teks *Release notes* resmi untuk Google Play Store dalam format multibahasa `<id>...</id>`.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-07] - Versi 1.1.6+9 (Upgrade Target SDK ke API 36 & Google Play Release Bundle Rebuild)
+* **Fitur & Perbaikan**:
+  1. **Upgrade Target SDK ke API Level 36**: Memenuhi regulasi Google Play Store terkait kewajiban minimum API level 36 dengan mengubah `compileSdk = 36` dan `targetSdk = 36` di [android/app/build.gradle.kts](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/build.gradle.kts).
+  2. **Resolusi Version Code ke 9 (`1.1.6+9`)**: Menaikkan `versionCode` menjadi 9 di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) karena version code 8 telah terekam pada draf pengujian internal sebelumnya.
+  3. **Verifikasi Manifest & Kompilasi AAB**: Berhasil mengompilasi ulang berkas rilis `build/app/outputs/bundle/release/app-release.aab` (~77.6 MB) dengan verifikasi `android:targetSdkVersion="36"` pada seluruh berkas merged manifest.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+### [2026-10-08] - Sinkronisasi Notifikasi Agenda/Event ke Backend Laravel (D:\laravel)
+* **Fitur & Perbaikan**:
+  1. **Aktivasi Notifikasi Agenda di Backend Laravel**: Menyinkronkan file [EventController.php](file:///D:/laravel/app/Http/Controllers/Admin/EventController.php) di `D:\laravel` dari referensi [PDM_web](file:///C:/Users/BILALIHSAN/Documents/project/PDM_web/app/Http/Controllers/Admin/EventController.php).
+  2. **Push Notification Topik 'agenda'**: Pada metode `store()` dan `update()`, sistem kini otomatis membersihkan tag HTML pada ringkasan, membuat catatan di tabel `push_notifications`, dan menembakkan pesan FCM ke topik `'agenda'` yang di-subscribe oleh aplikasi mobile.
+  3. **Penghapusan Riwayat Bersih**: Pada metode `destroy()`, record notifikasi terkait di tabel `push_notifications` otomatis dibersihkan saat agenda dihapus.
+  4. **Verifikasi Sintaks & Regression**: Validasi sintaks `php -l` lulus 100% tanpa error (`No syntax errors detected`). Pengujian unit & widget Flutter (`flutter test`) berstatus **PASS 100% (24/24 tests passed)** dan `flutter analyze` 0 compilation error.
+
+### [2026-10-08] - Versi 1.1.7+10 (Perbaikan Kedip Layar Xiaomi 14/Adreno 750, Sensor Kiblat & Kompilasi AAB)
+* **Fitur & Perbaikan**:
+  1. **Nonaktifkan Impeller (`EnableImpeller: false`)**: Menambahkan konfigurasi `<meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />` di [android/app/src/main/AndroidManifest.xml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/src/main/AndroidManifest.xml) untuk mengembalikan engine render grafis ke Skia (OpenGL ES). Menghilangkan bug layar berkedip (*flickering*) pada perangkat GPU Adreno 750 / Snapdragon 8 Gen 3 (seperti Xiaomi 14 dan Samsung Galaxy S24) saat menjalankan shader shimmer `Skeletonizer`.
+  2. **Penyempurnaan Pesan Sensor Kiblat**: Memperjelas teks petunjuk di [lib/view/pages/kiblat_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/kiblat_page.dart) menjadi `'Sensor kompas tidak terdeteksi atau aktifkan izin lokasi'` untuk perangkat fisik yang tidak memiliki sensor magnetometer.
+  3. **Auto Version Bump ke 1.1.7+10**: Menaikkan versi aplikasi menjadi `version: 1.1.7+10` (`versionCode: 10`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+  4. **Kompilasi Ulang Rilis AAB**: Berhasil mengompilasi berkas `build/app/outputs/bundle/release/app-release.aab` (~77.6 MB) dengan `versionCode="10"` dan `compileSdk/targetSdk = 36`.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-08] - Versi 1.1.8+11 (Optimasi Provider Selector, FCM Agenda Auto-Subscribe & Kompilasi AAB)
+* **Fitur & Perbaikan**:
+  1. **Optimasi Provider Selector di MainScreen**: Mengganti `Consumer<AuthViewModel>` menjadi `Selector<AuthViewModel, bool>` di [lib/view/main_screen.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/main_screen.dart) khusus memantau `authVm.isSubmitting`. Mencegah rebuild seluruh kerangka `Scaffold` dan `navigationShell` saat ada perubahan data auth yang tidak berhubungan dengan overlay submission.
+  2. **Optimasi Provider Selector di NavbarWidgets**: Mengganti `Consumer<NotificationViewModel>` menjadi `Selector<NotificationViewModel, bool>` di [lib/view/widgets/navbar_widgets.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/widgets/navbar_widgets.dart) khusus memantau `vm.unreadCount > 0`. Mencegah rebuild tombol lonceng notifikasi saat pengguna hanya mengubah-ubah filter kategori di halaman notifikasi.
+  3. **Auto-Subscribe Topik Agenda FCM**: Menambahkan `_ensureDefaultTopicsSubscribed()` di [lib/services/fcm/fcm_service.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/services/fcm/fcm_service.dart). Memastikan seluruh topik default (termasuk topik `'agenda'`) otomatis di-subscribe ke Firebase setiap kali aplikasi login atau dibuka, sehingga perangkat yang sudah pernah menginstal aplikasi pada versi lama tetap otomatis menerima push notifikasi agenda/kegiatan.
+  4. **Auto Version Bump ke 1.1.8+11**: Menaikkan versi aplikasi menjadi `version: 1.1.8+11` (`versionCode: 11`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+  5. **Kompilasi Ulang Rilis AAB**: Berhasil mengompilasi berkas `build/app/outputs/bundle/release/app-release.aab` (~77.7 MB) dengan `versionCode="11"` dan `compileSdk/targetSdk = 36`.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.

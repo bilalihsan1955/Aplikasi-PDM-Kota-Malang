@@ -70,8 +70,9 @@ class NavbarWidgets extends StatelessWidget {
           context.push('/notifications');
         },
         behavior: HitTestBehavior.opaque,
-        child: Consumer<NotificationViewModel>(
-          builder: (context, viewModel, child) {
+        child: Selector<NotificationViewModel, bool>(
+          selector: (_, vm) => vm.unreadCount > 0,
+          builder: (context, hasUnread, child) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -110,7 +111,7 @@ class NavbarWidgets extends StatelessWidget {
                         size: isInNotificationPage ? 30 : 26,
                       ),
                     ),
-                    if (viewModel.unreadCount > 0)
+                    if (hasUnread)
                       Positioned(
                         right: -2,
                         top: -2,

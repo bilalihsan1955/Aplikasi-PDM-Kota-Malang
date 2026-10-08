@@ -282,12 +282,16 @@ class _KiblaCompassSection extends StatelessWidget {
                   ),
                 ),
                 if (!hasCompass)
-                  Text(
-                    'Aktifkan lokasi untuk kompas',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: primaryText,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      'Sensor kompas tidak terdeteksi atau aktifkan izin lokasi',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: primaryText,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
               ],

@@ -28,9 +28,9 @@ class MainScreen extends StatelessWidget {
           // Jika sudah di Home, biarkan sistem menangani back (biasanya keluar aplikasi)
         }
       },
-      child: Consumer<AuthViewModel>(
-        builder: (context, authVm, _) {
-          final isSubmitting = authVm.isSubmitting;
+      child: Selector<AuthViewModel, bool>(
+        selector: (_, authVm) => authVm.isSubmitting,
+        builder: (context, isSubmitting, _) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           final overlayColor = isDark
               ? Colors.black.withOpacity(0.40)

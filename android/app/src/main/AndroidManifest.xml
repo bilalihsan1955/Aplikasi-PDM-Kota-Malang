@@ -58,6 +58,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Matikan Impeller untuk mencegah bug layar berkedip pada GPU Adreno 750 / Snapdragon 8 Gen 3 (Xiaomi 14, Galaxy S24, dll) -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_notification" />
