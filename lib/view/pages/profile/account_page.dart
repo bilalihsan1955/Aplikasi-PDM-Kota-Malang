@@ -230,7 +230,7 @@ class _AccountPageState extends State<AccountPage> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 24),
                             _buildEditButton(
                               context,
                               isDark,
@@ -248,7 +248,7 @@ class _AccountPageState extends State<AccountPage> {
                                 isSubmitting,
                               ),
                             ],
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 24),
                           ],
                         ),
                       ),

@@ -104,7 +104,6 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? AppStyle.scaffoldDark : Colors.white;
     final appBarColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-
     if (_loading && _profile == null && _structure.isEmpty) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -337,13 +336,10 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                           SafeArea(
                             top: false,
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: 32),
                                   const Text(
                                     'Program Kerja Unggulan',
                                     style: TextStyle(
@@ -363,7 +359,6 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                                     address: profile?.address,
                                     title: shortName,
                                   ),
-                                  const SizedBox(height: 40),
                                 ],
                               ),
                             ),
@@ -510,7 +505,10 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
     );
   }
 
-  Widget _buildAboutPageSkeleton(bool isDark, Color cardColor) {
+  Widget _buildAboutPageSkeleton(
+    bool isDark,
+    Color cardColor,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -526,11 +524,13 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             color: cardColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -687,6 +687,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
             ),
           ),
         ),
+      ),
       ],
     );
   }

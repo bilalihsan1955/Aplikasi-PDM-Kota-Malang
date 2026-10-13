@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.1.12+15` (Version Name: `1.1.12`, Version Code: `15`) — *Pembersihan Legalitas dari Halaman Profil Organisasi (About PDM)*
+* **Versi Saat Ini**: `1.1.21+24` (Version Name: `1.1.21`, Version Code: `24`) — *Optimasi Spasi Bawah Halaman Detail Amal Usaha & Penyelarasan Layout Presisi*
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 36, Compile SDK: 36), iOS
 
@@ -194,5 +194,43 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   2. **Auto Version Bump ke 1.1.12+15**: Menaikkan versi aplikasi menjadi `version: 1.1.12+15` (`versionCode: 15`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
 * **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
 
+### [2026-10-13] - Versi 1.1.13+16 (Normalisasi Spasi di Bawah Peta Halaman Profil Organisasi)
+* **Fitur & Perbaikan**:
+  1. **Normalisasi Spasi Peta `AboutPdmPage`**: Menyetel `bottom: false` pada `SafeArea` di [lib/view/pages/about_pdm_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/about_pdm_page.dart) untuk meniadakan penyisipan padding bawah sistem yang duplikat, serta menyesuaikan `SizedBox(height: 40)` menjadi `SizedBox(height: 20)` di bawah pratinjau peta lokasi. Jarak di bawah peta kini tampak rapi, proporsional, dan presisi.
+  2. **Auto Version Bump ke 1.1.13+16**: Menaikkan versi aplikasi menjadi `version: 1.1.13+16` (`versionCode: 16`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
 
+### [2026-10-13] - Versi 1.1.14+17 (Kalibrasi Clearance Bawah Peta Terhadap Floating Bottom Navbar)
+* **Fitur & Perbaikan**:
+  1. **Kalibrasi Clearance Peta `AboutPdmPage`**: Mengalibrasi spasi bawah di [lib/view/pages/about_pdm_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/about_pdm_page.dart) menjadi `const SizedBox(height: 72)`. Nilai 72 px ini menaikkan kartu alamat peta setinggi 52 px sehingga terbebas seutuhnya dari tumpukan floating bottom navbar ([lib/view/widgets/navbar_widgets.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/widgets/navbar_widgets.dart)) saat di-scroll mentok ke bawah, dengan jarak margin bersih yang simetris dan pas (~20–24 px) di atas navbar.
+  2. **Auto Version Bump ke 1.1.14+17**: Menaikkan versi aplikasi menjadi `version: 1.1.14+17` (`versionCode: 17`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-13] - Versi 1.1.18+21 (Normalisasi Padding Bawah Halaman Profil Organisasi & Penyelarasan dengan Skeleton)
+* **Fitur & Perbaikan**:
+  1. **Normalisasi Padding Bawah `AboutPdmPage`**: Mengeliminasi kalkulasi `bottomClearance` berlebih (~104dp) yang menimbulkan ruang hampa kosong di atas bottom navbar. Menetapkan padding bawah kontainer peta ke nilai standar yang seragam dengan halaman aplikasi lainnya (`const EdgeInsets.fromLTRB(24, 32, 24, 24)`).
+  2. **Penyelarasan Skeleton Loading**: Menyesuaikan `_buildAboutPageSkeleton` pada [lib/view/pages/about_pdm_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/about_pdm_page.dart) agar menggunakan padding `const EdgeInsets.fromLTRB(24, 32, 24, 24)` yang identik dengan konten utama, menjaga visual layout konsisten tanpa lompatan jarak.
+  3. **Auto Version Bump ke 1.1.18+21**: Menaikkan versi aplikasi menjadi `version: 1.1.18+21` (`versionCode: 21`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-13] - Versi 1.1.19+22 (Penerapan SafeArea & Kalibrasi Padding Bawah Halaman Profil Organisasi & Skeleton)
+* **Fitur & Perbaikan**:
+  1. **Penerapan SafeArea Dinamis & Presisi Padding Bawah `AboutPdmPage`**: Membungkus blok konten bawah pada [lib/view/pages/about_pdm_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/about_pdm_page.dart) dengan `SafeArea(top: false)` dan menyetel padding bawah `const EdgeInsets.fromLTRB(24, 32, 24, 0)`. Komponen bawah kartu preview peta kini terlindungi oleh insets SafeArea sistem tanpa tambahan padding statis berlebih, sehingga posisinya pas dan bersih saat di-scroll mentok di atas floating navbar.
+  2. **Pembersihan Spacing Duplikat**: Menghapus `const SizedBox(height: 32)` redundan di atas 'Program Kerja Unggulan' yang bertumpuk dengan `Padding(top: 32)`.
+  3. **Penyelarasan Skeleton Loading**: Membungkus `Padding` pada `_buildAboutPageSkeleton` dengan `SafeArea(top: false)` dan padding bawah `0` (`const EdgeInsets.fromLTRB(24, 32, 24, 0)`) agar skeleton kartu peta seragam dan bebas layout jump saat berpindah ke data nyata.
+  4. **Auto Version Bump ke 1.1.19+22**: Menaikkan versi aplikasi menjadi `version: 1.1.19+22` (`versionCode: 22`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-13] - Versi 1.1.20+23 (Penghapusan Margin Perulangan Bawah untuk Item Notifikasi Terakhir)
+* **Fitur & Perbaikan**:
+  1. **Penghapusan Margin Bawah Item Notifikasi Terakhir**: Menambahkan parameter `isLast: bool` pada `_NotificationCard` di [lib/view/pages/notification_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/notification_page.dart) agar item notifikasi paling akhir memiliki `margin: EdgeInsets.only(bottom: isLast ? 0 : 12)` baik untuk kartu utama maupun background `Dismissible`. Item-item sebelumnya tetap mempertahankan jarak 12dp antar kartu, dan item terbawah tidak lagi menimbulkan margin ganda terhadap padding kontainer luar.
+  2. **Penyelarasan Skeleton Notifikasi**: Mengatur parameter `isLast: index == 5` pada delegasi skeleton list notifikasi dan menghapus pembungkus `Padding(bottom: 12)` duplikat agar layout skeleton presisi dan selaras dengan daftar nyata.
+  3. **Auto Version Bump ke 1.1.20+23**: Menaikkan versi aplikasi menjadi `version: 1.1.20+23` (`versionCode: 23`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+### [2026-10-13] - Versi 1.1.21+24 (Optimasi Spasi Bawah Halaman Detail Amal Usaha & Penyelarasan Layout Presisi)
+* **Fitur & Perbaikan**:
+  1. **Optimasi Spasi Bawah `DetailAmalUsahaPage`**: Menghilangkan bottom padding berlebih (`24 + 96` / 120dp $\rightarrow$ `0`) dan menetralkan translation offset kartu (`-40` $\rightarrow$ `0`) pada [lib/view/pages/amal_usaha/detail_amal_usaha_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/amal_usaha/detail_amal_usaha_page.dart) agar konten tersaji lebih rapat, presisi, dan proporsional.
+  2. **Penyelarasan Spasi Halaman Profil Akun**: Mengurangi jarak vertical spacing berlebih pada tombol aksi edit & logout di [lib/view/pages/profile/account_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/account_page.dart) (`SizedBox(height: 32/40)` $\rightarrow$ `24`) untuk tampilan yang lebih seimbang dan ergonomis.
+  3. **Auto Version Bump ke 1.1.21+24**: Menaikkan versi aplikasi menjadi `version: 1.1.21+24` (`versionCode: 24`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
 

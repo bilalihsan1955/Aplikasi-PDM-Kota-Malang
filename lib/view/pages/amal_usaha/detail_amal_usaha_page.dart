@@ -328,7 +328,7 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
                         : _placeholderImage(isDark),
                   ),
                   Container(
-                    transform: Matrix4.translationValues(0, -40, 0),
+                    transform: Matrix4.translationValues(0, 0, 0),
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: cardColor,
@@ -339,7 +339,7 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
                         24,
                         32,
                         24,
-                        24 + 96,
+                        0,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

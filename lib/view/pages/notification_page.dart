@@ -247,14 +247,12 @@ class _NotificationListContent extends StatelessWidget {
                   enabled: true,
                   child: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _NotificationCard(
-                          notification: _skeletonDummy,
-                          onTap: () {},
-                          onDelete: () {},
-                          skeletonStyle: true,
-                        ),
+                      (context, index) => _NotificationCard(
+                        notification: _skeletonDummy,
+                        onTap: () {},
+                        onDelete: () {},
+                        skeletonStyle: true,
+                        isLast: index == 5,
                       ),
                       childCount: 6,
                     ),
@@ -365,6 +363,7 @@ class _NotificationListContent extends StatelessWidget {
                     (context, index) {
                       return _NotificationCard(
                         notification: notifications[index],
+                        isLast: index == notifications.length - 1,
                         onTap: () {
                           final n = notifications[index];
                           unawaited(() async {
@@ -396,12 +395,14 @@ class _NotificationCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final bool skeletonStyle;
+  final bool isLast;
 
   const _NotificationCard({
     required this.notification,
     required this.onTap,
     required this.onDelete,
     this.skeletonStyle = false,
+    this.isLast = false,
   });
 
   @override
@@ -424,7 +425,7 @@ class _NotificationCard extends StatelessWidget {
     final card = GestureDetector(
       onTap: skeletonStyle ? null : onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: EdgeInsets.only(bottom: isLast ? 0 : 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -544,7 +545,7 @@ class _NotificationCard extends StatelessWidget {
       key: Key(notification.id.toString()),
       direction: DismissDirection.endToStart,
       background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: EdgeInsets.only(bottom: isLast ? 0 : 12),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
