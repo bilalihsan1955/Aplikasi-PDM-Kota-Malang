@@ -1,6 +1,6 @@
 # MEMORY & STATUS PROYEK (MEMORY.MD)
 **Aplikasi: Makotamu (PDM Kota Malang)**  
-**Terakhir Diperbarui: 2026-10-07**
+**Terakhir Diperbarui: 2026-10-13**
 
 Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfigurasi teknis penting, dan riwayat pembaruan (*changelog*) untuk menjaga kesinambungan pengembangan.
 
@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.1.6+9` (Version Name: `1.1.6`, Version Code: `9`) — *Baseline rilis resmi Google Play Store (Target SDK 36)*
+* **Versi Saat Ini**: `1.1.12+15` (Version Name: `1.1.12`, Version Code: `15`) — *Pembersihan Legalitas dari Halaman Profil Organisasi (About PDM)*
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 36, Compile SDK: 36), iOS
 
@@ -36,6 +36,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Firebase & FCM Service**:
   * Inisialisasi Firebase Messaging dibuat lazy pada [fcm_service.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/services/fcm/fcm_service.dart) dengan pengecekan `Firebase.apps.isNotEmpty` agar aman saat dieksekusi di lingkungan headless automated testing.
   * Dilengkapi gate sinkronisasi izin notifikasi dan lokasi (`releaseLocationGate`).
+  * Menggunakan `resetAfterLogout()` untuk mengosongkan token lokal saat sesi berakhir.
 * **Routing & Deep Linking**:
   * Menggunakan `GoRouter` di [lib/routes/app_router.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/routes/app_router.dart) yang mendukung navigasi App Links dari domain `https://makotamu.org` untuk Berita, Agenda, dan Amal Usaha.
 * **Autentikasi & Sesi**:
@@ -46,10 +47,12 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   * Di backend Laravel (`D:\laravel`), `NewsController`, `ArtikelController`, dan kini `EventController.php` telah terhubung penuh dengan `FCMService` untuk mengirimkan push notification ke ponsel setiap kali berita, artikel, maupun agenda dibuat/diperbarui.
   * Logika push notification agenda mengirim pesan ke topik FCM `'agenda'`, membersihkan tag HTML pada ringkasan, mencatat riwayat ke tabel `push_notifications` dengan tipe redirect `'event'`, dan otomatis membersihkan notifikasi saat kegiatan dihapus.
   * Aplikasi mobile Flutter (`pdm_malang`) sudah 100% siap menangani notifikasi `event`/`agenda` di [notification_navigation.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/notification_navigation.dart).
-* **Aturan Signing Key Google Play Console vs Keystore Lokal**:
+* **Aturan Signing Key Google Play Console & Google Cloud API Key Restriction**:
   * Keystore lokal [android/app/keystore.jks](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/keystore.jks) dan [android/key.properties](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/key.properties) berfungsi sebagai **Upload Key**.
   * **Dilarang mengganti upload key lokal dengan key Google Play**. Google Play App Signing menandatangani ulang AAB menggunakan App Signing Key mereka di server.
-  * Sidik jari SHA-1 dari Google Play Console hanya perlu **disalin dan ditambahkan ke Firebase Console** (Project Settings) agar fitur Firebase/Google Auth/FCM tetap bekerja pada versi rilis Play Store.
+  * Sidik jari SHA-1 dari Google Play Console **wajib ditambahkan** ke:
+    1. **Firebase Console** (Project Settings $\rightarrow$ Your apps $\rightarrow$ Add fingerprint).
+    2. **Google Cloud Console** (APIs & Services $\rightarrow$ Credentials $\rightarrow$ Android key $\rightarrow$ Application restrictions $\rightarrow$ Add package name `id.makotamu.app` + SHA-1 Google Play). *Tanpa mendaftarkan SHA-1 Google Play di Google Cloud API Key restrictions, request Firebase Installations dari bundle Play Store akan diblokir dengan kode 403 API_KEY_ANDROID_APP_BLOCKED*.
 
 ---
 
@@ -182,6 +185,13 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   2. **Isolasi Error Handling `getToken()` FCM**: Membungkus pemanggilan `_firebaseMessaging.getToken()` di [lib/services/fcm/fcm_service.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/services/fcm/fcm_service.dart) dengan try-catch terisolasi. Mencegah error jaringan atau `FIS_AUTH_ERROR` menghentikan eksekusi sinkronisasi topik dan token pendaftaran di backend.
   3. **Auto Version Bump ke 1.1.11+14**: Menaikkan versi aplikasi menjadi `version: 1.1.11+14` (`versionCode: 14`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
   4. **Kompilasi Ulang Rilis AAB**: Berhasil mengompilasi berkas `build/app/outputs/bundle/release/app-release.aab` (~77.7 MB) dengan `versionCode="14"` dan `compileSdk/targetSdk = 36`.
+  5. **Resolusi Registrasi Token FCM Rilis Google Play**: Mengatasi pemblokiran request Google Firebase Installations (`API_KEY_ANDROID_APP_BLOCKED` 403) pada versi rilis Play Store dengan menambahkan SHA-1 Play Store App Signing ke *Application Restrictions* pada Google Cloud Console untuk API Key `Android key (auto created by Firebase)`. Hasilnya, perangkat yang menginstal via Play Store berhasil mendapatkan token dan terdaftar di database web.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-13] - Versi 1.1.12+15 (Pembersihan Menu Ketentuan & Legalitas dari Halaman Profil Organisasi)
+* **Fitur & Perbaikan**:
+  1. **Pembersihan Halaman Profil Organisasi (About PDM)**: Menghapus widget `_buildLegalSection` dan import `legal_navigation.dart` dari [lib/view/pages/about_pdm_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/about_pdm_page.dart). Halaman Tentang PDM Malang kini bersih dan berakhir rapi di bawah pratinjau peta lokasi, tanpa kartu Ketentuan & Legalitas yang tidak diminta. Tautan legalitas tetap berada di lokasi semestinya (menu Akun/Profil Pengguna, Login, dan Registrasi).
+  2. **Auto Version Bump ke 1.1.12+15**: Menaikkan versi aplikasi menjadi `version: 1.1.12+15` (`versionCode: 15`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
 * **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
 
 
