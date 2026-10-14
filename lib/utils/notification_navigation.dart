@@ -30,6 +30,45 @@ bool notificationImpliesJadwalSholat(NotificationModel notification) {
       topic.contains('jadwal');
 }
 
+/// Mengekstrak slug bersih dari variasi input `urlRedirect`:
+/// - Slug murni: 'kajian-ramadhan' -> 'kajian-ramadhan'
+/// - Relative path: '/berita/kajian-ramadhan' -> 'kajian-ramadhan'
+/// - URL penuh: 'https://makotamu.org/berita/kajian-ramadhan' -> 'kajian-ramadhan'
+/// - Query parameter: '/berita/detail?slug=kajian-ramadhan' -> 'kajian-ramadhan'
+String extractNotificationSlug(String? raw) {
+  if (raw == null) return '';
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return '';
+
+  final uri = Uri.tryParse(trimmed);
+  if (uri != null) {
+    if (uri.queryParameters.containsKey('slug') &&
+        uri.queryParameters['slug'] != null &&
+        uri.queryParameters['slug']!.isNotEmpty) {
+      return uri.queryParameters['slug']!.trim();
+    }
+    final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (segments.isNotEmpty) {
+      final last = segments.last.trim();
+      if (last.toLowerCase() != 'detail' && last.isNotEmpty) {
+        return last;
+      }
+      if (segments.length >= 2) {
+        return segments[segments.length - 2].trim();
+      }
+    }
+  }
+
+  var clean = trimmed;
+  while (clean.endsWith('/')) {
+    clean = clean.substring(0, clean.length - 1);
+  }
+  if (clean.contains('/')) {
+    clean = clean.split('/').last;
+  }
+  return clean.trim();
+}
+
 /// Samakan aturan dengan [openNotificationTargetWithRouter]; WebView pakai `/webview` (cabang home).
 NotificationColdStartTarget? coldStartTargetForNotification(NotificationModel notification) {
   if (notificationImpliesJadwalSholat(notification)) {
@@ -38,21 +77,37 @@ NotificationColdStartTarget? coldStartTargetForNotification(NotificationModel no
 
   final redirect = notification.urlRedirect?.trim() ?? '';
   final hasUrl = redirect.isNotEmpty;
+  final cleanSlug = extractNotificationSlug(redirect);
   final tipe = notification.tipeRedirect?.toLowerCase().trim() ?? '';
 
   switch (tipe) {
     case 'news':
     case 'berita':
-      if (hasUrl) {
-        return NotificationColdStartTarget('/berita/detail', {'slug': redirect});
+      if (cleanSlug.isNotEmpty) {
+        return NotificationColdStartTarget(
+          '/berita/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+          {'slug': cleanSlug},
+        );
       }
       return const NotificationColdStartTarget('/berita');
     case 'event':
     case 'agenda':
-      if (hasUrl) {
-        return NotificationColdStartTarget('/agenda/detail', {'slug': redirect});
+      if (cleanSlug.isNotEmpty) {
+        return NotificationColdStartTarget(
+          '/agenda/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+          {'slug': cleanSlug},
+        );
       }
       return const NotificationColdStartTarget('/agenda');
+    case 'amal-usaha':
+    case 'amal_usaha':
+      if (cleanSlug.isNotEmpty) {
+        return NotificationColdStartTarget(
+          '/amal-usaha/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+          {'slug': cleanSlug},
+        );
+      }
+      return const NotificationColdStartTarget('/amal-usaha');
     case 'web':
       if (hasUrl) {
         return NotificationColdStartTarget('/webview', {
@@ -93,7 +148,38 @@ NotificationColdStartTarget? coldStartTargetForNotification(NotificationModel no
 }
 
 /// Dari [BuildContext] (mis. halaman daftar notifikasi).
+/// Jika berita/agenda dibuka dari inbox, gunakan `context.push` agar tombol back kembali ke daftar notifikasi.
 void openNotificationTarget(BuildContext context, NotificationModel notification) {
+  final tipe = notification.tipeRedirect?.toLowerCase().trim() ?? '';
+  final redirect = notification.urlRedirect?.trim() ?? '';
+  final cleanSlug = extractNotificationSlug(redirect);
+
+  if (tipe == 'news' || tipe == 'berita') {
+    if (cleanSlug.isNotEmpty) {
+      context.push(
+        '/berita/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+        extra: {'slug': cleanSlug},
+      );
+      return;
+    }
+  } else if (tipe == 'event' || tipe == 'agenda') {
+    if (cleanSlug.isNotEmpty) {
+      context.push(
+        '/agenda/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+        extra: {'slug': cleanSlug},
+      );
+      return;
+    }
+  } else if (tipe == 'amal-usaha' || tipe == 'amal_usaha') {
+    if (cleanSlug.isNotEmpty) {
+      context.push(
+        '/amal-usaha/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+        extra: {'slug': cleanSlug},
+      );
+      return;
+    }
+  }
+
   unawaited(openNotificationTargetWithRouter(GoRouter.of(context), notification));
 }
 
@@ -121,6 +207,7 @@ Future<void> openNotificationTargetWithRouter(GoRouter router, NotificationModel
 
   final redirect = notification.urlRedirect?.trim() ?? '';
   final hasUrl = redirect.isNotEmpty;
+  final cleanSlug = extractNotificationSlug(redirect);
   final tipe = notification.tipeRedirect?.toLowerCase().trim() ?? '';
 
   final shellPath = router.state.uri.path;
@@ -131,18 +218,35 @@ Future<void> openNotificationTargetWithRouter(GoRouter router, NotificationModel
   switch (tipe) {
     case 'news':
     case 'berita':
-      if (hasUrl) {
-        router.go('/berita/detail', extra: {'slug': redirect});
+      if (cleanSlug.isNotEmpty) {
+        router.go(
+          '/berita/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+          extra: {'slug': cleanSlug},
+        );
       } else {
         router.go('/berita');
       }
       break;
     case 'event':
     case 'agenda':
-      if (hasUrl) {
-        router.go('/agenda/detail', extra: {'slug': redirect});
+      if (cleanSlug.isNotEmpty) {
+        router.go(
+          '/agenda/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+          extra: {'slug': cleanSlug},
+        );
       } else {
         router.go('/agenda');
+      }
+      break;
+    case 'amal-usaha':
+    case 'amal_usaha':
+      if (cleanSlug.isNotEmpty) {
+        router.go(
+          '/amal-usaha/detail?slug=${Uri.encodeQueryComponent(cleanSlug)}',
+          extra: {'slug': cleanSlug},
+        );
+      } else {
+        router.go('/amal-usaha');
       }
       break;
     case 'web':

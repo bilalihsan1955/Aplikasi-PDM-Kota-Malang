@@ -61,6 +61,36 @@ class _DetailAmalUsahaPageState extends State<DetailAmalUsahaPage> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant DetailAmalUsahaPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldSlug = oldWidget.slug?.trim() ?? oldWidget.item?.slug.trim();
+    final newSlug = widget.slug?.trim() ?? widget.item?.slug.trim();
+    final slugChanged = oldSlug != newSlug;
+    final itemChanged = widget.item?.id != oldWidget.item?.id;
+    if (slugChanged || itemChanged) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+      if (widget.item != null) {
+        _item = widget.item;
+        _loading = false;
+        _error = null;
+      } else {
+        _item = null;
+        _loading = true;
+        _error = null;
+      }
+      final s = _resolveSlug();
+      if (s != null && s.isNotEmpty) {
+        _loadFromApi(s);
+      } else if (widget.item == null) {
+        _loading = false;
+        if (_item == null) _error = 'Data tidak tersedia';
+      }
+    }
+  }
+
   /// Skeleton hanya bila tidak ada [widget.item] (mis. cold start / deep link); dari daftar tampil data list dulu.
   Future<void> _loadFromApi(String slug) async {
     if (_item == null) {

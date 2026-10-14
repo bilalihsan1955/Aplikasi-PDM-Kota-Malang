@@ -222,19 +222,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       if (!mounted) return;
       final loc = widget.initialLocation.trim();
       final ex = widget.initialExtra;
-      final beritaDetail = loc == '/berita/detail' || loc.endsWith('/berita/detail');
-      final agendaDetail = loc == '/agenda/detail' || loc.endsWith('/agenda/detail');
+      final pathOnly = Uri.tryParse(loc)?.path ?? loc;
+      final beritaDetail = pathOnly == '/berita/detail' || pathOnly.endsWith('/berita/detail');
+      final agendaDetail = pathOnly == '/agenda/detail' || pathOnly.endsWith('/agenda/detail');
       final amalDetail =
-          loc == '/amal-usaha/detail' || loc.endsWith('/amal-usaha/detail');
+          pathOnly == '/amal-usaha/detail' || pathOnly.endsWith('/amal-usaha/detail');
       if (!beritaDetail && !agendaDetail && !amalDetail) return;
       if (ex is Map) {
         final slug = ex['slug'];
         if (slug is String && slug.isNotEmpty) {
           final path = beritaDetail
-              ? '/berita/detail'
+              ? '/berita/detail?slug=${Uri.encodeQueryComponent(slug)}'
               : agendaDetail
-                  ? '/agenda/detail'
-                  : '/amal-usaha/detail';
+                  ? '/agenda/detail?slug=${Uri.encodeQueryComponent(slug)}'
+                  : '/amal-usaha/detail?slug=${Uri.encodeQueryComponent(slug)}';
           _router.go(path, extra: {'slug': slug});
         }
       }

@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import '../view/main_screen.dart';
 import '../view/pages/home_page.dart';
@@ -34,7 +35,11 @@ CustomTransitionPage<void> _webviewTransitionPage(GoRouterState state) {
   final title = extra?['title'] is String ? extra!['title'] as String : null;
   return CustomTransitionPage<void>(
     key: state.pageKey,
-    child: WebViewPage(url: url, title: title),
+    child: WebViewPage(
+      key: ValueKey('web-$url-${state.pageKey.value}'),
+      url: url,
+      title: title,
+    ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,
     transitionsBuilder: (_, __, ___, child) => child,
@@ -115,8 +120,14 @@ GoRouter createAppRouter({
           slug ??= ex['slug'] is String ? ex['slug'] as String : null;
           item = ex['item'] is AmalUsahaItem ? ex['item'] as AmalUsahaItem : null;
         }
+        final resolvedKey = slug ?? item?.slug ?? state.pageKey.value;
         return NoTransitionPage(
-          child: DetailAmalUsahaPage(item: item, slug: slug),
+          key: state.pageKey,
+          child: DetailAmalUsahaPage(
+            key: ValueKey('amal-$resolvedKey'),
+            item: item,
+            slug: slug,
+          ),
         );
       },
     ),
@@ -163,8 +174,14 @@ GoRouter createAppRouter({
                           slug ??= ex['slug'] is String ? ex['slug'] as String : null;
                           item = ex['item'] is AmalUsahaItem ? ex['item'] as AmalUsahaItem : null;
                         }
+                        final resolvedKey = slug ?? item?.slug ?? state.pageKey.value;
                         return NoTransitionPage(
-                          child: DetailAmalUsahaPage(item: item, slug: slug),
+                          key: state.pageKey,
+                          child: DetailAmalUsahaPage(
+                            key: ValueKey('amal-$resolvedKey'),
+                            item: item,
+                            slug: slug,
+                          ),
                         );
                       },
                     ),
@@ -236,8 +253,14 @@ GoRouter createAppRouter({
                     } else if (ex is String) {
                       slug ??= ex;
                     }
+                    final resolvedKey = slug ?? initialAgenda?.slug ?? state.pageKey.value;
                     return NoTransitionPage(
-                      child: DetailAgendaPage(slug: slug, initialAgenda: initialAgenda),
+                      key: state.pageKey,
+                      child: DetailAgendaPage(
+                        key: ValueKey('agenda-$resolvedKey'),
+                        slug: slug,
+                        initialAgenda: initialAgenda,
+                      ),
                     );
                   },
                 ),
@@ -265,8 +288,14 @@ GoRouter createAppRouter({
                     } else if (ex is String) {
                       slug ??= ex;
                     }
+                    final resolvedKey = slug ?? initialNews?.slug ?? state.pageKey.value;
                     return NoTransitionPage(
-                      child: DetailBeritaPage(slug: slug, initialNews: initialNews),
+                      key: state.pageKey,
+                      child: DetailBeritaPage(
+                        key: ValueKey('berita-$resolvedKey'),
+                        slug: slug,
+                        initialNews: initialNews,
+                      ),
                     );
                   },
                 ),

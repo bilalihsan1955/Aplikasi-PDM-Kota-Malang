@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.1.21+24` (Version Name: `1.1.21`, Version Code: `24`) — *Optimasi Spasi Bawah Halaman Detail Amal Usaha & Penyelarasan Layout Presisi*
+* **Versi Saat Ini**: `1.1.23+26` (Version Name: `1.1.23`, Version Code: `26`) — *Registrasi Lengkap Path /agenda pada Android App Links HTTPS & Penyelarasan Intent Filters AndroidManifest*
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 36, Compile SDK: 36), iOS
 
@@ -57,9 +57,10 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 ---
 
 ## 4. Status Pengujian Otomatis (Automated Testing Status)
-* **Total Automated Tests**: **24 Tests Passed / 0 Failed (100% Lulus)**
+* **Total Automated Tests**: **34 Tests Passed / 0 Failed (100% Lulus)**
   * `test/widget_test.dart`: 1 passed (Pengujian struktur `MyApp`, dependency injection Provider, dan routing awal).
   * `test/app_deep_link_test.dart`: 7 passed (Pengujian verifikasi parsing URL makotamu.org untuk berita, kegiatan/agenda, dan amal-usaha).
+  * `test/utils/notification_navigation_test.dart`: 10 passed (Pengujian ekstraksi slug bersih dari ragam format link dan resolusi rute cold start notifikasi).
   * `test/utils/network_error_mapper_test.dart`: 5 passed (Pengujian mapping SocketException, 404, 500, 403, dan generic fallback).
   * `test/view_models/agenda_view_model_test.dart`: 4 passed (Pengujian inisialisasi state, loadEvents, filter kategori/pencarian, dan error handling).
   * `test/view_models/news_view_model_test.dart`: 4 passed (Pengujian inisialisasi state, loadNews, filter tag/query, dan error mapping).
@@ -231,6 +232,23 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Fitur & Perbaikan**:
   1. **Optimasi Spasi Bawah `DetailAmalUsahaPage`**: Menghilangkan bottom padding berlebih (`24 + 96` / 120dp $\rightarrow$ `0`) dan menetralkan translation offset kartu (`-40` $\rightarrow$ `0`) pada [lib/view/pages/amal_usaha/detail_amal_usaha_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/amal_usaha/detail_amal_usaha_page.dart) agar konten tersaji lebih rapat, presisi, dan proporsional.
   2. **Penyelarasan Spasi Halaman Profil Akun**: Mengurangi jarak vertical spacing berlebih pada tombol aksi edit & logout di [lib/view/pages/profile/account_page.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/view/pages/profile/account_page.dart) (`SizedBox(height: 32/40)` $\rightarrow$ `24`) untuk tampilan yang lebih seimbang dan ergonomis.
-  3. **Auto Version Bump ke 1.1.21+24**: Menaikkan versi aplikasi menjadi `version: 1.1.21+24` (`versionCode: 24`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
-* **Status Pengujian**: `flutter test` $\rightarrow$ 24/24 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
+### [2026-10-14] - Versi 1.1.22+25 (Penyelesaian Masalah Navigasi Notifikasi, Normalisasi Slug, & Defense-in-Depth Halaman Detail)
+* **Fitur & Perbaikan**:
+  1. **Ekstraksi Slug Notifikasi Andal (`extractNotificationSlug`)**: Menambahkan fungsi ekstraksi cerdas di [lib/utils/notification_navigation.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/notification_navigation.dart) yang dapat mengekstrak slug bersih dari slug murni, relative path (`/berita/xyz`), full URL (`https://makotamu.org/berita/xyz`), maupun query string (`/berita/detail?slug=xyz`).
+  2. **Navigasi Presisi Inbox Notifikasi & Rute Query**:
+     - Memperbarui `openNotificationTarget` agar menggunakan `context.push` saat dibuka dari inbox notifikasi dalam aplikasi, sehingga tombol *Back* kembali ke daftar notifikasi alih-alih melompat tab.
+     - Menyertakan query parameter slug (`/berita/detail?slug=$slug`, `/agenda/detail?slug=$slug`, `/amal-usaha/detail?slug=$slug`) pada seluruh jalur navigasi notifikasi (baik in-app maupun cold start).
+  3. **Pemasangan `ValueKey` Unik di `routes.dart`**: Memasang `key: ValueKey('berita-$resolvedKey')`, `key: ValueKey('agenda-$resolvedKey')`, `key: ValueKey('amal-$resolvedKey')`, dan `key: ValueKey('web-$url')` pada [lib/utils/routes.dart](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/lib/utils/routes.dart) agar Flutter selalu meregenerasi State baru yang bersih saat pengguna berpindah antar artikel/agenda/web.
+  4. **Implementasi `didUpdateWidget` (*Defense-in-Depth*)**: Mengimplementasikan `didUpdateWidget` pada `DetailBeritaPage`, `DetailAgendaPage`, `DetailAmalUsahaPage`, dan `WebViewPage` agar bila widget diperbarui di dalam branch/stack yang sama, state langsung me-reset data lama ke `loading = true`, menggulir scroll ke posisi paling atas, dan memanggil API artikel/kegiatan/web baru secara instan.
+  5. **Dukungan Deep Link Eksternal Utuh (Zero Regression)**: Memastikan deep link luar (WhatsApp, Browser, Email) tetap kompatibel 100% dan terbebas dari bug konten lama tersangkut saat aplikasi dibuka dari background.
+  6. **Unit Testing & Verifikasi**: Menambahkan 10 skenario pengujian di `test/utils/notification_navigation_test.dart`. Total pengujian otomatis meningkat dari 24 menjadi 34 tests (100% lulus / 0 failure).
+  7. **Auto Version Bump ke 1.1.22+25**: Menaikkan versi aplikasi menjadi `version: 1.1.22+25` (`versionCode: 25`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 34/34 passed (100%), `dart analyze` $\rightarrow$ 0 compilation error.
+
+### [2026-10-14] - Versi 1.1.23+26 (Registrasi Path /agenda pada App Links & Penyelarasan AndroidManifest.xml)
+* **Fitur & Perbaikan**:
+  1. **Registrasi Path `/agenda` pada Android App Links**: Menambahkan entri path prefix `https://makotamu.org/agenda` dan `https://www.makotamu.org/agenda` ke dalam intent-filter `android:autoVerify="true"` di [android/app/src/main/AndroidManifest.xml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/src/main/AndroidManifest.xml), sehingga tautan agenda yang diklik dari luar (WhatsApp/browser) dapat langsung dikenali dan membuka aplikasi secara native.
+  2. **Penyelarasan Intent Filter Bersih (Pure HTTPS Verified App Links)**: Memastikan intent filter tetap bersih dan berfokus pada protokol resmi HTTPS terverifikasi sesuai standar Google Digital Asset Links tanpa filter HTTP berlebih.
+  3. **Auto Version Bump ke 1.1.23+26**: Menaikkan versi aplikasi menjadi `version: 1.1.23+26` (`versionCode: 26`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+* **Status Pengujian**: `flutter test` $\rightarrow$ 34/34 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
 

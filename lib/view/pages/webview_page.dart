@@ -90,6 +90,22 @@ class _WebViewPageState extends State<WebViewPage> {
       ..loadRequest(Uri.parse(widget.url));
   }
 
+  @override
+  void didUpdateWidget(covariant WebViewPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.url != oldWidget.url) {
+      _currentTitle = widget.title ?? '';
+      setState(() {
+        _loading = true;
+        _hasError = false;
+      });
+      final uri = Uri.tryParse(widget.url);
+      if (uri != null) {
+        _controller.loadRequest(uri);
+      }
+    }
+  }
+
   Future<bool> _onWillPop() async {
     if (await _controller.canGoBack()) {
       await _controller.goBack();

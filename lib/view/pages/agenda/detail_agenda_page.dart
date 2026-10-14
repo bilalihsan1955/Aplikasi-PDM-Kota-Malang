@@ -66,6 +66,33 @@ class _DetailAgendaPageState extends State<DetailAgendaPage> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant DetailAgendaPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldSlug = oldWidget.slug?.trim() ?? oldWidget.initialAgenda?.slug.trim();
+    final newSlug = widget.slug?.trim() ?? widget.initialAgenda?.slug.trim();
+    final slugChanged = oldSlug != newSlug;
+    final initialAgendaChanged = widget.initialAgenda?.id != oldWidget.initialAgenda?.id;
+    if (slugChanged || initialAgendaChanged) {
+      if (widget.initialAgenda != null) {
+        _agenda = widget.initialAgenda;
+        _loading = false;
+        _error = null;
+      } else {
+        _agenda = null;
+        _loading = true;
+        _error = null;
+      }
+      final s = _resolveSlug();
+      if (s != null && s.isNotEmpty) {
+        _loadFromApi(s);
+      } else if (widget.initialAgenda == null) {
+        _loading = false;
+        if (_agenda == null) _error = 'Data tidak tersedia';
+      }
+    }
+  }
+
   /// Sama seperti [DetailBeritaPage._loadDetail]: skeleton hanya jika tidak ada data awal (mis. app mati + deep link).
   Future<void> _loadFromApi(String slug) async {
     if (_agenda == null) {

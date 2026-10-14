@@ -52,6 +52,32 @@ class _DetailBeritaPageState extends State<DetailBeritaPage> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant DetailBeritaPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final slugChanged = widget.slug != oldWidget.slug;
+    final initialNewsChanged = widget.initialNews?.id != oldWidget.initialNews?.id;
+    if (slugChanged || initialNewsChanged) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+      if (widget.initialNews != null) {
+        _news = widget.initialNews;
+        _loading = false;
+        _error = null;
+      } else {
+        _news = null;
+        _loading = true;
+        _error = null;
+      }
+      if (widget.slug != null && widget.slug!.isNotEmpty) {
+        _loadDetail();
+      } else if (widget.initialNews == null) {
+        _loading = false;
+      }
+    }
+  }
+
   Future<void> _loadDetail() async {
     final slug = widget.slug;
     if (slug == null || slug.isEmpty) return;
