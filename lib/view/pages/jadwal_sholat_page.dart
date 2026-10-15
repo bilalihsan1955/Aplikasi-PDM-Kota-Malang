@@ -40,8 +40,11 @@ class _JadwalSholatPageState extends State<JadwalSholatPage> {
       if (!mounted) return;
       await FCMService().runJadwalPageAndroidPermissionOnboarding();
       if (!mounted) return;
-      if (widget.prayer == null) {
-        context.read<HomeViewModel>().loadPrayerData();
+      final vm = context.read<HomeViewModel>();
+      final currentCity = (vm.prayerTime ?? widget.prayer)?.city.toUpperCase() ?? '';
+      // Jika data belum ada, atau jika kota masih default KOTA MALANG (kemungkinan GPS baru aktif), sinkronkan lokasi
+      if (widget.prayer == null || currentCity.contains('MALANG')) {
+        unawaited(vm.loadPrayerData());
       }
     });
   }
@@ -52,8 +55,8 @@ class _JadwalSholatPageState extends State<JadwalSholatPage> {
 
     return Consumer<HomeViewModel>(
       builder: (context, vm, _) {
-        final prayer = widget.prayer ?? vm.prayerTime;
-        final loadingExtra = widget.prayer == null && vm.prayerLoading;
+        final prayer = vm.prayerTime ?? widget.prayer;
+        final loadingExtra = vm.prayerLoading && prayer == null;
         final subtitle = prayer != null
             ? JadwalSholatPage._cityTitleCase(prayer.city)
             : (loadingExtra ? 'Memuat jadwal…' : 'Waktu sholat');
@@ -66,15 +69,21 @@ class _JadwalSholatPageState extends State<JadwalSholatPage> {
               preferredSize: const Size.fromHeight(110),
               child: _JadwalHeader(subtitle: subtitle),
             ),
-            body: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 24, bottom: 24),
-              child: SafeArea(
-                top: false,
-                child: _JadwalContent(
-                  prayer: prayer,
-                  isDark: isDark,
-                  prayerLoadingExtra: loadingExtra,
+            body: RefreshIndicator(
+              onRefresh: () async {
+                await context.read<HomeViewModel>().loadPrayerData();
+              },
+              color: const Color(0xFF152D8D),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(top: 24, bottom: 24),
+                child: SafeArea(
+                  top: false,
+                  child: _JadwalContent(
+                    prayer: prayer,
+                    isDark: isDark,
+                    prayerLoadingExtra: loadingExtra,
+                  ),
                 ),
               ),
             ),

@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
 import 'package:pdm_malang/services/fcm/fcm_service.dart';
-import 'package:pdm_malang/services/auth/auth_local_service.dart';
 
 /// Service waktu sholat: utama dari API [waktu-sholat](https://github.com/maftuh23/waktu-sholat) (data Kemenag),
 /// lokasi & jadwal by latitude/longitude. Fallback MyQuran + Nominatim jika API utama gagal.
@@ -46,7 +45,7 @@ class PrayerTimeService {
 
   List<Map<String, String>>? _cityListCache;
 
-  /// Ambil posisi perangkat (dipaksa baca terbaru, kurangi pakai cache). Return null jika permission ditolak atau error.
+  /// Ambil posisi perangkat dengan fallback instan last-known dan akurasi medium yang ramah indoor.
   Future<Position?> getCurrentPosition() async {
     try {
       await FCMService.waitUntilNotificationFlowDoneForLocation();
@@ -57,7 +56,6 @@ class PrayerTimeService {
       if (!enabled) return null;
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        if (!await AuthLocalService().isLoggedIn()) return null;
         permission = await Geolocator.requestPermission();
         if (permission != LocationPermission.whileInUse &&
             permission != LocationPermission.always) {
@@ -66,18 +64,23 @@ class PrayerTimeService {
       }
       if (permission == LocationPermission.deniedForever) return null;
 
-      const settings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 15),
-      );
-      Position? first = await Geolocator.getCurrentPosition(locationSettings: settings);
-      // Panggil lagi setelah jeda agar sistem pakai posisi terbaru (bukan last-known cache)
-      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      // 1. Ambil posisi terakhir yang tersimpan di cache sistem (instan, 0 detik)
+      Position? lastKnown;
       try {
-        final second = await Geolocator.getCurrentPosition(locationSettings: settings);
-        return second;
+        lastKnown = await Geolocator.getLastKnownPosition();
+      } catch (_) {}
+
+      // 2. Ambil posisi saat ini dengan akurasi medium (cepat mengunci via LBS/WiFi/seluler & hemat daya)
+      const settings = LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 10),
+      );
+      try {
+        final current = await Geolocator.getCurrentPosition(locationSettings: settings);
+        return current;
       } catch (_) {
-        return first;
+        // Fallback ke posisi terakhir jika pencarian posisi baru timeout (mis. di dalam ruangan)
+        return lastKnown;
       }
     } catch (_) {
       return null;

@@ -46,7 +46,7 @@ class HomeMenuGrid extends StatelessWidget {
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
           mainAxisSpacing: 0,
-          crossAxisSpacing: 16,
+          crossAxisSpacing: 12,
           childAspectRatio: 0.8,
         ),
         itemBuilder: (context, index) {
@@ -104,16 +104,19 @@ class HomeMenuGrid extends StatelessWidget {
                   child: Icon(item['icon'], color: themeColor, size: 28),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  item['label'],
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : const Color(0xFF2D3142),
-                    letterSpacing: -0.2,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    item['label'],
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : const Color(0xFF2D3142),
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
               ],

@@ -10,7 +10,7 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
 * **Nama Aplikasi**: Makotamu (Muhammadiyah Kota Malang)
 * **Package ID / Application ID**: `id.makotamu.app`
 * **Namespace Kotlin**: `com.example.pdm_malang`
-* **Versi Saat Ini**: `1.1.23+26` (Version Name: `1.1.23`, Version Code: `26`) — *Registrasi Lengkap Path /agenda pada Android App Links HTTPS & Penyelarasan Intent Filters AndroidManifest*
+* **Versi Saat Ini**: `1.1.24+27` (Version Name: `1.1.24`, Version Code: `27`) — *Penyempurnaan UI Menu Wrapping (Auto-scale 1 Baris) & Ketahanan Deteksi Lokasi Sholat Indoor Infinix (Last-Known Fallback & Medium Accuracy)*
 * **Framework**: Flutter 3.x / Dart SDK `^3.10.7`
 * **Platform Target**: Android (Min SDK: 21, Target SDK: 36, Compile SDK: 36), iOS
 
@@ -245,10 +245,24 @@ Dokumen ini berfungsi sebagai cache konteks, status aktif proyek, catatan konfig
   7. **Auto Version Bump ke 1.1.22+25**: Menaikkan versi aplikasi menjadi `version: 1.1.22+25` (`versionCode: 25`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
 * **Status Pengujian**: `flutter test` $\rightarrow$ 34/34 passed (100%), `dart analyze` $\rightarrow$ 0 compilation error.
 
-### [2026-10-14] - Versi 1.1.23+26 (Registrasi Path /agenda pada App Links & Penyelarasan AndroidManifest.xml)
+### [2026-10-15] - Versi 1.1.24+27 (Penyempurnaan UI Menu Wrapping & Ketahanan Deteksi Lokasi Sholat Infinix)
 * **Fitur & Perbaikan**:
-  1. **Registrasi Path `/agenda` pada Android App Links**: Menambahkan entri path prefix `https://makotamu.org/agenda` dan `https://www.makotamu.org/agenda` ke dalam intent-filter `android:autoVerify="true"` di [android/app/src/main/AndroidManifest.xml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/android/app/src/main/AndroidManifest.xml), sehingga tautan agenda yang diklik dari luar (WhatsApp/browser) dapat langsung dikenali dan membuka aplikasi secara native.
-  2. **Penyelarasan Intent Filter Bersih (Pure HTTPS Verified App Links)**: Memastikan intent filter tetap bersih dan berfokus pada protokol resmi HTTPS terverifikasi sesuai standar Google Digital Asset Links tanpa filter HTTP berlebih.
-  3. **Auto Version Bump ke 1.1.23+26**: Menaikkan versi aplikasi menjadi `version: 1.1.23+26` (`versionCode: 26`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
+  1. **Pencegahan Teks Menu Patah / Turun Baris (`home_menu_section.dart`)**:
+     - Membungkus label teks ikon menu dengan `FittedBox(fit: BoxFit.scaleDown)` dan menetapkan `maxLines: 1`.
+     - Mengubah `crossAxisSpacing` dari `16` menjadi `12` pada grid menu utama sehingga memberikan ruang kolom horizontal lebih lega (+6dp).
+     - Menjamin teks panjang seperti "Dokumentasi" dan "Amal Usaha" selalu tampil rapi dalam 1 baris utuh di semua ukuran layar dan tingkat perbesaran font sistem (*font scaling*) tanpa pernah terpotong atau patah baris.
+  2. **Ketahanan Deteksi Lokasi Sholat Indoor & Ramah Perangkat Hemat Daya (`prayer_time_service.dart`)**:
+     - Menghapus pembatasan `isLoggedIn` pada permintaan izin lokasi sehingga pengguna guest (belum login) tetap dapat meminta izin lokasi demi keakuratan jadwal sholat.
+     - Mengimplementasikan pengecekan cepat `Geolocator.getLastKnownPosition()` (instan 0 detik dari cache sistem Android) sebagai fallback utama.
+     - Mengubah akurasi pengambilan koordinat dari `LocationAccuracy.high` ke `LocationAccuracy.medium` dengan timeout 10 detik. Hal ini menghilangkan masalah kegagalan satelit GPS GNSS di dalam ruangan (*indoor*) yang sering terjadi pada chipset entry-level seperti Infinix X6833B (Unisoc/MediaTek) serta menghemat daya baterai.
+     - Menghilangkan *double lock delay* (jeda 1.5 detik yang tidak perlu) untuk performa startup aplikasi yang jauh lebih responsif.
+  3. **Penyempurnaan Halaman Jadwal Sholat (`jadwal_sholat_page.dart`)**:
+     - Memprioritaskan data `vm.prayerTime ?? widget.prayer` agar ketika lokasi diperbarui di background, tampilan seketika menampilkan lokasi dan jadwal sholat terbaru.
+     - Menambahkan deteksi otomatis saat halaman dibuka: jika koordinat masih default 'Kota Malang' akibat GPS baru aktif belakangan, aplikasi otomatis memicu sinkronisasi posisi.
+     - Menambahkan fitur tarik untuk menyegarkan (*pull-to-refresh*) menggunakan `RefreshIndicator` pada halaman Jadwal Sholat.
+  4. **Pembaruan Jadwal Sholat Saat App Resume (`home_view_model.dart`)**:
+     - Mengizinkan pembaruan jadwal sholat saat aplikasi kembali aktif dari background (`refreshPrayerDataIfStaleOnResume`) untuk semua pengguna termasuk guest.
+  5. **Auto Version Bump ke 1.1.24+27**:
+     - Menaikkan versi aplikasi menjadi `version: 1.1.24+27` (`versionCode: 27`) di [pubspec.yaml](file:///c:/Users/BILALIHSAN/Documents/project/pdm_malang/pubspec.yaml) untuk kepatuhan Google Play Console.
 * **Status Pengujian**: `flutter test` $\rightarrow$ 34/34 passed (100%), `flutter analyze` $\rightarrow$ 0 compilation error.
 

@@ -7,7 +7,6 @@ import '../models/news_model.dart';
 import '../repositories/news_repository.dart';
 import '../repositories/agenda_repository.dart';
 import '../services/fcm/fcm_service.dart';
-import '../services/auth/auth_local_service.dart';
 import '../repositories/prayer_repository.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -84,11 +83,8 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> refreshPrayerDataIfStaleOnResume() async {
-    final auth = AuthLocalService();
-    if (!await auth.isLoggedIn()) return;
-    
     final today = _todayKey();
-    if (_lastPrayerSyncDayKey != today) {
+    if (_lastPrayerSyncDayKey != today || _prayerTime == null) {
       await loadPrayerData();
       return;
     }
