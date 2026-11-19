@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:pdm_malang/services/api/app_http.dart';
 import 'package:pdm_malang/models/amal_usaha_model.dart';
 import 'package:pdm_malang/services/api/api_service.dart';
 
@@ -42,7 +42,7 @@ class AmalUsahaApiService {
       if (type != null && type.isNotEmpty) q['type'] = type;
 
       final uri = Uri.parse('$_baseUrl/amal-usaha').replace(queryParameters: q);
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
 
       if (response.statusCode != 200) {
         return AmalUsahaListResult(
@@ -106,7 +106,7 @@ class AmalUsahaApiService {
     try {
       final encoded = Uri.encodeComponent(s);
       final uri = Uri.parse('$_baseUrl/amal-usaha/$encoded');
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         Map<String, dynamic>? raw;

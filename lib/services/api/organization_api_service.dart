@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:pdm_malang/services/api/app_http.dart';
 import 'package:pdm_malang/models/organization_model.dart';
 import 'package:pdm_malang/services/api/api_service.dart';
 
@@ -31,7 +31,7 @@ class OrganizationApiService {
   Future<OrganizationProfileResult> getProfile() async {
     try {
       final uri = Uri.parse('$_baseUrl/organization/profile');
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
 
       if (response.statusCode != 200) {
         return OrganizationProfileResult(
@@ -75,7 +75,7 @@ class OrganizationApiService {
   Future<OrganizationStructureResult> getStructure() async {
     try {
       final uri = Uri.parse('$_baseUrl/organization/structure');
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
 
       if (response.statusCode != 200) {
         return OrganizationStructureResult(

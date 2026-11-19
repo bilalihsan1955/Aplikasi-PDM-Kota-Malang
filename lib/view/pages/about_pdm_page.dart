@@ -907,7 +907,7 @@ class _AboutPdmPageState extends State<AboutPdmPage> {
                 TileLayer(
                   urlTemplate:
                       'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-                  userAgentPackageName: 'com.pdm_malang.app',
+                  userAgentPackageName: 'id.makotamu.app',
                 ),
                 MarkerLayer(
                   markers: [

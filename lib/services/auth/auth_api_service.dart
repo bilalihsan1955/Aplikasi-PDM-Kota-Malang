@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:pdm_malang/services/api/app_http.dart';
 import '../../models/auth_user_model.dart';
 import '../../services/api/api_service.dart';
 import 'auth_action_result.dart';
@@ -64,7 +65,7 @@ class AuthApiService {
     try {
       final uri = Uri.parse('$_baseUrl/register');
 
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: _headers,
         body: jsonEncode({
@@ -133,7 +134,7 @@ class AuthApiService {
     try {
       final uri = Uri.parse('$_baseUrl/login');
 
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: _headers,
         body: jsonEncode({
@@ -189,7 +190,7 @@ class AuthApiService {
   Future<AuthRefreshResult> refreshToken({required String token}) async {
     try {
       final uri = Uri.parse('$_baseUrl/auth/refresh');
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: _headers,
         body: jsonEncode({'token': token}),
@@ -283,7 +284,7 @@ class AuthApiService {
   }) async {
     try {
       final uri = Uri.parse('$_baseUrl/logout');
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: {
           'Accept': 'application/json',
@@ -321,7 +322,7 @@ class AuthApiService {
   Future<AuthProfileUpdateResult> fetchCurrentUser({required String token}) async {
     try {
       final uri = Uri.parse('$_baseUrl/user');
-      final response = await http.get(
+      final response = await AppHttp.client.get(
         uri,
         headers: _authJsonHeaders(token),
       );
@@ -401,10 +402,10 @@ class AuthApiService {
             filename: 'avatar.jpg',
           ),
         );
-        final streamed = await request.send();
+        final streamed = await AppHttp.client.send(request);
         response = await http.Response.fromStream(streamed);
       } else {
-        response = await http.post(
+        response = await AppHttp.client.post(
           uri,
           headers: _authJsonHeaders(token),
           body: jsonEncode({
@@ -487,7 +488,7 @@ class AuthApiService {
   }) async {
     try {
       final uri = Uri.parse('$_baseUrl/otp/send');
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: _headers,
         body: jsonEncode({
@@ -536,7 +537,7 @@ class AuthApiService {
   }) async {
     try {
       final uri = Uri.parse('$_baseUrl/otp/verify');
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: _headers,
         body: jsonEncode({
@@ -590,7 +591,7 @@ class AuthApiService {
   }) async {
     try {
       final uri = Uri.parse('$_baseUrl/password/reset');
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: _headers,
         body: jsonEncode({

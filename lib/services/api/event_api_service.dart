@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:pdm_malang/services/api/app_http.dart';
 import 'package:pdm_malang/models/agenda_model.dart';
 import 'package:pdm_malang/services/api/api_service.dart';
 
@@ -32,7 +32,7 @@ class EventApiService {
       if (status != null && status.isNotEmpty) q['status'] = status;
 
       final uri = Uri.parse('$_baseUrl/events').replace(queryParameters: q);
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
 
       if (response.statusCode != 200) {
         return EventListResult(
@@ -90,7 +90,7 @@ class EventApiService {
   /// GET /events/upcoming → array of 5 upcoming
   Future<List<AgendaModel>> getUpcoming() async {
     try {
-      final response = await http.get(
+      final response = await AppHttp.client.get(
         Uri.parse('$_baseUrl/events/upcoming'),
         headers: _headers,
       );
@@ -121,7 +121,7 @@ class EventApiService {
     try {
       final encodedSlug = Uri.encodeComponent(slug);
       final uri = Uri.parse('$_baseUrl/events/$encodedSlug');
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
 
       if (response.statusCode != 200) return null;
       final body = jsonDecode(response.body);

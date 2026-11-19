@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:pdm_malang/services/api/app_http.dart';
 import 'package:pdm_malang/models/news_model.dart';
 import 'package:pdm_malang/services/api/api_service.dart';
 
@@ -32,7 +32,7 @@ class NewsApiService {
       if (search != null && search.trim().isNotEmpty) q['search'] = search.trim();
 
       final uri = Uri.parse('$_baseUrl/news').replace(queryParameters: q);
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
 
       if (response.statusCode != 200) {
         return NewsListResult(
@@ -86,7 +86,7 @@ class NewsApiService {
   /// GET /news/featured → single news object
   Future<NewsModel?> getFeatured() async {
     try {
-      final response = await http.get(
+      final response = await AppHttp.client.get(
         Uri.parse('$_baseUrl/news/featured'),
         headers: _headers,
       );
@@ -109,7 +109,7 @@ class NewsApiService {
   /// GET /news/latest → array of 5 latest
   Future<List<NewsModel>> getLatest() async {
     try {
-      final response = await http.get(
+      final response = await AppHttp.client.get(
         Uri.parse('$_baseUrl/news/latest'),
         headers: _headers,
       );
@@ -137,7 +137,7 @@ class NewsApiService {
     try {
       final encodedSlug = Uri.encodeComponent(slug);
       final uri = Uri.parse('$_baseUrl/news/$encodedSlug');
-      final response = await http.get(uri, headers: _headers);
+      final response = await AppHttp.client.get(uri, headers: _headers);
 
       if (response.statusCode != 200) return null;
       final body = jsonDecode(response.body);

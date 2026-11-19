@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:pdm_malang/services/api/app_http.dart';
 import 'api_service.dart';
 import 'package:pdm_malang/models/notification_model.dart';
 
@@ -25,7 +25,7 @@ class NotificationApiService {
           'limit': limit.toString(),
         },
       );
-      final response = await http.get(uri, headers: _authHeaders(token));
+      final response = await AppHttp.client.get(uri, headers: _authHeaders(token));
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);

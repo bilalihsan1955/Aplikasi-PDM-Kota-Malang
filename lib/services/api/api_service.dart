@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:pdm_malang/services/api/app_http.dart';
 
 String _prettyJsonOrRaw(String body) {
   final t = body.trim();
@@ -80,7 +81,7 @@ class ApiService {
     required String topic,
   }) async {
     try {
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         Uri.parse('$baseUrl/fcm/subscribe'),
         headers: _headers,
         body: jsonEncode({
@@ -104,7 +105,7 @@ class ApiService {
     required String topic,
   }) async {
     try {
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         Uri.parse('$baseUrl/fcm/unsubscribe'),
         headers: _headers,
         body: jsonEncode({
@@ -128,7 +129,7 @@ class ApiService {
     required String topic,
   }) async {
     try {
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         Uri.parse('$baseUrl/fcm/subscribe'),
         headers: _headersWithAuth(userToken),
         body: jsonEncode({
@@ -151,7 +152,7 @@ class ApiService {
     required String topic,
   }) async {
     try {
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         Uri.parse('$baseUrl/fcm/unsubscribe'),
         headers: _headersWithAuth(userToken),
         body: jsonEncode({
@@ -176,7 +177,7 @@ class ApiService {
   }) async {
     final uri = Uri.parse('$baseUrl/fcm/token');
     try {
-      final response = await http.post(
+      final response = await AppHttp.client.post(
         uri,
         headers: _headersWithAuth(userToken),
         body: jsonEncode({
@@ -204,7 +205,7 @@ class ApiService {
     required String userToken,
   }) async {
     try {
-      final response = await http.delete(
+      final response = await AppHttp.client.delete(
         Uri.parse('$baseUrl/fcm/token'),
         headers: _headersWithAuth(userToken),
       );

@@ -26,6 +26,7 @@ import 'package:pdm_malang/view_models/auth_view_model.dart';
 import 'package:pdm_malang/view_models/amal_usaha_view_model.dart';
 
 // Services
+import 'package:pdm_malang/services/api/app_http_overrides.dart';
 import 'package:pdm_malang/services/api/event_api_service.dart';
 import 'package:pdm_malang/services/api/news_api_service.dart';
 import 'package:pdm_malang/services/prayer/prayer_time_service.dart';
@@ -47,6 +48,7 @@ import 'package:pdm_malang/firebase_background.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  installAppHttpOverrides();
 
   await configureLocalTimeZone();
 
